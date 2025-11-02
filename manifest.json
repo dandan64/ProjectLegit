@@ -3,9 +3,41 @@
     "description": "Base level extension",
     "version": "1.0",
     "manifest_version": 3,
-    "action":
-    {
-        "default_popup": "Legit.html",
-        "default_icon":"Legit_logo.jpg"
+    "action":{
+        "default_icon": {
+            "16": "Images/Legit_logo_16.png",
+            "32": "Images/Legit_logo_32.png",
+            "48": "Images/Legit_logo_48.png",
+            "128": "Images/Legit_logo_128.png"
+        }
+    },
+    "icons": {
+        "16": "Images/Legit_logo_16.png",
+        "32": "Images/Legit_logo_32.png",
+        "48": "Images/Legit_logo_48.png",
+        "128": "Images/Legit_logo_128.png"
+    },
+    "content_scripts": [
+        {
+            "js": ["scripts/content.js"],
+            "matches": [
+                "https://developer.chrome.com/docs/extensions/*",
+                "https://developer.chrome.com/docs/webstore/*",
+                "https://www.bbc.com/*"
+            ]  
+        }
+    ],
+    "permissions": ["activeTab", "scripting"],
+    "background":{
+        "service_worker": "scripts/background.js"
+    },
+    "commands": {
+        "_execute_action": {
+            "suggested_key": {
+                "default": "Ctrl+B",
+                "mac": "Command+B"
+            }
+        }
     }
+
 }

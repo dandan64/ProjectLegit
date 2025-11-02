@@ -6,6 +6,6 @@
     "action":
     {
         "default_popup": "Legit.html",
-        "default_icon":"Legit_logo.jpg"
+        "default_icon":"Legit_logo.png"
     }
 }

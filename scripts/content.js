@@ -1,5 +1,5 @@
 function renderReadingTime(article) {
-  // If we weren't provided an article, we don't need to render anything.
+    // If we weren't provided an article, we don't need to render anything.
     if (!article) {
         return;
     }
@@ -23,7 +23,14 @@ function renderReadingTime(article) {
     // Support for article docs with date
     const date = article.querySelector("time")?.parentNode;
 
-    (date ?? heading).insertAdjacentElement("afterend", badge);
+    const target = date ?? heading;
+
+    if (target) {
+        target.insertAdjacentElement("afterend", badge);
+    } else {
+        // fallback: just add it to the start of the article
+        article.prepend(badge);
+    }
 }
 
 renderReadingTime(document.querySelector("article"));

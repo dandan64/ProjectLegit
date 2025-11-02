@@ -1,0 +1,11 @@
+{
+    "name": "Legit Extension",
+    "description": "Base level extension",
+    "version": "1.0",
+    "manifest_version": 3,
+    "action":
+    {
+        "default_popup": "Legit.html",
+        "default_icon":"Legit_logo.jpg"
+    }
+}

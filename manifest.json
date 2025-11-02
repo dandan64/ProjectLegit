@@ -6,6 +6,22 @@
     "action":
     {
         "default_popup": "Legit.html",
-        "default_icon":"Legit_logo.png"
-    }
+        "default_icon": "Images/Legit_logo_128.png"
+    },
+    "icons":
+    {
+        "16": "Images/Legit_logo_16.png",
+        "32": "Images/Legit_logo_32.png",
+        "48": "Images/Legit_logo_48.png",
+        "128": "Images/Legit_logo_128.png"
+    },
+    "content_scripts": [
+        {
+            "js": ["scripts/content.js"],
+            "matches": [
+                "https://developer.chrome.com/docs/extensions/*",
+                "https://developer.chrome.com/docs/webstore/*"
+            ]
+        }
+    ]
 }

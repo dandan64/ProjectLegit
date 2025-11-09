@@ -1,6 +1,6 @@
 {
     "name": "Legit Extension",
-    "description": "Base level extension",
+    "description": "Solving the problem of fake news on the internet",
     "version": "1.0",
     "manifest_version": 3,
     "action":{
@@ -9,7 +9,8 @@
             "32": "Images/Legit_logo_32.png",
             "48": "Images/Legit_logo_48.png",
             "128": "Images/Legit_logo_128.png"
-        }
+        },
+        "default_popup": "Legit.html"
     },
     "icons": {
         "16": "Images/Legit_logo_16.png",
@@ -19,15 +20,17 @@
     },
     "content_scripts": [
         {
-            "js": ["scripts/content.js"],
+            "js": ["./scripts/popup.js", "./scripts/contentScript.js"],
             "matches": [
-                "https://developer.chrome.com/docs/extensions/*",
-                "https://developer.chrome.com/docs/webstore/*",
-                "https://www.bbc.com/*"
-            ]  
+                "<all_urls>"
+            ],
+            "css": ["style.css"]
         }
     ],
-    "permissions": ["activeTab", "scripting"],
+    "host_permissions": [
+        "*://*/*"
+    ],
+    "permissions": ["activeTab", "scripting", "storage"],
     "background":{
         "service_worker": "scripts/background.js"
     },

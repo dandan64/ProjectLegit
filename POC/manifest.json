@@ -1,0 +1,28 @@
+{
+    "manifest_version": 3,
+    "name": "Dramatic Headline Highlighter",
+    "version": "1.0.0",
+    "description": "Highlights article headlines in green or red based on how dramatic they are (using an LLM).",
+    "permissions": [
+      "activeTab",
+      "scripting"
+      
+    ],
+    "host_permissions": [
+        "*://generativelanguage.googleapis.com/*"
+      
+    ],
+    "action": {
+      "default_icon": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+      },
+      "default_title": "Check headline drama"
+      
+    },
+    "background": {
+      "service_worker": "background.js"
+    }
+  }
+  

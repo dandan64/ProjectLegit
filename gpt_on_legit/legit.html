@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Legit - News Legitimacy Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            width: 420px;
+            min-height: 500px;
+            max-height: 700px;
+            overflow-y: auto;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+
+        /* Custom Scrollbar */
+        body::-webkit-scrollbar {
+            width: 8px;
+        }
+        body::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+        }
+        body::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+        }
+
+        /* Setup View */
+        #setupView {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+            gap: 16px;
+        }
+
+        .logo-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .logo-header img {
+            width: 64px;
+            height: 64px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tagline {
+            font-size: 14px;
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        /* Glass morphism card */
+        .input-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4b5563;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+            font-family: 'Courier New', monospace;
+        }
+
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        #saveKeyBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        #saveKeyBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        #activateBtn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            font-size: 16px;
+            padding: 14px;
+        }
+
+        #activateBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        button:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            font-size: 13px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: center;
+            transition: opacity 0.3s;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        .api-help {
+            font-size: 12px;
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .api-help a {
+            color: white;
+            text-decoration: underline;
+        }
+
+        /* Results View */
+        #resultsView {
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+            gap: 16px;
+        }
+
+        #pageHeader {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .page-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 6px;
+            line-height: 1.4;
+        }
+
+        .page-domain {
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        /* Overall Score Display */
+        #overallScore {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .score-header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .score-header h2 {
+            font-size: 18px;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        #scoreLabel {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .score-display {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+
+        #scoreValue {
+            font-size: 48px;
+            font-weight: 800;
+            color: #1f2937;
+            min-width: 80px;
+        }
+
+        .score-bar-container {
+            flex: 1;
+            height: 12px;
+            background: #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        #scoreBar {
+            height: 100%;
+            transition: width 1s ease, background-color 0.5s;
+            border-radius: 6px;
+        }
+
+        /* Agent Grid */
+        #agentGrid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .agent-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #e5e7eb;
+            transition: all 0.3s;
+            opacity: 0.6;
+        }
+
+        .agent-card.completed {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .agent-card.priority-high {
+            border-left-color: #ef4444;
+        }
+
+        .agent-card.priority-medium {
+            border-left-color: #f59e0b;
+        }
+
+        .agent-card.priority-low {
+            border-left-color: #3b82f6;
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .agent-icon {
+            font-size: 24px;
+        }
+
+        .agent-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            flex: 1;
+        }
+
+        .agent-loader {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #e5e7eb;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        .agent-content {
+            font-size: 13px;
+            color: #4b5563;
+        }
+
+        .agent-loading {
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .rating-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .rating-badge.rating-highly_credible,
+        .rating-badge.rating-credible,
+        .rating-badge.rating-well_sourced,
+        .rating-badge.rating-accurate,
+        .rating-badge.rating-mostly_accurate,
+        .rating-badge.rating-balanced,
+        .rating-badge.rating-professional,
+        .rating-badge.rating-current {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .rating-badge.rating-neutral,
+        .rating-badge.rating-partially_sourced,
+        .rating-badge.rating-adequate,
+        .rating-badge.rating-recent {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .rating-badge.rating-questionable,
+        .rating-badge.rating-somewhat_misleading,
+        .rating-badge.rating-poorly_sourced,
+        .rating-badge.rating-emotional,
+        .rating-badge.rating-sensationalist {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        .rating-badge.rating-unreliable,
+        .rating-badge.rating-clickbait,
+        .rating-badge.rating-deceptive,
+        .rating-badge.rating-misleading,
+        .rating-badge.rating-highly_manipulative {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .agent-explanation {
+            line-height: 1.5;
+        }
+
+        .agent-error {
+            color: #dc2626;
+            font-style: italic;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .action-buttons button {
+            flex: 1;
+            padding: 10px;
+            font-size: 13px;
+        }
+
+        #newAnalysisBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        #exportBtn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        #exportBtn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Responsive adjustments */
+        /* @media (max-width: 400px) {
+            body {
+                width: 100%;
+            }
+        } */
+    </style>
+</head>
+<body>
+    <!-- Setup View -->
+    <div id="setupView">
+        <div class="logo-header">
+            <img src="Images/Legit_logo_128.png" alt="Legit Logo">
+            <h1>Legit</h1>
+        </div>
+        <p class="tagline">AI-powered fake news detection</p>
+
+        <div class="input-card">
+            <div class="input-group">
+                <label for="apiKeyInput">
+                    🔑 Gemini API Key
+                </label>
+                <input 
+                    id="apiKeyInput" 
+                    type="password" 
+                    placeholder="Enter your API key..."
+                    autocomplete="off"
+                />
+                <button id="saveKeyBtn">
+                    💾 Save API Key
+                </button>
+            </div>
+        </div>
+
+        <div id="statusMsg" class="status"></div>
+
+        <button id="activateBtn" disabled>
+            🔍 Analyze This Page
+        </button>
+
+        <div id="loader" class="loader"></div>
+
+        <p class="api-help">
+            Don't have an API key? <a href="https://aistudio.google.com/app/apikey" target="_blank">Get one free</a>
+        </p>
+    </div>
+
+    <!-- Results View -->
+    <div id="resultsView">
+        <div id="pageHeader"></div>
+
+        <div id="overallScore">
+            <div class="score-header">
+                <h2>Overall Legitimacy Score</h2>
+                <div id="scoreLabel"></div>
+            </div>
+            <div class="score-display">
+                <div id="scoreValue">--</div>
+                <div class="score-bar-container">
+                    <div id="scoreBar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="agentGrid"></div>
+
+        <div class="action-buttons">
+            <button id="newAnalysisBtn">
+                🔄 New Analysis
+            </button>
+            <button id="exportBtn">
+                📥 Export Results
+            </button>
+        </div>
+    </div>
+
+    <script src="scripts/popup.js"></script>
+</body>
+</html>

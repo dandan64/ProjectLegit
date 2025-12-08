@@ -1,5 +1,10 @@
 // background.js - Enhanced version with caching and rate limiting
 
+// Open Side Panel when the extension icon is clicked
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch((error) => console.error(error));
+  
 // Simple in-memory cache (cleared on extension reload)
 const responseCache = new Map();
 const CACHE_DURATION = 1000 * 60 * 30; // 30 minutes
@@ -62,7 +67,6 @@ function getCachedResponse(promptText) {
     const cached = responseCache.get(key);
     
     if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-        console.log("✅ Using cached response");
         return cached.response;
     }
     

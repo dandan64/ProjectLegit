@@ -9,8 +9,7 @@
             "32": "Images/Legit_logo_32.png",
             "48": "Images/Legit_logo_48.png",
             "128": "Images/Legit_logo_128.png"
-        },
-        "default_popup": "Legit.html"
+        }
     },
     "icons": {
         "16": "Images/Legit_logo_16.png",
@@ -22,9 +21,12 @@
         "*://*/*",
         "https://generativelanguage.googleapis.com/*"
     ],
-    "permissions": ["activeTab", "scripting", "storage"],
+    "permissions": ["activeTab", "scripting", "storage", "sidePanel"],
     "background": {
         "service_worker": "scripts/background.js"
+    },
+    "side_panel": {
+        "default_path": "Legit.html"
     },
     "commands": {
         "_execute_action": {

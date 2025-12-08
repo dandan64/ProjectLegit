@@ -9,6 +9,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const setupView = document.getElementById("setupView");
     const resultsView = document.getElementById("resultsView");
 
+    chrome.tabs.onActivated.addListener(async (activeInfo) => {
+        // Reset the view to "Setup" or "Ready" when user changes tabs
+        // This prevents showing the score for CNN while looking at BBC
+        setupView.style.display = "flex";
+        resultsView.style.display = "none";
+        statusMsg.textContent = "New tab detected. Ready to analyze.";
+        statusMsg.className = "status info";
+        activateBtn.disabled = false;
+    });
+
     // global variable for export
     let analysisResults = null;
 
@@ -101,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const cachedData = await checkCache(tab.url);
 
             if (cachedData) {
-                showStatus("⚡ Loading cached results...", "info");
+                showStatus("♻️ Loading cached results...", "info");
                 setTimeout(() => {
                     loadFromCache(cachedData);
                     loader.style.display = "none";
@@ -162,17 +172,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Function to render cached results instantly
     function loadFromCache(cacheData) {
         setupView.style.display = "none";
         resultsView.style.display = "flex";
-
-        // Restore global data for export
-        analysisResults = {
-            page: cacheData.pageData,
-            agents: cacheData.agents,
-            timestamp: new Date(cacheData.timestamp).toLocaleString(),
-            score: cacheData.score
-        };
 
         displayPageHeader(cacheData.pageData);
 
@@ -184,12 +187,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const agentGrid = document.getElementById("agentGrid");
         agentGrid.innerHTML = "";
 
+        // Sort agents by SCORE (Ascending: Worst -> Best)
         const sorted = [...cacheData.agents].sort((a, b) => {
-            const priorityOrder = { high: 0, medium: 1, low: 2 };
-            return priorityOrder[a.priority] - priorityOrder[b.priority];
+            const scoreA = a.result ? a.result.score : 100;
+            const scoreB = b.result ? b.result.score : 100;
+            return scoreA - scoreB;
         });
 
+        // Render cards
         sorted.forEach(agent => {
+            // This function already builds the FULL card with Badge, Chevron, and Colors
             const card = createCompletedAgentCard(agent);
             agentGrid.appendChild(card);
         });
@@ -197,6 +204,41 @@ document.addEventListener("DOMContentLoaded", () => {
         displayOverallScore(cacheData.agents);
     }
 
+    // Helper: Re-sorts the grid based on current scores
+    function sortGridDynamic() {
+        const agentGrid = document.getElementById("agentGrid");
+        const cards = Array.from(agentGrid.children);
+
+        cards.sort((cardA, cardB) => {
+            // Check if cards are finished (have the 'completed' class)
+            const isDoneA = cardA.classList.contains("completed");
+            const isDoneB = cardB.classList.contains("completed");
+
+            // 1. Move Completed cards to the TOP
+            if (isDoneA && !isDoneB) return -1;
+            if (!isDoneA && isDoneB) return 1;
+
+            // 2. If both are completed, sort by Score (Ascending: Worst first)
+            if (isDoneA && isDoneB) {
+                // We stored the result object on the card element in analyzeAgent
+                // But accessing DOM properties is messy, let's look at class names or attributes
+                // A cleaner way: We attached the 'agent' object to the card in memory previously, 
+                // but let's grab the score from a data-attribute we will add.
+                const scoreA = parseInt(cardA.getAttribute("data-score")) || 100;
+                const scoreB = parseInt(cardB.getAttribute("data-score")) || 100;
+                return scoreA - scoreB;
+            }
+
+            // 3. If neither are done, keep original Priority order (based on class)
+            // (Optional refinement, but keeping them stable is usually better while loading)
+            return 0;
+        });
+
+        // Re-append in new order
+        cards.forEach(card => agentGrid.appendChild(card));
+    }
+
+    // Helper to create a card that is ALREADY done (for cache loading)
     function createCompletedAgentCard(agent) {
         const card = document.createElement("div");
         const result = agent.result;
@@ -209,11 +251,16 @@ document.addEventListener("DOMContentLoaded", () => {
         card.className = `agent-card completed ${scoreClass}`;
         card.id = `agent-${agent.id}`;
         
+        // --- UPDATED HTML STRUCTURE ---
         card.innerHTML = `
             <div class="agent-header">
                 <span class="agent-icon">${agent.icon}</span>
-                <span class="agent-name">${agent.name}</span>
-                <span class="rating-badge rating-${result.rating.toLowerCase()}">${formatRating(result.rating)}</span>
+                
+                <div class="agent-text-wrapper">
+                    <span class="agent-name">${agent.name}</span>
+                    <span class="rating-badge rating-${result.rating.toLowerCase()}">${formatRating(result.rating)}</span>
+                </div>
+
                 <span class="toggle-icon">▼</span>
             </div>
             <div class="agent-content">
@@ -336,12 +383,12 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State
                 prompt: `Act as a Fact-Checking Researcher. Use Google Search to cross-reference this story: "${pageData.title}".
 Current Date: ${today}
 Your Task:
-1. Search for this specific headline to see if major outlets (Reuters, AP, BBC) are reporting it.
+1. Search for this specific headline to see if major outlets other than the current domain are reporting it.
 2. Check if Snopes or other fact-checkers have already debunked this.
 3. Verify if the core premise contradicts established consensus found in search results.
 Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
 Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). List specific major outlets that are (or are not) reporting this story.]`
+EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). List specific major outlets (other than the current domain) that are (or are not) reporting this story.]`
             },
             {
                 id: "headline",
@@ -376,9 +423,10 @@ Your Task:
 1. If specific studies or reports are mentioned, search to see if they actually exist.
 2. Verify if the text misrepresents the cited source's conclusion.
 3. Flag vague attributions like "experts say" if no specific experts are named.
+4. Identify any missing citations for significant claims.
 Rate as: WELL_SOURCED, PARTIALLY_SOURCED, POORLY_SOURCED, or UNSOURCED
 Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State if the citations found in the text are real and accurate.]`
+EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State if the citations found in the text are real and accurate. If the text does not cite sources, rate accordingly.]`
             },
             {
                 id: "accuracy",
@@ -479,6 +527,7 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Expli
         const agentGrid = document.getElementById("agentGrid");
         agentGrid.innerHTML = "";
 
+        // Initial Layout: Priority Order
         const sorted = [...agents].sort((a, b) => {
             const priorityOrder = { high: 0, medium: 1, low: 2 };
             return priorityOrder[a.priority] - priorityOrder[b.priority];
@@ -489,6 +538,7 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Expli
             agentGrid.appendChild(card);
         }
 
+        // Run in parallel - The cards will jump to their correct spots as they finish!
         const promises = sorted.map(agent => analyzeAgent(agent));
         await Promise.all(promises);
     }
@@ -500,7 +550,11 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Expli
         card.innerHTML = `
             <div class="agent-header">
                 <span class="agent-icon">${agent.icon}</span>
-                <span class="agent-name">${agent.name}</span>
+                
+                <div class="agent-text-wrapper">
+                    <span class="agent-name">${agent.name}</span>
+                    </div>
+
                 <div class="agent-loader"></div>
             </div>
             <div class="agent-content">
@@ -510,9 +564,11 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Expli
         return card;
     }
 
+    // Analyze individual agent (Updated for Dynamic Sorting)
     async function analyzeAgent(agent) {
         const card = document.getElementById(`agent-${agent.id}`);
         const headerDiv = card.querySelector(".agent-header");
+        const textWrapper = card.querySelector(".agent-text-wrapper");
         const contentDiv = card.querySelector(".agent-content");
         const loaderDiv = card.querySelector(".agent-loader");
 
@@ -525,53 +581,68 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Expli
 
             loaderDiv.style.display = "none";
 
-            if (response.error) {
-                throw new Error(response.error);
-            }
+            if (response.error) throw new Error(response.error);
 
             const result = parseAgentResponse(response.result);
             agent.result = result;
 
+            // --- IMPORTANT: Save Score to DOM for Sorting ---
+            card.setAttribute("data-score", result.score);
+
+            // Colors
             card.classList.remove("priority-high", "priority-medium", "priority-low");
-            if (result.score >= 80) {
-                card.classList.add("score-high");
-            } else if (result.score >= 60) {
-                card.classList.add("score-good");
-            } else if (result.score >= 40) {
-                card.classList.add("score-medium");
-            } else {
-                card.classList.add("score-low");
-            }
+            if (result.score >= 80) card.classList.add("score-high");
+            else if (result.score >= 60) card.classList.add("score-good");
+            else if (result.score >= 40) card.classList.add("score-medium");
+            else card.classList.add("score-low");
 
             const badgeHtml = `<span class="rating-badge rating-${result.rating.toLowerCase()}">${formatRating(result.rating)}</span>`;
             const chevronHtml = `<span class="toggle-icon">▼</span>`;
             
-            headerDiv.insertAdjacentHTML('beforeend', badgeHtml + chevronHtml);
+            textWrapper.insertAdjacentHTML('beforeend', badgeHtml);
+            headerDiv.insertAdjacentHTML('beforeend', chevronHtml);
             contentDiv.innerHTML = `<div class="agent-explanation">${escapeHtml(result.explanation)}</div>`;
 
-            card.addEventListener("click", () => {
-                card.classList.toggle("expanded");
-            });
-
+            card.addEventListener("click", () => card.classList.toggle("expanded"));
             card.classList.add("completed");
+
+            // --- TRIGGER DYNAMIC SORT ---
+            sortGridDynamic();
 
         } catch (err) {
             loaderDiv.style.display = "none";
-            headerDiv.insertAdjacentHTML('beforeend', `<span class="rating-badge rating-error">Error</span>`);
+            textWrapper.insertAdjacentHTML('beforeend', `<span class="rating-badge rating-error">Error</span>`);
             contentDiv.innerHTML = `<div class="agent-error">⚠️ ${escapeHtml(err.message)}</div>`;
             contentDiv.style.display = "block";
+            
             agent.result = { rating: "ERROR", explanation: err.message, score: 0 };
+            
+            // Set error score to 0 so it bubbles to top
+            card.setAttribute("data-score", 0);
             card.classList.add("score-low");
+            card.classList.add("completed");
+            
+            // Re-sort on error too
+            sortGridDynamic();
         }
     }
 
+    // Parse agent response
     function parseAgentResponse(text) {
+        // Look for the rating
         const ratingMatch = text.match(/RATING:\s*([A-Z_]+)/i);
+        
+        // Look for the explanation
         const explanationMatch = text.match(/EXPLANATION:\s*(.+?)(?=\n\n|$)/is);
 
-        const rating = ratingMatch ? ratingMatch[1].trim() : "UNKNOWN";
-        const explanation = explanationMatch ? explanationMatch[1].trim() : text;
+        let rating = ratingMatch ? ratingMatch[1].trim() : "UNKNOWN";
+        let explanation = explanationMatch ? explanationMatch[1].trim() : text;
 
+        // --- CLEANUP STEP ---
+        // Remove markdown asterisks from rating (e.g. **CREDIBLE** -> CREDIBLE)
+        rating = rating.replace(/\*/g, '');
+        
+        // Convert to score
         const score = ratingToScore(rating);
 
         return { rating, explanation, score };
@@ -728,9 +799,16 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Expli
         });
     });
 
+    // Utility function to escape HTML and clean Markdown
     function escapeHtml(text) {
+        if (!text) return "";
+
+        // 1. Remove Markdown bolding (**) and italics (*)
+        let cleanText = text.replace(/\*\*/g, '').replace(/\*/g, '');
+
+        // 2. Escape HTML characters to prevent security issues
         const div = document.createElement('div');
-        div.textContent = text;
+        div.textContent = cleanText;
         return div.innerHTML;
     }
 });

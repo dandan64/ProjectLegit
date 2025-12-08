@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Legit</title>
+
+    <style>
+      body {
+        font-family: "Courier New", monospace;
+        width: 240px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin: 0;
+        gap: 10px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      input {
+        width: 95%;
+        padding: 6px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+      }
+
+      button {
+        width: 160px;
+        background-color: rgb(92, 243, 92);
+        color: rgb(37, 37, 37);
+        border: none;
+        padding: 6px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: "Courier New", monospace;
+        font-size: small;
+        transition: transform 0.3s ease;
+        font-weight: bold;
+      }
+
+      button:hover:enabled {
+        background-color: #00bc03;
+        transform: scale(1.05);
+      }
+
+      button:disabled {
+        background-color: #999;
+        cursor: not-allowed;
+      }
+
+      .status {
+        font-size: 11px;
+        min-height: 14px;
+      }
+
+      .success {
+        color: green;
+      }
+
+      .error {
+        color: red;
+      }
+
+      .loader {
+        width: 16px;
+        height: 16px;
+        border: 3px solid #ccc;
+        border-top: 3px solid green;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        display: none;
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+
+  <body style="background-image: url('images/Legit_logo_32.png'); background-size: auto; background-repeat: no-repeat; background-position: top left; background-color: rgb(234, 255, 234);">
+    <!-- ✅ TITLE -->
+    <h2>Legit</h2>
+
+    <!-- ✅ API INPUT -->
+    <input id="apiKeyInput" type="password" placeholder="Enter Gemini API Key"/>
+
+    <!-- ✅ SAVE BUTTON -->
+    <button id="saveKeyBtn">Save Key</button>
+
+    <!-- ✅ STATUS MESSAGE -->
+    <div id="statusMsg" class="status"></div>
+
+    <!-- ✅ ACTIVATE BUTTON -->
+    <button id="activateBtn" style="font-weight: bold;" disabled>Test legitimacy now</button>
+
+    <!-- ✅ LOADER -->
+    <div id="loader" class="loader"></div>
+
+    <script src="./scripts/popup.js"></script>
+  </body>
+</html>

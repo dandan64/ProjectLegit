@@ -28,7 +28,8 @@
         }
     ],
     "host_permissions": [
-        "*://*/*"
+        "*://*/*",
+        "https://generativelanguage.googleapis.com/*"
     ],
     "permissions": ["activeTab", "scripting", "storage"],
     "background":{

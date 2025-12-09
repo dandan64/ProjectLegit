@@ -9,13 +9,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const setupView = document.getElementById("setupView");
     const resultsView = document.getElementById("resultsView");
 
+    // Reset view when switching tabs
     chrome.tabs.onActivated.addListener(async (activeInfo) => {
-        // Reset the view to "Setup" or "Ready" when user changes tabs
-        // This prevents showing the score for CNN while looking at BBC
         setupView.style.display = "flex";
         resultsView.style.display = "none";
         statusMsg.textContent = "New tab detected. Ready to analyze.";
         statusMsg.className = "status info";
+        statusMsg.style.opacity = "1";
         activateBtn.disabled = false;
     });
 
@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
             activateBtn.disabled = false;
             statusMsg.textContent = "✅ API key saved - Ready to analyze";
             statusMsg.className = "status success";
+            statusMsg.style.opacity = "1";
         }
     });
 
@@ -74,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
         chrome.storage.local.set({ [key]: cacheData });
     }
 
-    // NEW FUNCTION: Removes specific URL from cache
+    // Removes specific URL from cache
     function removeFromCache(url) {
         const key = getCacheKey(url);
         chrome.storage.local.remove(key, () => {
@@ -100,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- MAIN LOGIC ---
 
     async function startAnalysis() {
+        showStatus("🔍 Starting analysis...", "info");
         loader.style.display = "block";
         activateBtn.disabled = true;
 
@@ -111,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const cachedData = await checkCache(tab.url);
 
             if (cachedData) {
-                showStatus("♻️ Loading cached results...", "info");
+                showStatus("⚡ Loading cached results...", "info");
                 setTimeout(() => {
                     loadFromCache(cachedData);
                     loader.style.display = "none";
@@ -120,10 +122,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // 2. FRESH ANALYSIS
-            showStatus("🔍 Starting fresh analysis...", "info");
-
             const pageData = await extractPageData(tab);
             
+            // Check if page extraction actually got text (Fixes undefined error)
+            if (!pageData.excerpt || pageData.excerpt.trim() === "") {
+                throw new Error("No text found on this page to analyze.");
+            }
+
             // Setup UI
             setupView.style.display = "none";
             resultsView.style.display = "flex";
@@ -196,7 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Render cards
         sorted.forEach(agent => {
-            // This function already builds the FULL card with Badge, Chevron, and Colors
             const card = createCompletedAgentCard(agent);
             agentGrid.appendChild(card);
         });
@@ -220,17 +224,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // 2. If both are completed, sort by Score (Ascending: Worst first)
             if (isDoneA && isDoneB) {
-                // We stored the result object on the card element in analyzeAgent
-                // But accessing DOM properties is messy, let's look at class names or attributes
-                // A cleaner way: We attached the 'agent' object to the card in memory previously, 
-                // but let's grab the score from a data-attribute we will add.
                 const scoreA = parseInt(cardA.getAttribute("data-score")) || 100;
                 const scoreB = parseInt(cardB.getAttribute("data-score")) || 100;
                 return scoreA - scoreB;
             }
 
             // 3. If neither are done, keep original Priority order (based on class)
-            // (Optional refinement, but keeping them stable is usually better while loading)
             return 0;
         });
 
@@ -250,8 +249,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         card.className = `agent-card completed ${scoreClass}`;
         card.id = `agent-${agent.id}`;
+        card.setAttribute("data-score", result.score);
         
-        // --- UPDATED HTML STRUCTURE ---
+        // Vertical Stacking Structure
         card.innerHTML = `
             <div class="agent-header">
                 <span class="agent-icon">${agent.icon}</span>
@@ -276,53 +276,73 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     async function extractPageData(tab) {
-        const [titleResult] = await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => document.title
-        });
+        // Guard against restricted pages
+        if (tab.url.startsWith("chrome://") || tab.url.startsWith("edge://")) {
+            throw new Error("Cannot analyze browser system pages.");
+        }
 
-        const [domainResult] = await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => window.location.hostname
-        });
+        try {
+            const [titleResult] = await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: () => document.title
+            });
 
-        const [scriptResult] = await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            func: () => {
-                let author = "Unknown";
-                const metaAuthor = document.querySelector('meta[name="author"]');
-                if (metaAuthor) author = metaAuthor.content;
-                if (author === "Unknown") {
-                    const ogAuthor = document.querySelector('meta[property="article:author"]');
-                    if (ogAuthor) author = ogAuthor.content;
+            const [domainResult] = await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: () => window.location.hostname
+            });
+
+            const [scriptResult] = await chrome.scripting.executeScript({
+                target: { tabId: tab.id },
+                func: () => {
+                    let author = "Unknown";
+                    const metaAuthor = document.querySelector('meta[name="author"]');
+                    if (metaAuthor) author = metaAuthor.content;
+                    if (author === "Unknown") {
+                        const ogAuthor = document.querySelector('meta[property="article:author"]');
+                        if (ogAuthor) author = ogAuthor.content;
+                    }
+                    if (author === "Unknown") {
+                        const selector = document.querySelector('a[rel="author"], .author, .byline, .author-name, .writer');
+                        if (selector) author = selector.innerText.trim();
+                    }
+                    const article = document.querySelector('article');
+                    const main = document.querySelector('main');
+                    const content = article || main || document.body;
+                    
+                    // Sanitize text
+                    return { 
+                        text: content.innerText.replace(/\s+/g, ' ').trim(), 
+                        author: author 
+                    };
                 }
-                if (author === "Unknown") {
-                    const selector = document.querySelector('a[rel="author"], .author, .byline, .author-name, .writer');
-                    if (selector) author = selector.innerText.trim();
-                }
-                const article = document.querySelector('article');
-                const main = document.querySelector('main');
-                const content = article || main || document.body;
-                return { text: content.innerText, author: author };
-            }
-        });
+            });
 
-        const data = scriptResult?.result || { text: "", author: "Unknown" };
-        const bodyText = data.text;
-        const excerpt = bodyText.length > 1200 ? bodyText.slice(0, 1200) + "..." : bodyText;
+            const data = scriptResult?.result || { text: "", author: "Unknown" };
+            const bodyText = data.text || "";
 
-        return {
-            title: titleResult?.result?.trim() || "Unknown Page",
-            domain: domainResult?.result || "unknown",
-            author: data.author,
-            excerpt: excerpt,
-            url: tab.url
-        };
+            // Safely slice text (Checking length first)
+            const excerptStart = bodyText.slice(0, 1500);
+            const excerptEnd = bodyText.length > 1500 ? bodyText.slice(-1500) : "";
+
+            return {
+                title: titleResult?.result?.trim() || "Unknown Page",
+                domain: domainResult?.result || "unknown",
+                author: data.author,
+                bodyText: bodyText,
+                excerptStart: excerptStart,
+                excerptEnd: excerptEnd,
+                excerpt: excerptStart, // Fallback property
+                url: tab.url
+            };
+        } catch (e) {
+            console.error(e);
+            throw new Error("Failed to read page content. Try refreshing.");
+        }
     }
 
     function displayPageHeader(pageData) {
         const headerDiv = document.getElementById("pageHeader");
-        // Remove old cache badge if it exists (for fresh scans)
         const existingBadge = document.getElementById("cacheBadge");
         if (existingBadge) existingBadge.remove();
 
@@ -333,8 +353,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function getAnalysisAgents(pageData) {
-        const longExcerpt = pageData.excerpt.slice(0, 1500);
-        const shortExcerpt = pageData.excerpt.slice(0, 600);
+        // SAFETY FIX: Use empty string if text is missing to prevent crash
+        const startText = pageData.excerptStart || "";
+        const endText = pageData.excerptEnd || "";
+        
+        const longExcerpt = startText.slice(0, 1500);
+        const shortExcerpt = startText.slice(0, 600);
+        const excerptEnd = endText || startText.slice(-500);
+        
         const today = new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
 
         return [
@@ -447,42 +473,50 @@ Rate as: ACCURATE, MOSTLY_ACCURATE, UNVERIFIABLE, CONTAINS_ERRORS, or MISLEADING
 Format: RATING: [your rating]
 EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Cite the specific search result that confirmed or debunked the claim.]`
             },
-            {
-                id: "tone",
-                name: "Emotional Tone",
-                icon: "🎭",
-                priority: "medium",
-                weight: 0.10,
-                useSearch: false,
-                prompt: `Act as a Sentiment Analyst. Evaluate the emotional charge of this text:
-Current Date: ${today}
-"${longExcerpt}"
-Your Task:
-1. Is the language neutral and objective?
-2. Does it use "Loaded Language" designed to trigger fear, anger, or outrage?
-3. Is it mocking or derogatory?
-Rate as: NEUTRAL, SLIGHTLY_EMOTIONAL, EMOTIONAL, or HIGHLY_MANIPULATIVE
-Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) analyzing the specific emotional language and intent.]`
-            },
+            // --- BIAS AGENT (Now handling Tone/Sensationalism) ---
             {
                 id: "bias",
                 name: "Bias Detection",
                 icon: "⚖️",
-                priority: "medium",
-                weight: 0.10,
-                useSearch: false,
-                prompt: `Act as a Political Analyst. Detect the political or ideological leaning of this text:
+                priority: "high",
+                weight: 0.20,
+                useSearch: true,
+                prompt: `Act as a Lead Media Forensic Analyst managing a panel of 11 specialized experts.
+Your goal is to conduct a "Multi-Axis Bias Audit" on the text below (without looking at the advertisements or comments).
+
 Current Date: ${today}
-"${longExcerpt}"
-Domain: ${pageData.domain}
-Your Task:
-1. Identify if the framing favors a specific political agenda (Left/Right/etc).
-2. Does it present a balanced view of opposing arguments?
-3. Is it omitted context to favor one side?
+Text Start: "${longExcerpt}"
+Text End: "${excerptEnd}"
+
+--- THE PANEL OF EXPERTS ---
+
+[Standard Categories]
+1. Political Analyst: Checks for partisan slant/policy favoring.
+2. Gender Expert: Checks for stereotyping or focus on appearance vs merit.
+3. Corporate Auditor (Entity): Checks for unfair praise/criticism of companies.
+4. Sociologist (Racial/Ethnic): Checks for stereotypes or negative generalizations.
+5. Theologian (Religious): Checks for unfair portrayal of faiths.
+6. Geopolitical Analyst (Regional): Checks for geographic bias/xenophobia.
+7. Media Critic (Sensationalism): Checks for emotional manipulation/clickbait.
+
+[Advanced Computational Metrics]
+8. Structural Analyst: Compare the Start vs. the End. Does the article start neutral to gain trust, then switch to a strong opinion in the conclusion? (The "Trojan Horse" pattern).
+9. Pattern Recognition: Checks if the sequence of sentences builds a manipulative narrative arc.
+10. Lexical Linguist: Scans for specific word categories:
+    - High density of "Anger/Affect" words (e.g., "shame", "fear") -> Indicates Political Bias.
+    - High density of "Focus Present" words (e.g., "admit", "deny") -> Indicates Unfair Framing.
+11. Gatekeeper: Use Google Search to check what is MISSING. Are key stakeholders or perspectives mentioned in other reports but omitted here?
+
+--- YOUR TASK ---
+1. Consult all 11 agents internally.
+2. Determine if ANY significant bias exists.
+3. Synthesize the findings into ONE final verdict while verifying your statements if needed using Google Search, without mentioning any of the individual agents.
+4. If multiple biases are found, the rating must reflect the severity.
+
 Rate as: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, or STRONG_BIAS
+
 Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) identifying the specific slant, agenda, or omitted context.]`
+EXPLANATION: [Provide a clear, evidence-based summary (3-4 sentences). Explicitly name the strongest bias found (e.g., "Detected Structural Bias," "Found Gatekeeping Bias") and provide the specific evidence/reasoning.]`
             },
             {
                 id: "style",

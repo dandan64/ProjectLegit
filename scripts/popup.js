@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // 2. FRESH ANALYSIS
             const pageData = await extractPageData(tab);
             
-            // Check if page extraction actually got text (Fixes undefined error)
+            // Check if page extraction actually got text
             if (!pageData.excerpt || pageData.excerpt.trim() === "") {
                 throw new Error("No text found on this page to analyze.");
             }
@@ -229,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return scoreA - scoreB;
             }
 
-            // 3. If neither are done, keep original Priority order (based on class)
+            // 3. If neither are done, keep original Priority order
             return 0;
         });
 
@@ -321,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = scriptResult?.result || { text: "", author: "Unknown" };
             const bodyText = data.text || "";
 
-            // Safely slice text (Checking length first)
+            // Safely slice text
             const excerptStart = bodyText.slice(0, 1500);
             const excerptEnd = bodyText.length > 1500 ? bodyText.slice(-1500) : "";
 
@@ -353,7 +353,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function getAnalysisAgents(pageData) {
-        // SAFETY FIX: Use empty string if text is missing to prevent crash
         const startText = pageData.excerptStart || "";
         const endText = pageData.excerptEnd || "";
         
@@ -406,15 +405,21 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State
                 priority: "high",
                 weight: 0.10,
                 useSearch: true,
-                prompt: `Act as a Fact-Checking Researcher. Use Google Search to cross-reference this story: "${pageData.title}".
-Current Date: ${today}
-Your Task:
-1. Search for this specific headline to see if major outlets other than the current domain are reporting it.
-2. Check if Snopes or other fact-checkers have already debunked this.
-3. Verify if the core premise contradicts established consensus found in search results.
+                prompt: `Act as a Fact-Checking Researcher. Use Google Search to cross-reference this story (without looking at the advertisements or sponsored links):
+                Current Date: ${today}
+TITLE: "${pageData.title}"
+CONTENT: "${pageData.bodyText}"
+
+METHODOLOGY (Apply these advanced filters):
+1. ATOMIC CLAIMS (Complexity Reduction): Do not search for complex multi-clause sentences. Break the story down into "Key Components" (Who, Did What, When) and search for those specific facts.
+2. SOURCE GENEALOGY (Circular Reporting): Check if search results are independent reports or just "echoes" citing a single base source (e.g. "According to Reuters"). 50 echoes = 1 source.
+3. TEMPORAL CONTEXT: If this is "Breaking News" (less than 24h old), expect fewer sources. Do not penalize for lack of consensus if the story is brand new.
+4. SEMANTIC MATCHING: Look for matching *meaning* (Embedding Similarity) rather than just matching *keywords* (Lexical Overlap).
+
 Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
+
 Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). List specific major outlets (other than the current domain) that are (or are not) reporting this story.]`
+EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Explicitly state if the story has multiple *independent* sources - and if so, which ones - or if it traces back to a single root source.]`
             },
             {
                 id: "headline",
@@ -473,7 +478,6 @@ Rate as: ACCURATE, MOSTLY_ACCURATE, UNVERIFIABLE, CONTAINS_ERRORS, or MISLEADING
 Format: RATING: [your rating]
 EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Cite the specific search result that confirmed or debunked the claim.]`
             },
-            // --- BIAS AGENT (Now handling Tone/Sensationalism) ---
             {
                 id: "bias",
                 name: "Bias Detection",
@@ -482,13 +486,16 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Cite 
                 weight: 0.20,
                 useSearch: true,
                 prompt: `Act as a Lead Media Forensic Analyst managing a panel of 11 specialized experts.
-Your goal is to conduct a "Multi-Axis Bias Audit" on the text below (without looking at the advertisements or comments).
+Your goal is to conduct a "Multi-Axis Bias Audit" on the text below (without looking at the advertisements).
+
 
 Current Date: ${today}
 Text Start: "${longExcerpt}"
 Text End: "${excerptEnd}"
 
+
 --- THE PANEL OF EXPERTS ---
+
 
 [Standard Categories]
 1. Political Analyst: Checks for partisan slant/policy favoring.
@@ -499,6 +506,7 @@ Text End: "${excerptEnd}"
 6. Geopolitical Analyst (Regional): Checks for geographic bias/xenophobia.
 7. Media Critic (Sensationalism): Checks for emotional manipulation/clickbait.
 
+
 [Advanced Computational Metrics]
 8. Structural Analyst: Compare the Start vs. the End. Does the article start neutral to gain trust, then switch to a strong opinion in the conclusion? (The "Trojan Horse" pattern).
 9. Pattern Recognition: Checks if the sequence of sentences builds a manipulative narrative arc.
@@ -507,13 +515,16 @@ Text End: "${excerptEnd}"
     - High density of "Focus Present" words (e.g., "admit", "deny") -> Indicates Unfair Framing.
 11. Gatekeeper: Use Google Search to check what is MISSING. Are key stakeholders or perspectives mentioned in other reports but omitted here?
 
+
 --- YOUR TASK ---
 1. Consult all 11 agents internally.
 2. Determine if ANY significant bias exists.
-3. Synthesize the findings into ONE final verdict while verifying your statements if needed using Google Search, without mentioning any of the individual agents.
+3. Synthesize the findings into ONE final verdict without mentioning any of the individual agents.
 4. If multiple biases are found, the rating must reflect the severity.
 
+
 Rate as: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, or STRONG_BIAS
+
 
 Format: RATING: [your rating]
 EXPLANATION: [Provide a clear, evidence-based summary (3-4 sentences). Explicitly name the strongest bias found (e.g., "Detected Structural Bias," "Found Gatekeeping Bias") and provide the specific evidence/reasoning.]`
@@ -690,12 +701,12 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Expli
             NEUTRAL: 85, PROFESSIONAL: 85, PLAUSIBLE: 85, MOSTLY_ACCURATE: 80, RECENT: 80,
 
             // --- 🟡 YELLOW (60-79) ---
-            ADEQUATE: 70, CITIZEN_JOURNALIST: 70, SLIGHTLY_EMOTIONAL: 70,
+            ADEQUATE: 70, CITIZEN_JOURNALIST: 70, 
             SLIGHT_BIAS: 70, PARTIALLY_SOURCED: 60, UNIQUE_REPORTING: 60, DATED: 60,
 
             // --- 🟠 ORANGE (40-59) ---
             UNVERIFIED: 50, UNVERIFIABLE: 50, UNKNOWN: 50, ERROR: 50,
-            QUESTIONABLE: 40, EMOTIONAL: 40, MODERATE_BIAS: 40,
+            QUESTIONABLE: 40, MODERATE_BIAS: 40,
 
             // --- 🔴 RED (0-39) ---
             SOMEWHAT_MISLEADING: 35, SENSATIONALIST: 35, ANONYMOUS: 35,

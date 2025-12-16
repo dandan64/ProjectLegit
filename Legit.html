@@ -511,28 +511,109 @@
             box-shadow: 0 6px 20px rgba(15, 118, 110, 0.3);
         }
 
+        /* Language Switcher - Fixed Top Left */
+        .lang-switch {
+            position: absolute;       /* Float above everything */
+            top: 16px;                /* Distance from top */
+            left: 16px;               /* Distance from left */
+            z-index: 1000;            /* Ensure it's on top of everything */
+            
+            display: flex;
+            gap: 4px;
+            background: rgba(218, 255, 225, 0.8); /* Slight transparency */
+            backdrop-filter: blur(4px);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            direction: ltr !important; 
+        }
+
+        .lang-btn {
+            background: transparent;
+            border: none;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 6px;
+            color: #9ca3af;
+            transition: all 0.2s ease;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .lang-btn:hover {
+            color: #6b7280;
+            background: rgba(0,0,0,0.05);
+        }
+
+        .lang-btn.active {
+            background: #ffffff;
+            color: #0f766e;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* RTL Support Class */
+        body.rtl {
+            direction: rtl;
+            text-align: right;
+        }
+
+        /* Adjustments for RTL */
+        body.rtl .agent-card {
+            border-left: none;
+            border-right: 4px solid #e5e7eb; /* Flip border */
+        }
+        
+        body.rtl .agent-card.score-high { 
+            border-right-color: #10b981 !important;
+            background: linear-gradient(to right, rgba(16, 185, 129, 0.15), rgba(255, 255, 255, 0.95)) !important;
+        }
+
+        body.rtl .agent-card.score-good { 
+            border-right-color: #eff613 !important; 
+            background: linear-gradient(to right, rgba(231, 255, 17, 0.15), rgba(255, 255, 255, 0.95)) !important;
+        }
+        body.rtl .agent-card.score-medium { 
+            border-right-color: #f59e0b !important; 
+            background: linear-gradient(to right, rgba(245, 156, 0, 0.15), rgba(255, 255, 255, 0.95)) !important;}
+        body.rtl .agent-card.score-low { 
+            border-right-color: #ef4444 !important; 
+            background: linear-gradient(to right, rgba(239, 68, 68, 0.15), rgba(255, 255, 255, 0.95)) !important;}
+
+        body.rtl .toggle-icon { margin-left: 0; margin-right: auto; }
+        body.rtl .agent-loader { margin-left: 0; margin-right: auto; }
+        
+        body.rtl .score-header h2 { letter-spacing: 0; } /* Hebrew doesn't need letter spacing */
+        body.rtl .score-spinner { margin-right: 0; margin-left: 12px; border-left-color: rgba(20, 184, 166, 0.1); border-right-color: #0f766e; }
+
     </style>
 </head>
 <body>
     <div id="setupView">
         <div class="logo-header">
+            <div class="lang-switch">
+                <button id="langEn" class="lang-btn active">EN</button>
+                <button id="langHe" class="lang-btn">עב</button>
+            </div>
             <img src="Images/Legit_logo_128.png" alt="Legit Logo">
-            <h1>Legit</h1>
-            <p class="tagline">AI-powered fake news detection</p>
+            <h1 data-i18n="appName">Legit</h1>
+            <p class="tagline" data-i18n="tagline">AI-powered fake news detection</p>
         </div>
 
         <div class="input-card">
             <div class="input-group">
-                <label for="apiKeyInput">
+                <label for="apiKeyInput" data-i18n="apiKeyLabel">
                     🔑 Gemini API Key
                 </label>
                 <input 
                     id="apiKeyInput" 
                     type="password" 
+                    data-i18n-placeholder="apiKeyPlaceholder"
                     placeholder="Enter your API key..."
                     autocomplete="off"
                 />
-                <button id="saveKeyBtn">
+                <button id="saveKeyBtn" data-i18n="saveKeyBtn">
                     💾 Save API Key
                 </button>
             </div>
@@ -540,14 +621,15 @@
 
         <div id="statusMsg" class="status"></div>
 
-        <button id="activateBtn" disabled>
+        <button id="activateBtn" disabled data-i18n="analyzeBtn">
             🔍 Analyze This Page
         </button>
 
         <div id="loader" class="loader"></div>
 
         <p class="api-help">
-            Don't have an API key? <a href="https://aistudio.google.com/app/apikey" target="_blank">Get one free</a>
+            <span data-i18n="noKey">Don't have an API key?</span> 
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" data-i18n="getKey">Get one free</a>
         </p>
     </div>
 
@@ -556,7 +638,7 @@
 
         <div id="overallScore" class="mint-box">
             <div class="score-header">
-                <h2>Overall Legitimacy Score</h2>
+                <h2 data-i18n="overallScoreTitle">Overall Legitimacy Score</h2>
                 <div id="scoreLabel"></div>
             </div>
             <div class="score-display">
@@ -571,10 +653,10 @@
         <div id="agentGrid"></div>
 
         <div class="action-buttons">
-            <button id="newAnalysisBtn">
+            <button id="newAnalysisBtn" data-i18n="newScanBtn">
                 🔄 New Analysis
             </button>
-            <button id="exportBtn">
+            <button id="exportBtn" data-i18n="exportBtn">
                 📥 Export Results
             </button>
         </div>

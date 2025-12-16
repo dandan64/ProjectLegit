@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chrome.storage.local.get(["geminiApiKey"], (res) => {
         if (res.geminiApiKey) {
             activateBtn.disabled = false;
-            statusMsg.textContent = "✅ API key saved - Ready to analyze";
+            statusMsg.textContent = TRANSLATIONS[currentLang].apiKeySaved;
             statusMsg.className = "status success";
             statusMsg.style.opacity = "1";
         }
@@ -36,11 +36,11 @@ document.addEventListener("DOMContentLoaded", () => {
     saveBtn.addEventListener("click", () => {
         const key = apiInput.value.trim();
         if (!key) {
-            showStatus("❌ Please enter an API key", "error");
+            showStatus(TRANSLATIONS[currentLang].noKey, "error");
             return;
         }
         chrome.storage.local.set({ geminiApiKey: key }, () => {
-            showStatus("✅ API key saved successfully!", "success");
+            showStatus(TRANSLATIONS[currentLang].apiKeySaved, "success");
             activateBtn.disabled = false;
             apiInput.value = "";
             setTimeout(() => statusMsg.style.opacity = "0", 2000);
@@ -996,7 +996,7 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Expli
 
         let color, labelKey, emoji;
         if (overallScore >= 80) { color = "#10b981"; labelKey = "HIGHLY_CREDIBLE"; emoji = "✅"; } 
-        else if (overallScore >= 60) { color = "#eedf0fff"; labelKey = "CREDIBLE"; emoji = "⭐"; } 
+        else if (overallScore >= 60) { color = "#e0d212ff"; labelKey = "CREDIBLE"; emoji = "⭐"; } 
         else if (overallScore >= 40) { color = "#f59e0b"; labelKey = "QUESTIONABLE"; emoji = "⚠️"; } 
         else { color = "#ef4444"; labelKey = "UNRELIABLE"; emoji = "🚨"; }
 
@@ -1014,6 +1014,7 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Expli
         
         scoreLabel.style.color = color;
         scoreDisplay.style.display = "block";
+
         return overallScore;
     }
 

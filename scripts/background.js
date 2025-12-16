@@ -91,6 +91,23 @@ function cacheResponse(promptText, response) {
     });
 }
 
+function extractTextFromResponse(candidate) {
+    if (!candidate || !candidate.content || !candidate.content.parts) {
+        return null;
+    }
+    
+    // Collect all text parts (search results return multiple parts)
+    const textParts = [];
+    
+    for (const part of candidate.content.parts) {
+        if (part.text) {
+            textParts.push(part.text);
+        }
+    }
+    
+    return textParts.join('\n\n').trim();
+}
+
 /**
  * Calls the Gemini API with a given prompt text and returns the trimmed response text
  */
@@ -185,11 +202,7 @@ async function callGemini(promptText, options = {}) {
                 console.warn("⚠️ Unusual finish reason:", candidate.finishReason);
             }
             
-            // Extract text from response
-            const text =
-                candidate.content?.parts?.[0]?.text ||
-                candidate.output_text ||
-                null;
+            const text = extractTextFromResponse(candidate);
             
             if (!text) {
                 throw new Error("NO_TEXT_IN_RESPONSE - AI returned empty response");
@@ -230,7 +243,7 @@ async function callGemini(promptText, options = {}) {
  */
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === "CALL_GEMINI") {
-        callGemini(msg.prompt, msg.options || {})
+        callGemini(msg.prompt, {useSearch: msg.useSearch})
             .then(result => {
                 sendResponse({ result });
             })

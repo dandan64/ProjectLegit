@@ -61,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
             analyzeBtn: "🔍 Analyze This Page",
             noKey: "Don't have an API key?",
             getKey: "Get one free",
+            analysis: "🔍 Starting analysis...",
             overallScoreTitle: "Overall Legitimacy Score",
             newScanBtn: "🔄 New Analysis",
             exportBtn: "📥 Export Results",
@@ -69,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
             calculating: "Calculating...",
             readyMsg: "New tab detected. Ready to analyze.",
             analyzing: "Analyzing...",
-            loadingCache: "⚡ Loading cached results...",
+            loadingCache: "♻️ Loading cached results...",
             apiKeySaved: "✅ API key saved successfully!",
             noTextError: "No text found on this page to analyze.",
             errorPrefix: "Error: ",
@@ -128,6 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
             analyzeBtn: "🔍 נתח כתבה זו",
             noKey: "אין לך מפתח?",
             getKey: "השג אחד בחינם",
+            analysis: "🔍 מתחיל ניתוח...",
             overallScoreTitle: "ציון אמינות כללי",
             newScanBtn: "🔄 ניתוח חדש",
             exportBtn: "📥 ייצוא תוצאות",
@@ -136,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
             calculating: "מחשב...",
             readyMsg: "זוהה טאב חדש. מוכן לניתוח.",
             analyzing: "מנתח...",
-            loadingCache: "⚡ טוען תוצאות מהזכרון...",
+            loadingCache: "♻️ טוען תוצאות מהזכרון...",
             apiKeySaved: "✅ המפתח נשמר בהצלחה!",
             noTextError: "לא נמצא טקסט לניתוח בעמוד זה.",
             errorPrefix: "שגיאה: ",
@@ -292,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- MAIN LOGIC ---
 
     async function startAnalysis() {
-        showStatus("🔍 Starting analysis...", "info");
+        showStatus(TRANSLATIONS[currentLang].analysis, "info");
         loader.style.display = "block";
         activateBtn.disabled = true;
 
@@ -304,7 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const cachedData = await checkCache(tab.url);
 
             if (cachedData) {
-                showStatus("♻️ Loading cached results...", "info");
+                showStatus(TRANSLATIONS[currentLang].loadingCache, "info");
                 setTimeout(() => {
                     loadFromCache(cachedData);
                     loader.style.display = "none";
@@ -332,7 +334,7 @@ document.addEventListener("DOMContentLoaded", () => {
             scoreBar.style.backgroundColor = "#e5e7eb"; 
             
             const scoreLabel = document.getElementById("scoreLabel");
-            scoreLabel.textContent = "Calculating...";
+            scoreLabel.textContent = TRANSLATIONS[currentLang].calculating;
             scoreLabel.style.color = "#94a3b8"; 
             
             displayPageHeader(pageData);
@@ -613,7 +615,7 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State
                 prompt: `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story.
                 ${LANG_INSTRUCTION}
 TITLE: "${pageData.title}"
-CONTENT: "${longExcerpt}..."
+CONTENT: "${pageData.text}"
 Current Date: ${today}
 If the date is the same as today, treat this as "Breaking News".
 
@@ -646,7 +648,7 @@ If the date is the same as today, treat this as "Breaking News".
 Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
 
 Format: RATING: [your rating]
-EXPLANATION: [Provide a 3-4 sentence analysis. explicitly state in ${TRANSLATIONS[currentLang]}: "Found X independent sources matching the atomic claims." or "Detected circular reporting tracing back to..." or "Story is too new for consensus."]`
+EXPLANATION: [Provide a 3-4 sentence analysis in ${currentLang}. explicitly state in ${currentLang}: "Found X independent sources matching the atomic claims." or "Detected circular reporting tracing back to..." or "Story is too new for consensus."]`
             },
             {
                 id: "headline",

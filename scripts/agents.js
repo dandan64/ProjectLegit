@@ -2,20 +2,12 @@ function getAnalysisAgents(pageData) {
     const startText = pageData.excerptStart || "";
     const endText = pageData.excerptEnd || "";
     
-    const longExcerpt = startText.slice(0, 1500);
+    const longExcerpt = startText;
     const shortExcerpt = startText.slice(0, 600);
     const excerptEnd = endText || startText.slice(-500);
     
     const today = new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
-
     
-
-    // --- LANGUAGE INSTRUCTION ---
-    // If Hebrew is selected, we tell Gemini to explain in Hebrew.
-    const LANG_INSTRUCTION = currentLang === 'he' 
-        ? `OUTPUT REQUIREMENT: You MUST write the 'EXPLANATION' content ONLY in Hebrew (עברית). However, the keys 'RATING:' and 'EXPLANATION:' and the rating values (e.g. 'HIGHLY_CREDIBLE') MUST remain in English for parsing.` 
-        : ``;
-
     return [
         {
             id: "source",
@@ -24,16 +16,38 @@ function getAnalysisAgents(pageData) {
             priority: "high",
             weight: 0.15,
             useSearch: true,
-            prompt: currentLang === 'en' ? `Act as a Media Intelligence Analyst. Use Google Search to evaluate the reputation of the domain "${pageData.domain}".
+            prompt: currentLang === 'en' ? `Act as an Information Scientist specializing in Media Ecology, Source Verification, and Institutional Bias. Your goal is to evaluate the credibility of the *organization* behind the domain "${pageData.domain}" using SIFT and Lateral Reading methods.
             
 Current Date: ${today}
 
+Your Methodology: SIFT (Lateral Reading Focus)
+1. **Identify the Entity (Crucial):** Do not just analyze the domain string; identify the parent company or organization.
+2. **Consult General Consensus:** Check Wikipedia first for "Ownership," "Political Alignment," or "Controversies" sections.
+3. **Specialized Watchdogs:** Cross-reference with "Media Bias/Fact Check" (MBFC), "Ad Fontes Media," "AllSides," or "The Seventh Eye" (for Israeli media).
+4. **Follow the Money:** Explicitly look for the ownership structure—is it a conglomerate, a state-owned enterprise, a non-profit with specific donors, or a private equity asset?
+
+Search Queries to Perform:
+- "${pageData.domain} Wikipedia"
+- "${pageData.domain} media bias fact check funding"
+- "who owns ${pageData.domain} media group"
+- "${pageData.domain} major donors shareholders"
+- "${pageData.domain} political alignment controversy"
+
+**Decision Logic:**
+- **Funding Transparency:** If ownership is hidden or relies on "dark money" (undisclosed donors), downgrade the reliability rating.
+- **State vs. Public:** Distinguish between *Public Broadcasters* (often independent, e.g., BBC) and *State-Controlled Media* (propaganda arm).
+- **Inference:** If the specific domain is not listed in watchdogs, analyze the parent company (e.g., if "N12", analyze "Keshet Media Group").
+
 Your Task:
-1. Search for this domain's history of retractions, satire status, or ownership.
-2. Identify if it is a known state-sponsored outlet or content farm.
+Determine three distinct factors:
+1. **Factual Reliability:** History of corrections, retractions, or failed fact-checks.
+2. **Political/Editorial Bias:** The specific ideological lean (e.g., "Fiscal Conservative," "Progressive Left," "Pro-Government").
+3. **Financial Context:** Who pays the bills? (e.g., "Ad-driven corporate," "State-funded," "Donor-supported").
+
 Rate as: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, or UNRELIABLE
-Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences) citing the domain's known history and reputation.]` :
+Format:
+RATING: [your rating]
+EXPLANATION: [Provide a forensic analysis (3-4 sentences). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus. Use neutral, professional language.]` :
 
 `פעל כאנליסט מודיעין מדיה. חפש בגוגל על מנת להעריך את המוניטין של הדומיין "${pageData.domain}".
 תאריך נוכחי: ${today}
@@ -90,7 +104,7 @@ EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4
             prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story.
             
 TITLE: "${pageData.title}"
-CONTENT: "${pageData.text}"
+CONTENT: "${longExcerpt}"
 Current Date: ${today}
 If the date is the same as today, treat this as "Breaking News".
 
@@ -127,7 +141,7 @@ EXPLANATION: [Provide a 3-4 sentence analysis. explicitly state: "Found X indepe
 
 `פעל כחוקר בדיקת עובדות. בצע אימות צולב קפדני של הסיפור הבא.
 כותרת: "${pageData.title}"
-תוכן: "${pageData.text}"
+תוכן: "${longExcerpt}"
 תאריך נוכחי: ${today}
 אם התאריך זהה להיום, התייחס לזה כ"חדשות מתפרצות".
 --- פרוטוקול ביצוע ---

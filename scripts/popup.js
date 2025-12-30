@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             console.log("Extracted page text:", bodyText);
             // Slice for tokens
-            const excerptStart = bodyText.slice(0, 1500);
+            const excerptStart = bodyText.slice(0, 2500);
             const excerptEnd = bodyText.length > 1500 ? bodyText.slice(-1500) : "";
 
             return {

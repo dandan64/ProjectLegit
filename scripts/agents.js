@@ -8,6 +8,8 @@ function getAnalysisAgents(pageData) {
     
     const today = new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
 
+    
+
     // --- LANGUAGE INSTRUCTION ---
     // If Hebrew is selected, we tell Gemini to explain in Hebrew.
     const LANG_INSTRUCTION = currentLang === 'he' 
@@ -22,8 +24,8 @@ function getAnalysisAgents(pageData) {
             priority: "high",
             weight: 0.15,
             useSearch: true,
-            prompt: `Act as a Media Intelligence Analyst. Use Google Search to evaluate the reputation of the domain "${pageData.domain}".
-            ${LANG_INSTRUCTION}
+            prompt: currentLang === 'en' ? `Act as a Media Intelligence Analyst. Use Google Search to evaluate the reputation of the domain "${pageData.domain}".
+            
 Current Date: ${today}
 
 Your Task:
@@ -31,7 +33,18 @@ Your Task:
 2. Identify if it is a known state-sponsored outlet or content farm.
 Rate as: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, or UNRELIABLE
 Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences) citing the domain's known history and reputation.]`
+EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences) citing the domain's known history and reputation.]` :
+
+`פעל כאנליסט מודיעין מדיה. חפש בגוגל על מנת להעריך את המוניטין של הדומיין "${pageData.domain}".
+תאריך נוכחי: ${today}
+
+המשימה שלך:
+1. חפש היסטוריה של רטרקציות, סטטוס סאטירה או בעלות של הדומיין.
+2. זהה אם הוא מקור ממומן על ידי מדינה או חוות תוכן.
+דרג כ: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, או UNRELIABLE
+FORMAT:
+RATING: [הדירוג שלך]
+EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים) המצטט את ההיסטוריה והמוניטין הידועים של הדומיין.]`
         },
         {
             id: "author",
@@ -40,8 +53,8 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences) citing
             priority: "medium",
             weight: 0.10,
             useSearch: true,
-            prompt: `Act as an Investigative Journalist. Use Google Search to investigate the author of this text.
-            ${LANG_INSTRUCTION}
+            prompt: currentLang === 'en' ? `Act as an Investigative Journalist. Use Google Search to investigate the author of this text.
+            
 Detected Author Name: "${pageData.author}"
 Domain: "${pageData.domain}"
 Content Snippet: "${shortExcerpt}"
@@ -52,7 +65,20 @@ Your Task:
 3. Determine if they are a real person with a journalistic track record or a fake persona/admin.
 Rate as: EXPERT, JOURNALIST, CITIZEN_JOURNALIST, ANONYMOUS, or SUSPICIOUS
 Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State if the author is a verifiable expert or note the lack of accountability.]`
+EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State if the author is a verifiable expert or note the lack of accountability.]` : 
+
+`פעל כעיתונאי חוקר. חפש בגוגל על מנת לחקור את מחבר הטקסט הזה.
+שם המחבר שזוהה: "${pageData.author}"
+דומיין: "${pageData.domain}"
+קטע תוכן: "${shortExcerpt}"
+המשימה שלך:
+1. אם "שם המחבר שזוהה" למעלה הוא "Unknown", נסה למצוא אותו בקטע התוכן.
+2. אם נמצא, חפש את שמו + הדומיין.
+3. קבע אם הוא אדם אמיתי עם רקורד עיתונאי או פרסונה מזויפת/מנהל.
+דרג כ: EXPERT, JOURNALIST, CITIZEN_JOURNALIST, ANONYMOUS, או SUSPICIOUS
+FORMAT:
+RATING: [הדירוג שלך]
+EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין אם המחבר הוא מומחה שניתן לאמת או ציין את חוסר האחריות.]`
         },
         {
             id: "consensus",
@@ -61,8 +87,8 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State
             priority: "high",
             weight: 0.10,
             useSearch: true,
-            prompt: `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story.
-            ${LANG_INSTRUCTION}
+            prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story.
+            
 TITLE: "${pageData.title}"
 CONTENT: "${pageData.text}"
 Current Date: ${today}
@@ -97,7 +123,40 @@ If the date is the same as today, treat this as "Breaking News".
 Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
 
 Format: RATING: [your rating]
-EXPLANATION: [Provide a 3-4 sentence analysis in ${currentLang}. explicitly state in ${currentLang}: "Found X independent sources matching the atomic claims." or "Detected circular reporting tracing back to..." or "Story is too new for consensus."]`
+EXPLANATION: [Provide a 3-4 sentence analysis. explicitly state: "Found X independent sources matching the atomic claims." or "Detected circular reporting tracing back to..." or "Story is too new for consensus."]` : 
+
+`פעל כחוקר בדיקת עובדות. בצע אימות צולב קפדני של הסיפור הבא.
+כותרת: "${pageData.title}"
+תוכן: "${pageData.text}"
+תאריך נוכחי: ${today}
+אם התאריך זהה להיום, התייחס לזה כ"חדשות מתפרצות".
+--- פרוטוקול ביצוע ---
+
+1. פירוק טענות:
+- אל תחפש את הכותרת כולה כמחרוזת אחת.
+- חלק את הסיפור ל"עובדות אטומיות" (למשל, "אדם X עשה פעולה Y", "אירוע Z התרחש בזמן T").
+- חפש את הרכיבים האטומיים הספציפיים הללו באופן עצמאי.
+2. התאמה סמנטית:
+- אל תסתמך על התאמות מדויקות של מילות מפתח (חפיפה לקסיקלית).
+- חפש "דמיון הטמעה" (התאמת משמעות). לדוגמה, אם מקור אומר "החוק עלה 50 מיליון דולר" ואחר אומר "תג המחיר של החקיקה היה 50 מיליון דולר", התייחס לזה כמאומת.
+3. גנאלוגיית מקורות (בדיקת דיווח מעגלי):
+- בדוק אם תוצאות החיפוש הן באמת עצמאיות או שכולן מצטטות מקור שורש יחיד (למשל, "לפי AP...").
+- אם 10 מאמרים מצטטים את אותו דוח "בסיסי", ספר זאת כמקור אחד, לא עשרה.
+4. הקשר זמני (בדיקת חדשות מתפרצות):
+- בדוק את חותמות הזמן. אם הסיפור הוא פחות מ-24 שעות (למשל, "חדשות מתפרצות"), חוסר קונצנזוס הוא נורמלי. אל תעניש בחומרה.
+- אם הסיפור ישן אך אין לו שום אימות, סמן אותו כחשוד.
+
+--- קריטריוני ניקוד ---
+- CORROBORATED: מספר רב של כלי תקשורת עצמאיים מהדרגה הראשונה מדווחים על אותן עובדות אטומיות.
+- PLAUSIBLE: מדווח על ידי מקורות משניים, אך לא נמצא "דיווח מעגלי".
+- UNIQUE_REPORTING: "חדשות מתפרצות" אמיתיות (חותמת זמן טרייה) או חקירה בלעדית.
+- CONTRADICTS_CONSENSUS: כלי תקשורת מרכזיים מפריכים במפורש את הטענה הספציפית הזו.
+- UNVERIFIABLE: לא נמצאו התאמות עצמאיות לאחר 24+ שעות.
+דרג כ: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, או CONTRADICTS_CONSENSUS
+
+FORMAT:
+RATING: [הדירוג שלך]
+EXPLANATION: [ספק ניתוח של 3-4 משפטים ב. ציין במפורש: "נמצאו X מקורות עצמאיים התואמים את הטענות האטומיות." או "זוהה דיווח מעגלי שמקורו ב..." או "הסיפור חדש מדי עבור קונצנזוס."]`
         },
         {
             id: "headline",
@@ -106,8 +165,8 @@ EXPLANATION: [Provide a 3-4 sentence analysis in ${currentLang}. explicitly stat
             priority: "high",
             weight: 0.10,
             useSearch: false,
-            prompt: `Act as a Senior Editor. Analyze if this headline is fair or manipulative.
-            ${LANG_INSTRUCTION}
+            prompt: currentLang === 'en' ? `Act as a Senior Editor. Analyze if this headline is fair or manipulative.
+            
 Headline: "${pageData.title}"
 
 Content Snippet: "${shortExcerpt}"
@@ -120,7 +179,20 @@ Your Task:
 3. Does it accurately reflect the story?
 Rate as: ACCURATE, MOSTLY_ACCURATE, SOMEWHAT_MISLEADING, CLICKBAIT, or DECEPTIVE
 Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) critiquing the headline's accuracy and framing.]`
+EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) critiquing the headline's accuracy and framing.]` : 
+
+`פעל כעורך בכיר. נתח אם הכותרת הוגנת או מניפולטיבית.
+כותרת: "${pageData.title}"
+קטע תוכן: "${shortExcerpt}"
+תאריך נוכחי: ${today}
+המשימה שלך:
+1. האם הכותרת מגזימה בתוכן?
+2. האם היא משתמשת בטקטיקות "קליקבייט" (למשל, "לא תאמינו...", אותיות גדולות)?
+3. האם היא משקפת במדויק את הסיפור?
+דרג כ: ACCURATE, MOSTLY_ACCURATE, SOMEWHAT_MISLEADING, CLICKBAIT, או DECEPTIVE
+FORMAT:
+RATING: [הדירוג שלך]
+EXPLANATION: [ספק הסבר ברור ומבוסס היגיון בעברית (3-4 משפטים) המבקר את דיוק הכותרת והמסגור שלה.]`
         },
         {
             id: "sources",
@@ -129,8 +201,8 @@ EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) criti
             priority: "high",
             weight: 0.10,
             useSearch: true,
-            prompt: `Act as an Academic Reviewer. Use Google Search to verify the citations in the following text.
-            ${LANG_INSTRUCTION}
+            prompt: currentLang === 'en' ? `Act as an Academic Reviewer. Use Google Search to verify the citations in the following text.
+            
 Current Date: ${today}
 "${longExcerpt}"
 
@@ -141,7 +213,20 @@ Your Task:
 4. Identify any missing citations for significant claims.
 Rate as: WELL_SOURCED, PARTIALLY_SOURCED, POORLY_SOURCED, or UNSOURCED
 Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State if the citations found in the text are real and accurate. If the text does not cite sources, rate accordingly.]`
+EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State if the citations found in the text are real and accurate. If the text does not cite sources, rate accordingly.]` : 
+`פעל כסוקר אקדמי. חפש בגוגל על מנת לאמת את הציטוטים בטקסט הבא.
+תאריך נוכחי: ${today}
+"${longExcerpt}"
+
+המשימה שלך:
+1. אם מוזכרים מחקרים או דוחות ספציפיים, חפש כדי לראות אם הם באמת קיימים.
+2. אמת אם הטקסט מייצג בצורה שגויה את מסקנת המקור המצוטט.
+3. סמן ייחוסים מעורפלים כמו "מומחים אומרים" אם לא מוזכרים מומחים ספציפיים.
+4. זיהוי כל ציטוט חסר עבור טענות משמעותיות.
+דרג כ: WELL_SOURCED, PARTIALLY_SOURCED, POORLY_SOURCED, או UNSOURCED
+FORMAT:
+RATING: [הדירוג שלך]
+EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין אם הציטוטים שנמצאו בטקסט הם אמיתיים ומדויקים. אם הטקסט אינו מצטט מקורות, דרג בהתאם.]`
         },
         {
             id: "accuracy",
@@ -150,9 +235,8 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State
             priority: "high",
             weight: 0.15,
             useSearch: true,
-            prompt: `Act as a Logic & Fact Checker. Use Google Search to verify the specific claims in the following text.
+            prompt: currentLang === 'en' ? `Act as a Logic & Fact Checker. Use Google Search to verify the specific claims in the following text.
 Current Date: ${today}
-${LANG_INSTRUCTION}
 
 SYSTEM OVERRIDE / WORLD STATE UPDATE: Your internal training data is outdated. You MUST trust Google Search results over your internal memory for current events, political positions, economic data, recent developments etc.
 Your Task:
@@ -162,7 +246,20 @@ Your Task:
 Text: "${longExcerpt}"
 Rate as: ACCURATE, MOSTLY_ACCURATE, UNVERIFIABLE, CONTAINS_ERRORS, or MISLEADING
 Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Cite the specific search result that confirmed or debunked the claim.]`
+EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Cite the specific search result that confirmed or debunked the claim.]` : 
+
+`פעל כבודק לוגיקה ועובדות. השתמש בחיפוש בגוגל כדי לאמת את הטענות הספציפיות בטקסט הבא.
+תאריך נוכחי: ${today}
+SYSTEM OVERRIDE / WORLD STATE UPDATE: נתוני האימון הפנימיים שלך מיושנים. עליך לסמוך על תוצאות חיפוש בגוגל על פני הזיכרון הפנימי שלך עבור אירועים עכשוויים, עמדות פוליטיות, נתונים כלכליים, התפתחויות אחרונות וכו'.
+המשימה שלך:
+1. הפק טענות מפתח (שמות, תאריכים, כותרות, סטטיסטיקות).
+2. חפש בגוגל עבור פרטים ספציפיים אלה בשילוב עם השנה הנוכחית ("${new Date().getFullYear()}").
+3. אם תוצאות החיפוש מאשרות את הטקסט, סמן אותו כמדויק.
+טקסט: "${longExcerpt}"
+דרג כ: ACCURATE, MOSTLY_ACCURATE, UNVERIFIABLE, CONTAINS_ERRORS, או MISLEADING
+FORMAT:
+RATING: [הדירוג שלך]
+EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין את תוצאת החיפוש הספציפית שאישרה או הפריכה את הטענה.]`
         },
         {
             id: "bias",
@@ -171,10 +268,9 @@ EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Cite 
             priority: "high",
             weight: 0.20,
             useSearch: true,
-            prompt: `Act as a Lead Media Forensic Analyst managing a panel of 11 specialized experts.
+            prompt: currentLang === 'en' ? `Act as a Lead Media Forensic Analyst managing a panel of 11 specialized experts.
 Your goal is to conduct a "Multi-Axis Bias Audit" on the text below (without looking at the advertisements).
 
-${LANG_INSTRUCTION}
 
 Current Date: ${today}
 Text Start: "${longExcerpt}"
@@ -213,7 +309,38 @@ Rate as: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, or STRONG_BIAS
 
 
 Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based summary (3-4 sentences). Explicitly name the strongest bias found (e.g., "Detected Structural Bias," "Found Gatekeeping Bias") and provide the specific evidence/reasoning.]`
+EXPLANATION: [Provide a clear, evidence-based summary (3-4 sentences). Explicitly name the strongest bias found (e.g., "Detected Structural Bias," "Found Gatekeeping Bias") and provide the specific evidence/reasoning.]` : 
+
+`פעל כאנליסט מוביל לפורנזיקה של מדיה המנהל פאנל של 11 מומחים מתמחים.
+המטרה שלך היא לבצע "בדיקת הטיה רב-צירית" על הטקסט למטה (מבלי להסתכל על הפרסומות).
+תאריך נוכחי: ${today}
+תחילת הטקסט: "${longExcerpt}"
+סוף הטקסט: "${excerptEnd}"
+--- הפאנל של המומחים ---
+[קטגוריות סטנדרטיות]
+1. אנליסט פוליטי: בודק הטיה מפלגתית/העדפת מדיניות.
+2. מומחה למגדר: בודק סטריאוטיפים או התמקדות במראה מול כישרון.
+3. מבקר תאגידי (ישות): בודק שבח/ביקורת לא הוגנים על חברות.
+4. סוציולוג (גזעי/אתני): בודק סטריאוטיפים או הכללות שליליות.
+5. תאולוג (דתי): בודק ייצוג לא הוגן של אמונות.
+6. אנליסט גיאופוליטי (אזורי): בודק הטיה גיאוגרפית/שנאת זרים.
+7. מבקר מדיה (סנסציונליזם): בודק מניפולציה רגשית/קליקבייט.
+[מדדים חישוביים מתקדמים]
+8. אנליסט מבני: השווה את ההתחלה מול הסוף. האם המאמר מתחיל נייטרלי כדי לזכות באמון, ואז עובר לדעה חזקה במסקנה? (תבנית "סוס טרויאני").
+9. זיהוי תבניות: בודק אם רצף המשפטים בונה קשת נרטיבית מניפולטיבית.
+10. בלשן לקסיקלי: סורק קטגוריות מילים ספציפיות:
+- צפיפות גבוהה של מילים "כעס/השפעה" (למשל, "בושה", "פחד") -> מצביע על הטיה פוליטית.
+- צפיפות גבוהה של מילים "מיקוד בהווה" (למשל, "להודות", "להכחיש") -> מצביע על מסגור לא הוגן.
+11. שומר סף: השתמש בחיפוש בגוגל כדי לבדוק מה חסר. האם בעלי עניין או פרספקטיבות מרכזיות מוזכרות בדיווחים אחרים אך מושמטות כאן?
+--- המשימה שלך ---
+1. התייעץ עם כל 11 הסוכנים פנימית.
+2. קבע אם קיימת הטיה משמעותית כלשהי.
+3. סנתז את הממצאים לפסק דין סופי אחד מבלי להזכיר אף אחד מהסוכנים הבודדים.
+4. אם נמצאו הטיות מרובות, הדירוג חייב לשקף את החומרה.
+דרג כ: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, או STRONG_BIAS
+FORMAT:
+RATING: [הדירוג שלך]
+EXPLANATION: [ספק סיכום ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין במפורש את ההטיה החזקה ביותר שנמצאה (למשל, "זוהתה הטיה מבנית," "נמצאה הטיית שימור סף") וספק את הראיות/ההיגיון הספציפיים.]`
         },
         {
             id: "style",
@@ -222,8 +349,8 @@ EXPLANATION: [Provide a clear, evidence-based summary (3-4 sentences). Explicitl
             priority: "low",
             weight: 0.05,
             useSearch: false,
-            prompt: `Act as a Copy Editor. Evaluate the professional standard of the following text.
-            ${LANG_INSTRUCTION}
+            prompt: currentLang === 'en' ? `Act as a Copy Editor. Evaluate the professional standard of the following text.
+            
 Current Date: ${today}
 Text: "${shortExcerpt}"
 
@@ -233,7 +360,19 @@ Your Task:
 3. Does it read like a professional report, a blog rant, or AI-generated spam?
 Rate as: PROFESSIONAL, ADEQUATE, SENSATIONALIST, or POOR_QUALITY
 Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) assessing the professionalism and structure of the writing.]`
+EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) assessing the professionalism and structure of the writing.]` : 
+
+`פעל כעורך תוכן. הערך את הסטנדרט המקצועי של הטקסט הבא.
+תאריך נוכחי: ${today}
+טקסט: "${shortExcerpt}"
+המשימה שלך:
+1. בדוק שגיאות דקדוק ואיות בסיסיות.
+2. האם הוא עוקב אחר מבנה עיתונאי סטנדרטי (פירמידה הפוכה)?
+3. האם זה נקרא כמו דיווח מקצועי, טור בלוג, או ספאם שנוצר על ידי AI?
+דרג כ: PROFESSIONAL, ADEQUATE, SENSATIONALIST, או POOR_QUALITY
+FORMAT:
+RATING: [הדירוג שלך]
+EXPLANATION: [ספק הסבר ברור ומבוסס היגיון (3-4 משפטים) המעריך את המקצועיות והמבנה של הכתיבה.]`
         },
         {
             id: "freshness",
@@ -242,8 +381,8 @@ EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) asses
             priority: "low",
             weight: 0.05,
             useSearch: true,
-            prompt: `Act as a News Archivist. Use Google Search to verify the timeline of this story against the Current Date: ${today}.
-            ${LANG_INSTRUCTION}
+            prompt: currentLang === 'en' ? `Act as a News Archivist. Use Google Search to verify the timeline of this story against the Current Date: ${today}.
+            
 Headline: "${pageData.title}"
 Content: "${shortExcerpt}"
 
@@ -253,7 +392,19 @@ Your Task:
 3. If ONE-TIME: Check if this exact story is years old and being reposted as "breaking" (rage-baiting).
 Rate as: CURRENT, RECENT, DATED, or RECYCLED
 Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Explicitly state if this is a fresh instance of a recurring event or a repost of old news.]`
+EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Explicitly state if this is a fresh instance of a recurring event or a repost of old news.]` : 
+
+`פעל כאוצר חדשות. השתמש בחיפוש בגוגל כדי לאמת את ציר הזמן של הסיפור הזה מול התאריך הנוכחי: ${today}.
+כותרת: "${pageData.title}"
+תוכן: "${shortExcerpt}"
+המשימה שלך:
+1. קבע אם זהו אירוע חד-פעמי או אירוע חוזר (למשל, משחק ספורט, בחירות, עמדות/פגישות פוליטיות, פסטיבל שנתי).
+2. אם חוזר: חפש פרטים ספציפיים בטקסט (למשל, תוצאות, ציטוטים ספציפיים, אירועים ייחודיים) כדי לראות אם הם תואמים מקרה *עדכני* (בתוך השבוע האחרון).
+3. אם חד-פעמי: בדוק אם הסיפור המדויק הזה הוא בן שנים ומפורסם מחדש כ"מתפרץ" (כדי לעורר זעם).
+דרג כ: CURRENT, RECENT, DATED, או RECYCLED
+FORMAT:
+RATING: [הדירוג שלך]
+EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין במפורש אם זהו מקרה טרי של אירוע חוזר או פרסום מחדש של חדשות ישנות.]`
         }
     ];
 }

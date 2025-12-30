@@ -21,10 +21,10 @@ function getAnalysisAgents(pageData) {
 Current Date: ${today}
 
 Your Methodology: SIFT (Lateral Reading Focus)
-1. **Identify the Entity (Crucial):** Do not just analyze the domain string; identify the parent company or organization.
-2. **Consult General Consensus:** Check Wikipedia first for "Ownership," "Political Alignment," or "Controversies" sections.
-3. **Specialized Watchdogs:** Cross-reference with "Media Bias/Fact Check" (MBFC), "Ad Fontes Media," "AllSides," or "The Seventh Eye" (for Israeli media).
-4. **Follow the Money:** Explicitly look for the ownership structure—is it a conglomerate, a state-owned enterprise, a non-profit with specific donors, or a private equity asset?
+1. Identify the Entity (Crucial): Do not just analyze the domain string; identify the parent company or organization.
+2. Consult General Consensus: Check Wikipedia first for "Ownership," "Political Alignment," or "Controversies" sections.
+3. Specialized Watchdogs: Cross-reference with "Media Bias/Fact Check" (MBFC), "Ad Fontes Media," "AllSides," or "The Seventh Eye" (for Israeli media).
+4. Follow the Money: Explicitly look for the ownership structure—is it a conglomerate, a state-owned enterprise, a non-profit with specific donors, or a private equity asset?
 
 Search Queries to Perform:
 - "${pageData.domain} Wikipedia"
@@ -33,32 +33,48 @@ Search Queries to Perform:
 - "${pageData.domain} major donors shareholders"
 - "${pageData.domain} political alignment controversy"
 
-**Decision Logic:**
-- **Funding Transparency:** If ownership is hidden or relies on "dark money" (undisclosed donors), downgrade the reliability rating.
-- **State vs. Public:** Distinguish between *Public Broadcasters* (often independent, e.g., BBC) and *State-Controlled Media* (propaganda arm).
-- **Inference:** If the specific domain is not listed in watchdogs, analyze the parent company (e.g., if "N12", analyze "Keshet Media Group").
+Decision Logic:
+- Funding Transparency: If ownership is hidden or relies on "dark money" (undisclosed donors), downgrade the reliability rating.
+- State vs. Public: Distinguish between *Public Broadcasters* (often independent, e.g., BBC) and *State-Controlled Media* (propaganda arm).
+- Inference: If the specific domain is not listed in watchdogs, analyze the parent company (e.g., if "N12", analyze "Keshet Media Group").
 
 Your Task:
 Determine three distinct factors:
-1. **Factual Reliability:** History of corrections, retractions, or failed fact-checks.
-2. **Political/Editorial Bias:** The specific ideological lean (e.g., "Fiscal Conservative," "Progressive Left," "Pro-Government").
-3. **Financial Context:** Who pays the bills? (e.g., "Ad-driven corporate," "State-funded," "Donor-supported").
+1. Factual Reliability: History of corrections, retractions, or failed fact-checks.
+2. Political/Editorial Bias: The specific ideological lean (e.g., "Fiscal Conservative," "Progressive Left," "Pro-Government").
+3. Financial Context: Who pays the bills? (e.g., "Ad-driven corporate," "State-funded," "Donor-supported").
 
 Rate as: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, or UNRELIABLE
 Format:
 RATING: [your rating]
 EXPLANATION: [Provide a forensic analysis (3-4 sentences). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus. Use neutral, professional language.]` :
 
-`פעל כאנליסט מודיעין מדיה. חפש בגוגל על מנת להעריך את המוניטין של הדומיין "${pageData.domain}".
+`פעל כמדען מידע המתמחה באקולוגיית מדיה, אימות מקורות והטיה מוסדית. המטרה שלך היא להעריך את האמינות של הארגון שמאחורי הדומיין "${pageData.domain}" באמצעות שיטות SIFT וקריאה רוחבית.
 תאריך נוכחי: ${today}
-
+שיטת העבודה שלך: SIFT (מיקוד בקריאה רוחבית)
+1. זיהוי הישות (קריטי): אל תנתח רק את מחרוזת הדומיין; זהה את החברה או הארגון האם.
+2. התייעצות עם קונצנזוס כללי: בדוק תחילה בוויקיפדיה עבור סעיפי "בעלות," "הטיה פוליטית," או "מחלוקות."
+3. שומרי ראש מתמחים: השווה עם "Media Bias/Fact Check" (MBFC), "Ad Fontes Media," "AllSides," או "The Seventh Eye" (למדיה ישראלית).
+4. עקוב אחרי הכסף: חפש במפורש את מבנה הבעלות—האם זו קונגלומרט, יישות בבעלות המדינה, ארגון ללא מטרות רווח עם תורמים ספציפיים, או נכס של הון פרטי?
+ חיפושים לביצוע:
+- "${pageData.domain} ויקיפדיה"
+- "${pageData.domain} media bias fact check funding"
+- "מי הבעלים של ${pageData.domain} media group"
+- "${pageData.domain} תורמים עיקריים בעלי מניות"
+- "${pageData.domain} הטיה פוליטית מחלוקת"
+לוגיקת החלטה:
+- שקיפות מימון: אם הבעלות מוסתרת או מסתמכת על "כסף אפל" (תורמים לא מדווחים), הורד את דירוג האמינות.
+- מדינה מול ציבור: הבחין בין *שדרנים ציבוריים* (לעיתים קרובות עצמאיים, למשל, BBC) ו*מדיה בשליטת המדינה* (זרוע תעמולה).
+- הסקה: אם הדומיין הספציפי אינו מופיע בשומרי הראש, נתח את חברת האם (למשל, אם "N12", נתח את "קשת מדיה גרופ").
 המשימה שלך:
-1. חפש היסטוריה של רטרקציות, סטטוס סאטירה או בעלות של הדומיין.
-2. זהה אם הוא מקור ממומן על ידי מדינה או חוות תוכן.
+קבע שלושה גורמים מובחנים:
+1. אמינות עובדתית: היסטוריה של תיקונים, הסרות או בדיקות עובדות שנכשלו.
+2. הטיה פוליטית/עיתונאית: הנטייה האידיאולוגית הספציפית (למשל, "שמרני כלכלי," "שמאל פרוגרסיבי," "תומך ממשלתי").
+3. הקשר פיננסי: מי משלם את החשבונות? (למשל, "מונע פרסומות תאגידיות," "ממומן על ידי המדינה," "נתמך על ידי תורמים").
 דרג כ: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, או UNRELIABLE
 FORMAT:
 RATING: [הדירוג שלך]
-EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים) המצטט את ההיסטוריה והמוניטין הידועים של הדומיין.]`
+EXPLANATION: [ספק ניתוח פורנזי (3-4 משפטים). התרכז במוניטין חיצוני בלבד. ציין במפורש מה *מקורות אחרים* אומרים על ההיסטוריה של הדומיין הזה, שקיפות המימון, והציות לקונצנזוס העובדתי. השתמש בשפה ניטרלית ומקצועית.]`
         },
         {
             id: "author",

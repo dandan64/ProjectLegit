@@ -298,48 +298,44 @@ EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4
             priority: "high",
             weight: 0.20,
             useSearch: true,
-            prompt: currentLang === 'en' ? `Act as a Lead Media Forensic Analyst managing a panel of 11 specialized experts.
-Your goal is to conduct a "Multi-Axis Bias Audit" on the text below (without looking at the advertisements).
-
-
-Current Date: ${today}
-Text Start: "${longExcerpt}"
-Text End: "${excerptEnd}"
-
---- THE PANEL OF EXPERTS ---
-
-
-[Standard Categories]
-1. Political Analyst: Checks for partisan slant/policy favoring.
-2. Gender Expert: Checks for stereotyping or focus on appearance vs merit.
-3. Corporate Auditor (Entity): Checks for unfair praise/criticism of companies.
-4. Sociologist (Racial/Ethnic): Checks for stereotypes or negative generalizations.
-5. Theologian (Religious): Checks for unfair portrayal of faiths.
-6. Geopolitical Analyst (Regional): Checks for geographic bias/xenophobia.
-7. Media Critic (Sensationalism): Checks for emotional manipulation/clickbait.
-
-
-[Advanced Computational Metrics]
-8. Structural Analyst: Compare the Start vs. the End. Does the article start neutral to gain trust, then switch to a strong opinion in the conclusion? (The "Trojan Horse" pattern).
-9. Pattern Recognition: Checks if the sequence of sentences builds a manipulative narrative arc.
-10. Lexical Linguist: Scans for specific word categories:
-- High density of "Anger/Affect" words (e.g., "shame", "fear") -> Indicates Political Bias.
-- High density of "Focus Present" words (e.g., "admit", "deny") -> Indicates Unfair Framing.
-11. Gatekeeper: Use Google Search to check what is MISSING. Are key stakeholders or perspectives mentioned in other reports but omitted here?
-
-
---- YOUR TASK ---
-1. Consult all 11 agents internally.
-2. Determine if ANY significant bias exists.
-3. Synthesize the findings into ONE final verdict without mentioning any of the individual agents.
-4. If multiple biases are found, the rating must reflect the severity.
-
-
-Rate as: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, or STRONG_BIAS
-
-
-Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based summary (3-4 sentences). Explicitly name the strongest bias found (e.g., "Detected Structural Bias," "Found Gatekeeping Bias") and provide the specific evidence/reasoning.]` : 
+            prompt: currentLang === 'en' ? 
+            `You are a Media Bias Analyst. Analyze the following article for bias.
+        
+        Current Date: ${today}
+        
+        Text Start: "${longExcerpt}"
+        Text End: "${excerptEnd}"
+        
+        YOUR TASK:
+        1. Check for these bias types:
+           - Political bias (partisan language, one-sided arguments)
+           - Gender bias (stereotyping, focus on appearance over merit)
+           - Corporate bias (unfair praise/criticism of companies)
+           - Racial/ethnic bias (stereotypes, generalizations)
+           - Religious bias (unfair portrayal of faiths)
+           - Geographic bias (xenophobia, regional stereotyping)
+           - Sensationalism (emotional manipulation, clickbait language)
+        
+        2. Look for structural bias:
+           - Does the article start neutral but become opinionated at the end?
+           - Are key stakeholders or perspectives missing?
+           - Is there high density of emotional/loaded words?
+        
+        3. Search online to check if important perspectives are omitted
+        
+        CRITICAL OUTPUT RULES:
+        - You MUST use EXACT quotes from the article as evidence
+        - Format quotes as: [[QUOTE::text from article::QUOTE]]
+        - Do NOT use quotation marks inside the markers
+        - Keep quotes under 15 words
+        - Use 1-3 specific quotes maximum
+        
+        Rate as: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, or STRONG_BIAS
+        
+        FORMAT:
+        RATING: [your rating]
+        EXPLANATION: Your analysis (3-5 sentences). When citing evidence, use [[QUOTE::exact text::QUOTE]] format. Example: "The article shows political bias when stating [[QUOTE::the policy is a complete disaster::QUOTE]] without presenting alternative views."` 
+         :  
 
 `פעל כאנליסט מוביל לפורנזיקה של מדיה המנהל פאנל של 11 מומחים מתמחים.
 המטרה שלך היא לבצע "בדיקת הטיה רב-צירית" על הטקסט למטה (מבלי להסתכל על הפרסומות).

@@ -3,6 +3,13 @@
     "description": "Solving the problem of fake news on the internet",
     "version": "2.0",
     "manifest_version": 3,
+    "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["scripts/contentHighlighter.js"],
+      "run_at": "document_idle"
+    }
+    ],
     "action": {
         "default_icon": {
             "16": "Images/Legit_logo_16.png",

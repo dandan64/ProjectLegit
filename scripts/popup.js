@@ -281,9 +281,23 @@ document.addEventListener("DOMContentLoaded", () => {
             
             textWrapper.insertAdjacentHTML('beforeend', badgeHtml);
             headerDiv.insertAdjacentHTML('beforeend', chevronHtml);
-            contentDiv.innerHTML = `<div class="agent-explanation">${escapeHtml(result.explanation)}</div>`;
 
-            card.addEventListener("click", () => card.classList.toggle("expanded"));
+            //new of trying to link quotes 
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+            const linkedExplanation = parseAndLinkifyQuotes(result.explanation, tab.id);
+
+            contentDiv.innerHTML = `<div class="agent-explanation">${linkedExplanation}</div>`;
+
+            card.addEventListener("click", (e) => {
+                if(e.target.classList.contains('quote-Link')) return;
+                card.classList.toggle("expanded");
+
+            });
+
+            setTimeout(() => attachQuoteLinkListeners(), 100);
+
+
             card.classList.add("completed");
 
             // --- TRIGGER DYNAMIC SORT ---

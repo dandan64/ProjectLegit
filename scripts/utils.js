@@ -105,7 +105,7 @@ function parseAgentResponse(text) {
     const ratingMatch = text.match(/RATING:\s*([A-Z_]+)/i);
     
     // Look for the explanation
-    const explanationMatch = text.match(/EXPLANATION:\s*(.+?)(?=\n\n|$)/is);
+    const explanationMatch = text.match(/EXPLANATION:\s*([\s\S]*)/i);
 
     let rating = ratingMatch ? ratingMatch[1].trim() : "UNKNOWN";
     let explanation = explanationMatch ? explanationMatch[1].trim() : text;
@@ -322,4 +322,148 @@ function createAgentCard(agent) {
         </div>
     `;
     return card;
+}
+
+function parseAndLinkifyQuotes(rawExplanation, tabId) {
+    // 1. Make the text HTML-safe first
+    let safeExplanation = escapeHtml(rawExplanation);
+
+    // 2. IMPROVED REGEX - Handles multiple quote formats
+    // This matches:
+    // - [[QUOTE::"text"::QUOTE]]
+    // - [[QUOTE::text::QUOTE]]  (missing quotes)
+    // - [[QUOTE::&quot;text&quot;::QUOTE]]  (escaped quotes)
+    // - [[QUOTE::'text'::QUOTE]]  (single quotes)
+    // - [[QUOTE::"text with "nested" quotes"::QUOTE]]
+    
+    const quoteRegex = /\[\[QUOTE::(?:&quot;|["'"])?([^:]+?)(?:&quot;|["'"])?::QUOTE\]\]/g;
+    
+    let quoteIndex = 0;
+    let linkedExplanation = safeExplanation;
+    
+    // Track all quotes for debugging
+    const foundQuotes = [];
+    
+    linkedExplanation = linkedExplanation.replace(quoteRegex, (match, quoteContent) => {
+        // Clean up the quote content
+        const cleanQuote = quoteContent
+            .trim()
+            .replace(/&quot;/g, '"')  // Convert HTML entities back
+            .replace(/&#039;/g, "'")
+            .replace(/&amp;/g, "&")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">");
+        
+        foundQuotes.push(cleanQuote);
+        
+        const uniqueId = `quote-${Date.now()}-${quoteIndex++}`;
+        
+        // Re-escape for safe HTML attribute storage
+        const safeQuoteForAttribute = cleanQuote
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+        
+        return `<span class="quote-link" 
+                    data-quote="${safeQuoteForAttribute}" 
+                    data-tab-id="${tabId}" 
+                    data-quote-id="${uniqueId}" 
+                    title="Click to locate in article: ${cleanQuote.substring(0, 50)}..."
+                    style="color: #0f766e; text-decoration: underline; cursor: pointer; font-weight: 600; background-color: rgba(15, 118, 110, 0.05); border-radius: 3px; padding: 2px 4px; transition: all 0.2s ease;">
+                    "${quoteContent.trim()}"
+                </span>`;
+    });
+    
+    // Debug logging
+    console.log('📝 Found quotes:', foundQuotes);
+    
+    return linkedExplanation;
+}
+
+// ========================================
+// IMPROVED attachQuoteLinkListeners
+// ========================================
+
+function attachQuoteLinkListeners() {
+    document.querySelectorAll('.quote-link').forEach(link => {
+        // Remove existing listeners to prevent duplicates
+        link.replaceWith(link.cloneNode(true));
+    });
+    
+    // Re-select after cloning
+    document.querySelectorAll('.quote-link').forEach(link => {
+        link.addEventListener('click', async (e) => {
+            e.stopPropagation(); // Prevent card toggle
+            
+            // Get the quote and clean it
+            let quote = link.getAttribute('data-quote');
+            quote = quote
+                .replace(/&quot;/g, '"')
+                .replace(/&#039;/g, "'")
+                .replace(/&amp;/g, "&")
+                .replace(/&lt;/g, "<")
+                .replace(/&gt;/g, ">");
+            
+            const tabId = parseInt(link.getAttribute('data-tab-id'));
+            
+            console.log('🔍 Attempting to highlight quote:', quote);
+            
+            // Visual feedback
+            link.style.backgroundColor = '#d1fae5';
+            link.style.transform = 'scale(1.02)';
+            
+            try {
+                // Ensure content script is injected
+                await chrome.scripting.executeScript({
+                    target: { tabId: tabId },
+                    files: ['scripts/contentHighlighter.js']
+                }).catch(() => {
+                    console.log('Content script already injected');
+                });
+                
+                // Send message to content script
+                const response = await chrome.tabs.sendMessage(tabId, {
+                    type: 'HIGHLIGHT_QUOTE',
+                    quote: quote
+                });
+                
+                if (response && response.success) {
+                    link.style.backgroundColor = '#86efac';
+                    console.log('✅ Quote highlighted successfully');
+                } else {
+                    link.style.backgroundColor = '#fecaca';
+                    console.warn('❌ Quote not found on page');
+                    
+                    // Show user-friendly error
+                    const errorMsg = document.createElement('div');
+                    errorMsg.textContent = 'Quote not found on current page';
+                    errorMsg.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: #fee2e2;
+                        color: #991b1b;
+                        padding: 12px 16px;
+                        border-radius: 8px;
+                        border: 1px solid #f87171;
+                        z-index: 10000;
+                        font-size: 13px;
+                        font-weight: 600;
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    `;
+                    document.body.appendChild(errorMsg);
+                    setTimeout(() => errorMsg.remove(), 3000);
+                }
+            } catch (error) {
+                console.error('Error highlighting quote:', error);
+                link.style.backgroundColor = '#fecaca';
+                
+                alert('Unable to highlight quote. Make sure you\'re viewing the same page that was analyzed.');
+            }
+            
+            setTimeout(() => {
+                link.style.backgroundColor = '';
+                link.style.transform = '';
+            }, 2000);
+        });
+    });
 }

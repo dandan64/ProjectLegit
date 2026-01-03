@@ -514,7 +514,8 @@ function parseAndLinkifySources(rawExplanation) {
     // gemini said to do. maybe shit 
     const getDomain = (url) => {
         try {
-            const domain = new URL(url).hostname;
+            const clean = url.replace(/::$/, '').trim();
+            const domain = new URL(clean).hostname;
             return domain.startsWith('www.') ? domain.slice(4) : domain;
         } catch (e) {
             return 'Source'; // Fallback if URL is invalid
@@ -523,7 +524,8 @@ function parseAndLinkifySources(rawExplanation) {
 
     // 2. Helper: Generate the HTML for the "Chip"
     const createChip = (title, url, type) => {
-        const cleanUrl = url.trim();
+        const cleanUrl = url.replace(/::$/, '').trim();
+        // const cleanUrl = url.trim();
         const cleanTitle = title.trim();
         const domain = getDomain(cleanUrl);
         

@@ -127,33 +127,27 @@ If the date is the same as today, treat this as "Breaking News".
 --- EXECUTION PROTOCOL ---
 
 1. CLAIM ATOMIZATION:
-- Do not search for the entire headline as one string.
-- Break the story down into "Atomic Facts" (e.g., "Person X did Action Y", "Event Z occurred at Time T").
+- Break the story down into "Atomic Facts".
 - Search for these specific atomic components independently.
 
-2. SEMANTIC MATCHING:
-- Do not rely on exact keyword matches (Lexical Overlap).
-- Look for "Embedding Similarity" (matching meaning). For example, if a source says "The bill cost $50M" and another says "The legislation price tag was $50 million", treat this as CONFIRMED.
+2. VERIFICATION:
+- Look for "Embedding Similarity" (matching meaning) across independent sources.
+- Check timestamps (is this breaking news?).
 
-3. SOURCE GENEALOGY (Circular Reporting Check):
-- Check if the search results are truly independent or if they all cite a single root source (e.g., "According to AP...").
-- If 10 articles all cite the same "base" report, count that as ONE source, not ten.
+--- CITATION RULES (MANDATORY) ---
+You are REQUIRED to cite your search results using this exact format:
+[[SOURCE::Source Name::URL::SOURCE]]
 
-4. TEMPORAL CONTEXT (Breaking News Check):
-- Check the timestamps. If the story is less than 24 hours old (eg. , "Breaking News"), a lack of consensus is normal. Do not penalize heavily.
-- If the story is old but has NO corroboration, flag it as suspicious.
-
---- SCORING CRITERIA ---
-- CORROBORATED: Multiple independent Tier-1 outlets report the same Atomic Facts.
-- PLAUSIBLE: Reported by secondary sources, but no "Circular Reporting" found.
-- UNIQUE_REPORTING: True "Breaking News" (fresh timestamp) or exclusive investigation.
-- CONTRADICTS_CONSENSUS: Major outlets explicitly debunk this specific claim.
-- UNVERIFIABLE: No independent matches found after 24+ hours.
+- DO NOT list sources at the end.
+- DO NOT say "sources confirm this".
+- YOU MUST embed the citation tag immediately after the sentence it supports.
+- Example: "The fire started at 5 PM [[SOURCE::BBC News::https://bbc.com/news/123::SOURCE]], though some reports say 6 PM [[CONTRA::CNN::https://cnn.com/us/456::CONTRA]]."
 
 Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
 
-Format: RATING: [your rating]
-EXPLANATION: [Provide a 3-4 sentence analysis. explicitly state: "Found X independent sources matching the atomic claims." or "Detected circular reporting tracing back to..." or "Story is too new for consensus."]` : 
+Format: 
+RATING: [your rating]
+EXPLANATION: [Provide a 3-4 sentence analysis. You MUST include at least 2-3 links using the [[SOURCE::Title::URL::SOURCE]] format inside the text.]` : 
 
 `פעל כחוקר בדיקת עובדות. בצע אימות צולב קפדני של הסיפור הבא.
 כותרת: "${pageData.title}"
@@ -183,10 +177,16 @@ EXPLANATION: [Provide a 3-4 sentence analysis. explicitly state: "Found X indepe
 - CONTRADICTS_CONSENSUS: כלי תקשורת מרכזיים מפריכים במפורש את הטענה הספציפית הזו.
 - UNVERIFIABLE: לא נמצאו התאמות עצמאיות לאחר 24+ שעות.
 דרג כ: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, או CONTRADICTS_CONSENSUS
+**קריטי: אתה חייב לספק קישורי מקור לאימות**
+- פורמט מקורות תומכים כ: [[SOURCE::כותרת מאמר::https://example.com/article::SOURCE]]
+- פורמט מקורות סותרים כ: [[CONTRA::כותרת מאמר::https://example.com/debunk::CONTRA]]
+- כלול 2-5 קישורים הכי רלוונטיים
+
+דרג כ: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, או CONTRADICTS_CONSENSUS
 
 FORMAT:
 RATING: [הדירוג שלך]
-EXPLANATION: [ספק ניתוח של 3-4 משפטים ב. ציין במפורש: "נמצאו X מקורות עצמאיים התואמים את הטענות האטומיות." או "זוהה דיווח מעגלי שמקורו ב..." או "הסיפור חדש מדי עבור קונצנזוס."]`
+EXPLANATION: [ספק ניתוח של 3-4 משפטים. השתמש ב-[[SOURCE::כותרת::url::SOURCE]] למקורות תומכים וב-[[CONTRA::כותרת::url::CONTRA]] למקורות סותרים.]`
         },
         {
             id: "headline",

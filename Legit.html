@@ -5,6 +5,60 @@
     <title>Legit - News Legitimacy Checker</title>
     <style>
 
+        /* Source Link Styles */
+        .source-link {
+            display: inline-block;
+            padding: 6px 12px;
+            margin: 4px 4px 4px 0;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            border: 2px solid;
+            background: white;
+        }
+
+        .source-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Supporting source (green) */
+        .source-supporting {
+            color: #065f46;
+            border-color: #10b981;
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        }
+
+        .source-supporting:hover {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-color: #059669;
+        }
+
+        /* Contradicting source (red) */
+        .source-contra {
+            color: #991b1b;
+            border-color: #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        }
+
+        .source-contra:hover {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border-color: #dc2626;
+        }
+
+        .source-icon {
+            display: inline-block;
+            font-weight: 800;
+            margin-right: 4px;
+            font-size: 14px;
+        }
+
+        /* Make source links wrap nicely */
+        .agent-explanation {
+            line-height: 1.8;
+        }
         
         .quote-link {
         color: #0f766e;
@@ -438,7 +492,7 @@
         }
         
         .agent-card.expanded .agent-content {
-            max-height: 500px;
+            max-height: 2000px;
             opacity: 1;
             margin-top: 10px;
             padding-top: 10px;

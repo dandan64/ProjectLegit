@@ -284,13 +284,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             //new of trying to link quotes 
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-            const linkedExplanation = parseAndLinkifyQuotes(result.explanation, tab.id);
+            // for bias agent
+            let linkedExplanation = parseAndLinkifyQuotes(result.explanation, tab.id);
+            //for consensus agent
+            linkedExplanation = parseAndLinkifySources(linkedExplanation); 
 
             contentDiv.innerHTML = `<div class="agent-explanation">${linkedExplanation}</div>`;
 
             card.addEventListener("click", (e) => {
-                if(e.target.classList.contains('quote-Link')) return;
+                if(e.target.classList.contains('quote-link')) return;
                 card.classList.toggle("expanded");
 
             });

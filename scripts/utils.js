@@ -100,9 +100,30 @@ function sortGridDynamic() {
     cards.forEach(card => agentGrid.appendChild(card));
 }
 
+// function parseAgentResponse(text) {
+//     // Look for the rating
+//     const ratingMatch = text.match(/RATING:\s*([A-Z_]+)/i);
+    
+//     // Look for the explanation
+//     const explanationMatch = text.match(/EXPLANATION:\s*([\s\S]*)/i);
+
+//     let rating = ratingMatch ? ratingMatch[1].trim() : "UNKNOWN";
+//     let explanation = explanationMatch ? explanationMatch[1].trim() : text;
+
+//     // --- CLEANUP STEP ---
+//     // Remove markdown asterisks from rating (e.g. **CREDIBLE** -> CREDIBLE)
+//     rating = rating.replace(/\*/g, '');
+    
+//     // Convert to score
+//     const score = ratingToScore(rating);
+
+//     return { rating, explanation, score };
+// }
 function parseAgentResponse(text) {
-    // Look for the rating
-    const ratingMatch = text.match(/RATING:\s*([A-Z_]+)/i);
+    console.log('📋 Parsing response:', text.substring(0, 200) + '...');
+    
+    // Look for the rating - more flexible regex
+    const ratingMatch = text.match(/RATING:\s*\*?\*?([A-Z_]+)\*?\*?/i);
     
     // Look for the explanation
     const explanationMatch = text.match(/EXPLANATION:\s*([\s\S]*)/i);
@@ -111,11 +132,23 @@ function parseAgentResponse(text) {
     let explanation = explanationMatch ? explanationMatch[1].trim() : text;
 
     // --- CLEANUP STEP ---
-    // Remove markdown asterisks from rating (e.g. **CREDIBLE** -> CREDIBLE)
-    rating = rating.replace(/\*/g, '');
+    // Remove markdown asterisks and formatting from rating
+    rating = rating.replace(/[\*\-\s]/g, '').toUpperCase();
+    
+    // Clean up explanation - remove markdown formatting
+    explanation = explanation
+        .replace(/\*\*/g, '')  // Remove bold
+        .replace(/\*/g, '')    // Remove italics
+        .trim();
+    
+    console.log('✅ Parsed rating:', rating);
     
     // Convert to score
     const score = ratingToScore(rating);
+    
+    if (score === 50 && rating !== "UNKNOWN" && rating !== "ERROR" && rating !== "UNVERIFIED" && rating !== "UNVERIFIABLE") {
+        console.warn('⚠️ Unknown rating detected:', rating, '- using default score 50');
+    }
 
     return { rating, explanation, score };
 }
@@ -294,7 +327,7 @@ function createCompletedAgentCard(agent) {
             <span class="toggle-icon">▼</span>
         </div>
         <div class="agent-content">
-            <div class="agent-explanation">${escapeHtml(result.explanation)}</div>
+            <div class="agent-explanation">${parseAndLinkifySources(escapeHtml(result.explanation))}</div>
         </div>
     `;
     
@@ -466,4 +499,72 @@ function attachQuoteLinkListeners() {
             }, 2000);
         });
     });
+}
+
+
+// ========================================
+// NEW FUNCTION: Parse and linkify source citations
+// ========================================
+
+function parseAndLinkifySources(rawExplanation) {
+    let safeExplanation = rawExplanation;
+    
+    // Track found sources for debugging
+    const foundSources = [];
+    // gemini said to do. maybe shit 
+    const getDomain = (url) => {
+        try {
+            const domain = new URL(url).hostname;
+            return domain.startsWith('www.') ? domain.slice(4) : domain;
+        } catch (e) {
+            return 'Source'; // Fallback if URL is invalid
+        }
+    };
+
+    // 2. Helper: Generate the HTML for the "Chip"
+    const createChip = (title, url, type) => {
+        const cleanUrl = url.trim();
+        const cleanTitle = title.trim();
+        const domain = getDomain(cleanUrl);
+        
+        // Google's favicon service (sz=32 asks for high-res)
+        const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+        
+        // Determine class based on type
+        const typeClass = type === 'supporting' ? 'source-supporting' : 'source-contra';
+
+        // Log for debugging
+        foundSources.push({ type, title: cleanTitle, url: cleanUrl });
+
+        return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link ${typeClass}" title="${escapeHtml(cleanTitle)}">
+            <img src="${faviconUrl}" class="source-favicon" alt="" onerror="this.style.display='none'"/>
+            ${escapeHtml(domain)}
+        </a>`;
+    };
+    //till here gemini
+
+    // Parse SUPPORTING sources: [[SOURCE::title::url::SOURCE]]
+    const sourceRegex = /\[\[SOURCE::(.*?)::(https?:\/\/[^\s:]+)::SOURCE\]\]/g;
+    safeExplanation = safeExplanation.replace(sourceRegex, (match, title, url) => {
+        foundSources.push({ type: 'supporting', title, url });
+        
+        return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="source-link source-supporting" title="Click to open: ${escapeHtml(title)}">
+            <span class="source-icon">✓</span> ${escapeHtml(title)}
+        </a>`;
+    });
+    
+    // Parse CONTRADICTING sources: [[CONTRA::title::url::CONTRA]]
+    const contraRegex = /\[\[CONTRA::(.*?)::(https?:\/\/[^\s:]+)::CONTRA\]\]/g;
+    safeExplanation = safeExplanation.replace(contraRegex, (match, title, url) => {
+        foundSources.push({ type: 'contradicting', title, url });
+        
+        return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="source-link source-contra" title="Click to open: ${escapeHtml(title)}">
+            <span class="source-icon">✗</span> ${escapeHtml(title)}
+        </a>`;
+    });
+    
+    // Debug logging
+    console.log('🔗 Found source links:', foundSources);
+    
+    return safeExplanation;
 }

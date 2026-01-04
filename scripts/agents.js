@@ -147,7 +147,7 @@ Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS
 
 Format: 
 RATING: [your rating]
-EXPLANATION: [Provide a 3-4 sentence analysis. You MUST include at least 2-3 links using the [[SOURCE::Title::URL::SOURCE]] format inside the text.]` : 
+EXPLANATION: [Provide a 3-4 sentence analysis. You MUST include at least 2-3 links using the [[SOURCE::Title::URL::SOURCE]] format inside the text]` : 
 
 `פעל כחוקר בדיקת עובדות. בצע אימות צולב קפדני של הסיפור הבא.
 כותרת: "${pageData.title}"

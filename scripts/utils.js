@@ -508,56 +508,60 @@ function parseAndLinkifySources(rawExplanation) {
     // Track found sources for debugging
     const foundSources = [];
     // gemini said to do. maybe shit 
-    const getDomain = (url) => {
-        try {
-            const clean = url.replace(/::$/, '').trim();
-            const domain = new URL(clean).hostname;
-            return domain.startsWith('www.') ? domain.slice(4) : domain;
-        } catch (e) {
-            return 'Source'; // Fallback if URL is invalid
-        }
-    };
+    // const getDomain = (url) => {
+    //     try {
+    //         const clean = url.replace(/::$/, '').trim();
+    //         const domain = new URL(clean).hostname;
+    //         return domain.startsWith('www.') ? domain.slice(4) : domain;
+    //     } catch (e) {
+    //         return 'Source'; // Fallback if URL is invalid
+    //     }
+    // };
 
-    // 2. Helper: Generate the HTML for the "Chip"
-    const createChip = (title, url, type) => {
-        const cleanUrl = url.replace(/::$/, '').trim();
-        // const cleanUrl = url.trim();
-        const cleanTitle = title.trim();
-        const domain = getDomain(cleanUrl);
+    // // 2. Helper: Generate the HTML for the "Chip"
+    // const createChip = (title, url, type) => {
+    //     const cleanUrl = url.replace(/::$/, '').trim();
+    //     // const cleanUrl = url.trim();
+    //     const cleanTitle = title.trim();
+    //     const domain = getDomain(cleanUrl);
         
-        // Google's favicon service (sz=32 asks for high-res)
-        const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    //     // Google's favicon service (sz=32 asks for high-res)
+    //     const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
         
-        // Determine class based on type
-        const typeClass = type === 'supporting' ? 'source-supporting' : 'source-contra';
+    //     // Determine class based on type
+    //     const typeClass = type === 'supporting' ? 'source-supporting' : 'source-contra';
 
-        // Log for debugging
-        foundSources.push({ type, title: cleanTitle, url: cleanUrl });
+    //     // Log for debugging
+    //     foundSources.push({ type, title: cleanTitle, url: cleanUrl });
 
-        return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link ${typeClass}" title="${escapeHtml(cleanTitle)}">
-            <img src="${faviconUrl}" class="source-favicon" alt="" onerror="this.style.display='none'"/>
-            ${escapeHtml(domain)}
-        </a>`;
-    };
+    //     return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link ${typeClass}" title="${escapeHtml(cleanTitle)}">
+    //         <img src="${faviconUrl}" class="source-favicon" alt="" onerror="this.style.display='none'"/>
+    //         ${escapeHtml(domain)}
+    //         </a>`;
+    // };
     //till here gemini
 
     // Parse SUPPORTING sources: [[SOURCE::title::url::SOURCE]]
-    const sourceRegex = /\[\[SOURCE::(.*?)::(https?:\/\/[^\s:]+)::SOURCE\]\]/g;
+    const sourceRegex = /\[\[SOURCE::(.*?)::(https?:\/\/[^\]]+?)::SOURCE\]\]/g;
     safeExplanation = safeExplanation.replace(sourceRegex, (match, title, url) => {
-        foundSources.push({ type: 'supporting', title, url });
+        const cleanUrl = url.trim();
+        const cleanTitle = title.trim();
+        foundSources.push({ type: 'supporting', cleanTitle, cleanUrl});
         
-        return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="source-link source-supporting" title="Click to open: ${escapeHtml(title)}">
-            <span class="source-icon">✓</span> ${escapeHtml(title)}
+        return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
+            <span class="source-icon">✓</span> ${escapeHtml(cleanTitle)}
         </a>`;
     });
     
     // Parse CONTRADICTING sources: [[CONTRA::title::url::CONTRA]]
-    const contraRegex = /\[\[CONTRA::(.*?)::(https?:\/\/[^\s:]+)::CONTRA\]\]/g;
+    const contraRegex = /\[\[CONTRA::(.*?)::(https?:\/\/[^\]]+?)::CONTRA\]\]/g;
     safeExplanation = safeExplanation.replace(contraRegex, (match, title, url) => {
-        foundSources.push({ type: 'contradicting', title, url });
+        const cleanUrl = url.trim();
+        const cleanTitle = title.trim();
+        foundSources.push({ type: 'contradicting', cleanTitle, cleanUrl });
         
-        return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="source-link source-contra" title="Click to open: ${escapeHtml(title)}">
-            <span class="source-icon">✗</span> ${escapeHtml(title)}
+        return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
+            <span class="source-icon">✗</span> ${escapeHtml(cleanTitle)}
         </a>`;
     });
     

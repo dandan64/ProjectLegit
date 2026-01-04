@@ -369,7 +369,7 @@ function parseAndLinkifyQuotes(rawExplanation, tabId) {
     // - [[QUOTE::'text'::QUOTE]]  (single quotes)
     // - [[QUOTE::"text with "nested" quotes"::QUOTE]]
     
-    const quoteRegex = /\[\[QUOTE::(?:&quot;|["'"])?([^:]+?)(?:&quot;|["'"])?::QUOTE\]\]/g;
+    const quoteRegex = /\[\[QUOTE::(?:&quot;|["'"])?(.+?)(?:&quot;|["'"])?::QUOTE\]\]/g;
     
     let quoteIndex = 0;
     let linkedExplanation = safeExplanation;
@@ -429,16 +429,12 @@ function attachQuoteLinkListeners() {
             
             // Get the quote and clean it
             let quote = link.getAttribute('data-quote');
-            quote = quote
-                .replace(/&quot;/g, '"')
-                .replace(/&#039;/g, "'")
-                .replace(/&amp;/g, "&")
-                .replace(/&lt;/g, "<")
-                .replace(/&gt;/g, ">");
             
             const tabId = parseInt(link.getAttribute('data-tab-id'));
             
-            console.log('🔍 Attempting to highlight quote:', quote);
+            console.log('🔍 Searching for quote:', JSON.stringify(quote));
+            console.log('Length:', quote.length);
+            console.log('Bytes:', new TextEncoder().encode(quote).length);
             
             // Visual feedback
             link.style.backgroundColor = '#d1fae5';
@@ -490,7 +486,7 @@ function attachQuoteLinkListeners() {
                 console.error('Error highlighting quote:', error);
                 link.style.backgroundColor = '#fecaca';
                 
-                alert('Unable to highlight quote. Make sure you\'re viewing the same page that was analyzed.');
+                alert("Unable to highlight quote. Make sure you're viewing the same page that was analyzed.");
             }
             
             setTimeout(() => {

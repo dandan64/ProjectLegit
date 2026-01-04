@@ -321,14 +321,14 @@ EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4
            - Are key stakeholders or perspectives missing?
            - Is there high density of emotional/loaded words?
         
-        3. Search online to check if important perspectives are omitted
+        3. use google search to check if important perspectives are omitted.
         
         CRITICAL OUTPUT RULES:
         - You MUST use EXACT quotes from the article as evidence
         - Format quotes as: [[QUOTE::text from article::QUOTE]]
         - Do NOT use quotation marks inside the markers
         - Keep quotes under 15 words
-        - Use 1-3 specific quotes maximum
+        - Use 1-3 specific quotes that are of the most significant bias.
         
         Rate as: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, or STRONG_BIAS
         

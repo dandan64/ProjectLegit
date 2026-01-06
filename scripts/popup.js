@@ -227,20 +227,64 @@ document.addEventListener("DOMContentLoaded", () => {
     async function runProgressiveAnalysis(agents) {
         const agentGrid = document.getElementById("agentGrid");
         agentGrid.innerHTML = "";
+        
+        const backgroundAgents = agents.filter(a => a.isBackgroundAgent);
+        const regularAgents = agents.filter(a => !a.isBackgroundAgent);
 
         // Initial Layout: Priority Order
-        const sorted = [...agents].sort((a, b) => {
+        const sorted = [...regularAgents].sort((a, b) => {
             const priorityOrder = { high: 0, medium: 1, low: 2 };
             return priorityOrder[a.priority] - priorityOrder[b.priority];
         });
 
         for (const agent of sorted) {
+            if (agent.isBackgroundAgent) continue; // Skip background agents here
             const card = createAgentCard(agent);
             agentGrid.appendChild(card);
         }
 
-        // Run in parallel - The cards will jump to their correct spots as they finish!
-        const promises = sorted.map(agent => analyzeAgent(agent));
+        const agentResults = {};
+    
+        for (const agent of backgroundAgents) {
+            console.log(`⚙️ Running background agent: ${agent.id}`);
+            try {
+                const response = await chrome.runtime.sendMessage({
+                    type: "CALL_GEMINI",
+                    prompt: agent.prompt,
+                    useSearch: agent.useSearch
+                });
+                
+                if (response.error) throw new Error(response.error);
+                
+                const result = parseAgentResponse(response.result);
+                agent.result = result;
+                agentResults[agent.id] = result;
+                
+                console.log(`✅ Background agent complete: ${agent.id}`);
+            } catch (err) {
+                console.error(`❌ Background agent failed: ${agent.id}`, err);
+                agentResults[agent.id] = null;
+            }
+        }
+
+        // --- THEN RUN REGULAR AGENTS IN PARALLEL ---
+        const promises = sorted.map(agent => {
+            // If this agent depends on a background agent, inject the result
+            if (agent.dependsOn && agentResults[agent.dependsOn]) {
+
+                console.log(`agent prompt before:`, agent.prompt);
+
+                const backgroundResult = agentResults[agent.dependsOn];
+                agent.prompt = agent.prompt.replace(
+                    `{INPUT_FROM_${agent.dependsOn.toUpperCase().replace(/-/g, '_')}}`,
+                    backgroundResult.explanation
+                );
+
+                console.log(`agent prompt updated to:`, agent.prompt);
+            }
+            
+            return analyzeAgent(agent);
+        });
         await Promise.all(promises);
     }
 
@@ -285,9 +329,14 @@ document.addEventListener("DOMContentLoaded", () => {
             //new of trying to link quotes 
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             // for bias agent
-            let linkedExplanation = parseAndLinkifyQuotes(result.explanation, tab.id);
+            let linkedExplanation = result.explanation;
+            if(agent.id === 'bias') {
+                linkedExplanation = parseAndLinkifyQuotes(result.explanation, tab.id);
+            }
             //for consensus agent
-            linkedExplanation = parseAndLinkifySources(linkedExplanation); 
+            if (agent.id === 'consensus-format') {
+                linkedExplanation = parseAndLinkifySources(linkedExplanation);
+            } 
 
             contentDiv.innerHTML = `<div class="agent-explanation">${linkedExplanation}</div>`;
 

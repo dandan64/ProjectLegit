@@ -110,84 +110,141 @@ FORMAT:
 RATING: [הדירוג שלך]
 EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין אם המחבר הוא מומחה שניתן לאמת או ציין את חוסר האחריות.]`
         },
+//         {
+//             id: "consensus",
+//             name: TRANSLATIONS[currentLang].consensus,
+//             icon: "🌐",
+//             priority: "high",
+//             weight: 0.10,
+//             useSearch: true,
+//             prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story.
+            
+// TITLE: "${pageData.title}"
+// CONTENT: "${longExcerpt}"
+// Current Date: ${today}
+// If the date is the same as today, treat this as "Breaking News".
+
+// --- EXECUTION PROTOCOL ---
+
+// 1. CLAIM ATOMIZATION:
+// - Break the story down into "Atomic Facts".
+// - Search for these specific atomic components independently.
+
+// 2. VERIFICATION:
+// - Look for "Embedding Similarity" (matching meaning) across independent sources.
+// - Check timestamps (is this breaking news?).
+
+// --- CITATION RULES (MANDATORY) ---
+// You are REQUIRED to cite your search results using this exact format:
+// [[SOURCE::Source Name::URL::SOURCE]]
+
+// - DO NOT list sources at the end.
+// - DO NOT say "sources confirm this".
+// - YOU MUST embed the citation tag immediately after the sentence it supports.
+// - Example: "The fire started at 5 PM [[SOURCE::BBC News::https://bbc.com/news/123::SOURCE]], though some reports say 6 PM [[CONTRA::CNN::https://cnn.com/us/456::CONTRA]]."
+
+// Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
+
+// Format: 
+// RATING: [your rating]
+// EXPLANATION: [Provide a 3-4 sentence analysis. You MUST include at least 2-3 links using the [[SOURCE::Title::URL::SOURCE]] format inside the text]` : 
+
+// `פעל כחוקר בדיקת עובדות. בצע אימות צולב קפדני של הסיפור הבא.
+// כותרת: "${pageData.title}"
+// תוכן: "${longExcerpt}"
+// תאריך נוכחי: ${today}
+// אם התאריך זהה להיום, התייחס לזה כ"חדשות מתפרצות".
+// --- פרוטוקול ביצוע ---
+
+// 1. פירוק טענות:
+// - אל תחפש את הכותרת כולה כמחרוזת אחת.
+// - חלק את הסיפור ל"עובדות אטומיות" (למשל, "אדם X עשה פעולה Y", "אירוע Z התרחש בזמן T").
+// - חפש את הרכיבים האטומיים הספציפיים הללו באופן עצמאי.
+// 2. התאמה סמנטית:
+// - אל תסתמך על התאמות מדויקות של מילות מפתח (חפיפה לקסיקלית).
+// - חפש "דמיון הטמעה" (התאמת משמעות). לדוגמה, אם מקור אומר "החוק עלה 50 מיליון דולר" ואחר אומר "תג המחיר של החקיקה היה 50 מיליון דולר", התייחס לזה כמאומת.
+// 3. גנאלוגיית מקורות (בדיקת דיווח מעגלי):
+// - בדוק אם תוצאות החיפוש הן באמת עצמאיות או שכולן מצטטות מקור שורש יחיד (למשל, "לפי AP...").
+// - אם 10 מאמרים מצטטים את אותו דוח "בסיסי", ספר זאת כמקור אחד, לא עשרה.
+// 4. הקשר זמני (בדיקת חדשות מתפרצות):
+// - בדוק את חותמות הזמן. אם הסיפור הוא פחות מ-24 שעות (למשל, "חדשות מתפרצות"), חוסר קונצנזוס הוא נורמלי. אל תעניש בחומרה.
+// - אם הסיפור ישן אך אין לו שום אימות, סמן אותו כחשוד.
+
+// --- קריטריוני ניקוד ---
+// - CORROBORATED: מספר רב של כלי תקשורת עצמאיים מהדרגה הראשונה מדווחים על אותן עובדות אטומיות.
+// - PLAUSIBLE: מדווח על ידי מקורות משניים, אך לא נמצא "דיווח מעגלי".
+// - UNIQUE_REPORTING: "חדשות מתפרצות" אמיתיות (חותמת זמן טרייה) או חקירה בלעדית.
+// - CONTRADICTS_CONSENSUS: כלי תקשורת מרכזיים מפריכים במפורש את הטענה הספציפית הזו.
+// - UNVERIFIABLE: לא נמצאו התאמות עצמאיות לאחר 24+ שעות.
+// דרג כ: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, או CONTRADICTS_CONSENSUS
+// **קריטי: אתה חייב לספק קישורי מקור לאימות**
+// - פורמט מקורות תומכים כ: [[SOURCE::כותרת מאמר::https://example.com/article::SOURCE]]
+// - פורמט מקורות סותרים כ: [[CONTRA::כותרת מאמר::https://example.com/debunk::CONTRA]]
+// - כלול 2-5 קישורים הכי רלוונטיים
+
+// דרג כ: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, או CONTRADICTS_CONSENSUS
+
+// FORMAT:
+// RATING: [הדירוג שלך]
+// EXPLANATION: [ספק ניתוח של 3-4 משפטים. השתמש ב-[[SOURCE::כותרת::url::SOURCE]] למקורות תומכים וב-[[CONTRA::כותרת::url::CONTRA]] למקורות סותרים.]`
+//         },
+    {
+        id: "consensus-verify",
+        name: TRANSLATIONS[currentLang].consensus,
+        icon: "🌐",
+        priority: "high",
+        weight: 0,  // Background agent - no weight in final score
+        useSearch: true,
+        isBackgroundAgent: true,  // Flag for background processing
+        prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story.
+
+    TITLE: "${pageData.title}"
+    CONTENT: "${longExcerpt}"
+    Current Date: ${today}
+
+    --- EXECUTION PROTOCOL ---
+    1. CLAIM ATOMIZATION: Break down into atomic facts
+    2. VERIFICATION: Search for embedding similarity across sources
+    3. OUTPUT FORMAT: Embed raw links in the explanation like:
+    - Supporting: [Supporting] Title (https://example.com)
+    - Contradicting: [Contradicting] Title (https://example.com)
+
+    Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
+
+    Format:
+    RATING: [your rating]
+    EXPLANATION: [3-4 sentences with embedded links like [Supporting] BBC News (https://bbc.com/news/123)]` : 
+    `...Hebrew version with same format...`
+        },
+
         {
-            id: "consensus",
+            id: "consensus-format",
             name: TRANSLATIONS[currentLang].consensus,
             icon: "🌐",
             priority: "high",
-            weight: 0.10,
-            useSearch: true,
-            prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story.
-            
-TITLE: "${pageData.title}"
-CONTENT: "${longExcerpt}"
-Current Date: ${today}
-If the date is the same as today, treat this as "Breaking News".
+            weight: 0.10,  // This one counts toward final score
+            useSearch: false,
+            dependsOn: "consensus-verify",  // Receives input from first agent
+            prompt: `You are a Link Formatter. Convert the following explanation (which contains raw links) into standardized format.
 
---- EXECUTION PROTOCOL ---
+    INPUT EXPLANATION:
+    {INPUT_FROM_CONSENSUS_VERIFY}
 
-1. CLAIM ATOMIZATION:
-- Break the story down into "Atomic Facts".
-- Search for these specific atomic components independently.
+    YOUR TASK:
+    1. Find all links in format: [Supporting] Title (url) or [Contradicting] Title (url)
+    **CRITICAL**:
+    2. Convert to standardized format:
+    - Supporting → [[SOURCE::Title::url::SOURCE]]
+    - Contradicting → [[CONTRA::Title::url::CONTRA]]
+    3. Return the same explanation with converted links
 
-2. VERIFICATION:
-- Look for "Embedding Similarity" (matching meaning) across independent sources.
-- Check timestamps (is this breaking news?).
 
---- CITATION RULES (MANDATORY) ---
-You are REQUIRED to cite your search results using this exact format:
-[[SOURCE::Source Name::URL::SOURCE]]
+    Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
 
-- DO NOT list sources at the end.
-- DO NOT say "sources confirm this".
-- YOU MUST embed the citation tag immediately after the sentence it supports.
-- Example: "The fire started at 5 PM [[SOURCE::BBC News::https://bbc.com/news/123::SOURCE]], though some reports say 6 PM [[CONTRA::CNN::https://cnn.com/us/456::CONTRA]]."
-
-Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
-
-Format: 
-RATING: [your rating]
-EXPLANATION: [Provide a 3-4 sentence analysis. You MUST include at least 2-3 links using the [[SOURCE::Title::URL::SOURCE]] format inside the text]` : 
-
-`פעל כחוקר בדיקת עובדות. בצע אימות צולב קפדני של הסיפור הבא.
-כותרת: "${pageData.title}"
-תוכן: "${longExcerpt}"
-תאריך נוכחי: ${today}
-אם התאריך זהה להיום, התייחס לזה כ"חדשות מתפרצות".
---- פרוטוקול ביצוע ---
-
-1. פירוק טענות:
-- אל תחפש את הכותרת כולה כמחרוזת אחת.
-- חלק את הסיפור ל"עובדות אטומיות" (למשל, "אדם X עשה פעולה Y", "אירוע Z התרחש בזמן T").
-- חפש את הרכיבים האטומיים הספציפיים הללו באופן עצמאי.
-2. התאמה סמנטית:
-- אל תסתמך על התאמות מדויקות של מילות מפתח (חפיפה לקסיקלית).
-- חפש "דמיון הטמעה" (התאמת משמעות). לדוגמה, אם מקור אומר "החוק עלה 50 מיליון דולר" ואחר אומר "תג המחיר של החקיקה היה 50 מיליון דולר", התייחס לזה כמאומת.
-3. גנאלוגיית מקורות (בדיקת דיווח מעגלי):
-- בדוק אם תוצאות החיפוש הן באמת עצמאיות או שכולן מצטטות מקור שורש יחיד (למשל, "לפי AP...").
-- אם 10 מאמרים מצטטים את אותו דוח "בסיסי", ספר זאת כמקור אחד, לא עשרה.
-4. הקשר זמני (בדיקת חדשות מתפרצות):
-- בדוק את חותמות הזמן. אם הסיפור הוא פחות מ-24 שעות (למשל, "חדשות מתפרצות"), חוסר קונצנזוס הוא נורמלי. אל תעניש בחומרה.
-- אם הסיפור ישן אך אין לו שום אימות, סמן אותו כחשוד.
-
---- קריטריוני ניקוד ---
-- CORROBORATED: מספר רב של כלי תקשורת עצמאיים מהדרגה הראשונה מדווחים על אותן עובדות אטומיות.
-- PLAUSIBLE: מדווח על ידי מקורות משניים, אך לא נמצא "דיווח מעגלי".
-- UNIQUE_REPORTING: "חדשות מתפרצות" אמיתיות (חותמת זמן טרייה) או חקירה בלעדית.
-- CONTRADICTS_CONSENSUS: כלי תקשורת מרכזיים מפריכים במפורש את הטענה הספציפית הזו.
-- UNVERIFIABLE: לא נמצאו התאמות עצמאיות לאחר 24+ שעות.
-דרג כ: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, או CONTRADICTS_CONSENSUS
-**קריטי: אתה חייב לספק קישורי מקור לאימות**
-- פורמט מקורות תומכים כ: [[SOURCE::כותרת מאמר::https://example.com/article::SOURCE]]
-- פורמט מקורות סותרים כ: [[CONTRA::כותרת מאמר::https://example.com/debunk::CONTRA]]
-- כלול 2-5 קישורים הכי רלוונטיים
-
-דרג כ: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, או CONTRADICTS_CONSENSUS
-
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק ניתוח של 3-4 משפטים. השתמש ב-[[SOURCE::כותרת::url::SOURCE]] למקורות תומכים וב-[[CONTRA::כותרת::url::CONTRA]] למקורות סותרים.]`
-        },
+    Format:
+    RATING: [same rating as input]
+    EXPLANATION: [same text with converted links]`
+    },
         {
             id: "headline",
             name: TRANSLATIONS[currentLang].headline,

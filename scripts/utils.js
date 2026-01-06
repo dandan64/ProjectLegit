@@ -100,25 +100,6 @@ function sortGridDynamic() {
     cards.forEach(card => agentGrid.appendChild(card));
 }
 
-// function parseAgentResponse(text) {
-//     // Look for the rating
-//     const ratingMatch = text.match(/RATING:\s*([A-Z_]+)/i);
-    
-//     // Look for the explanation
-//     const explanationMatch = text.match(/EXPLANATION:\s*([\s\S]*)/i);
-
-//     let rating = ratingMatch ? ratingMatch[1].trim() : "UNKNOWN";
-//     let explanation = explanationMatch ? explanationMatch[1].trim() : text;
-
-//     // --- CLEANUP STEP ---
-//     // Remove markdown asterisks from rating (e.g. **CREDIBLE** -> CREDIBLE)
-//     rating = rating.replace(/\*/g, '');
-    
-//     // Convert to score
-//     const score = ratingToScore(rating);
-
-//     return { rating, explanation, score };
-// }
 function parseAgentResponse(text) {
     console.log('📋 Parsing response:', text.substring(0, 200) + '...');
     
@@ -327,12 +308,23 @@ function createCompletedAgentCard(agent) {
             <span class="toggle-icon">▼</span>
         </div>
         <div class="agent-content">
-            <div class="agent-explanation">${parseAndLinkifySources(escapeHtml(result.explanation))}</div>
-        </div>
+            <div class="agent-explanation">${getRelevantCachedResult(agent)}</div>
     `;
     
     card.addEventListener("click", () => card.classList.toggle("expanded"));
     return card;
+}
+
+function getRelevantCachedResult(agent) {
+    const result = agent.result;
+    if(agent.id === 'bias') {
+        return parseAndLinkifyQuotes(escapeHtml(result.explanation));
+    } 
+    else if(agent.id === 'consensus') {
+        return parseAndLinkifySources(escapeHtml(result.explanation));
+    } else {
+        return escapeHtml(result.explanation);
+    }
 }
 
 function createAgentCard(agent) {
@@ -360,20 +352,12 @@ function createAgentCard(agent) {
 function parseAndLinkifyQuotes(rawExplanation, tabId) {
     // 1. Make the text HTML-safe first
     let safeExplanation = escapeHtml(rawExplanation);
-
-    // 2. IMPROVED REGEX - Handles multiple quote formats
-    // This matches:
-    // - [[QUOTE::"text"::QUOTE]]
-    // - [[QUOTE::text::QUOTE]]  (missing quotes)
-    // - [[QUOTE::&quot;text&quot;::QUOTE]]  (escaped quotes)
-    // - [[QUOTE::'text'::QUOTE]]  (single quotes)
-    // - [[QUOTE::"text with "nested" quotes"::QUOTE]]
     
     const quoteRegex = /\[\[QUOTE::(?:&quot;|["'"])?(.+?)(?:&quot;|["'"])?::QUOTE\]\]/g;
     
     let quoteIndex = 0;
     let linkedExplanation = safeExplanation;
-    
+    const baseTimestamp = Date.now();
     // Track all quotes for debugging
     const foundQuotes = [];
     
@@ -389,7 +373,7 @@ function parseAndLinkifyQuotes(rawExplanation, tabId) {
         
         foundQuotes.push(cleanQuote);
         
-        const uniqueId = `quote-${Date.now()}-${quoteIndex++}`;
+        const uniqueId = `quote-${baseTimestamp}-${quoteIndex++}`;
         
         // Re-escape for safe HTML attribute storage
         const safeQuoteForAttribute = cleanQuote
@@ -496,6 +480,32 @@ function attachQuoteLinkListeners() {
         });
     });
 }
+// function attachQuoteLinkListeners(containerElement = document) {
+//     // Use event delegation on container or document
+//     containerElement.addEventListener('click', async (e) => {
+//         const link = e.target.closest('.quote-link');
+//         if (!link) return;
+        
+//         e.stopPropagation();
+        
+//         const quote = link.getAttribute('data-quote');
+//         const tabId = parseInt(link.getAttribute('data-tab-id'));
+//         const quoteId = link.getAttribute('data-quote-id');
+        
+//         console.log('🔍 Searching for quote:', JSON.stringify(quote));
+        
+//         // Your search logic here
+//         try {
+//             await chrome.tabs.sendMessage(tabId, {
+//                 type: 'FIND_QUOTE',
+//                 quote: quote,
+//                 quoteId: quoteId
+//             });
+//         } catch (err) {
+//             console.error('Failed to send message to tab:', err);
+//         }
+//     }, { once: false });
+// }
 
 
 // ========================================
@@ -507,39 +517,6 @@ function parseAndLinkifySources(rawExplanation) {
     
     // Track found sources for debugging
     const foundSources = [];
-    // gemini said to do. maybe shit 
-    // const getDomain = (url) => {
-    //     try {
-    //         const clean = url.replace(/::$/, '').trim();
-    //         const domain = new URL(clean).hostname;
-    //         return domain.startsWith('www.') ? domain.slice(4) : domain;
-    //     } catch (e) {
-    //         return 'Source'; // Fallback if URL is invalid
-    //     }
-    // };
-
-    // // 2. Helper: Generate the HTML for the "Chip"
-    // const createChip = (title, url, type) => {
-    //     const cleanUrl = url.replace(/::$/, '').trim();
-    //     // const cleanUrl = url.trim();
-    //     const cleanTitle = title.trim();
-    //     const domain = getDomain(cleanUrl);
-        
-    //     // Google's favicon service (sz=32 asks for high-res)
-    //     const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-        
-    //     // Determine class based on type
-    //     const typeClass = type === 'supporting' ? 'source-supporting' : 'source-contra';
-
-    //     // Log for debugging
-    //     foundSources.push({ type, title: cleanTitle, url: cleanUrl });
-
-    //     return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link ${typeClass}" title="${escapeHtml(cleanTitle)}">
-    //         <img src="${faviconUrl}" class="source-favicon" alt="" onerror="this.style.display='none'"/>
-    //         ${escapeHtml(domain)}
-    //         </a>`;
-    // };
-    //till here gemini
 
     // Parse SUPPORTING sources: [[SOURCE::title::url::SOURCE]]
     const sourceRegex = /\[\[SOURCE::(.*?)::(https?:\/\/[^\]]+?)::SOURCE\]\]/g;

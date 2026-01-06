@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (cachedData) {
                 showStatus(TRANSLATIONS[currentLang].loadingCache, "info");
                 setTimeout(() => {
-                    loadFromCache(cachedData);
+                    loadFromCache(cachedData, tab.id);
                     loader.style.display = "none";
                 }, 500);
                 return;
@@ -244,48 +244,57 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const agentResults = {};
+
+        const independentAgents = sorted.filter(a => !a.dependsOn);
+        const dependentAgents = sorted.filter(a => a.dependsOn);
+        
+        const parallelPromises = [
+            // Background agents
+            ...backgroundAgents.map(agent => (async () => {
+                console.log(`⚙️ Running background agent: ${agent.id}`);
+                try {
+                    const response = await chrome.runtime.sendMessage({
+                        type: "CALL_GEMINI",
+                        prompt: agent.prompt,
+                        useSearch: agent.useSearch
+                    });
+                    
+                    if (response.error) throw new Error(response.error);
+                    
+                    const result = parseAgentResponse(response.result);
+                    agent.result = result;
+                    agentResults[agent.id] = result;
+                    
+                    console.log(`✅ Background agent complete: ${agent.id}`);
+                } catch (err) {
+                    console.error(`❌ Background agent failed: ${agent.id}`, err);
+                    agentResults[agent.id] = null;
+                }
+            })()),
+            
+            // Independent agents
+            ...independentAgents.map(agent => analyzeAgent(agent))
+        ];
     
-        for (const agent of backgroundAgents) {
-            console.log(`⚙️ Running background agent: ${agent.id}`);
-            try {
-                const response = await chrome.runtime.sendMessage({
-                    type: "CALL_GEMINI",
-                    prompt: agent.prompt,
-                    useSearch: agent.useSearch
-                });
-                
-                if (response.error) throw new Error(response.error);
-                
-                const result = parseAgentResponse(response.result);
-                agent.result = result;
-                agentResults[agent.id] = result;
-                
-                console.log(`✅ Background agent complete: ${agent.id}`);
-            } catch (err) {
-                console.error(`❌ Background agent failed: ${agent.id}`, err);
-                agentResults[agent.id] = null;
-            }
-        }
-
-        // --- THEN RUN REGULAR AGENTS IN PARALLEL ---
-        const promises = sorted.map(agent => {
-            // If this agent depends on a background agent, inject the result
+        // Wait for all background + independent agents to complete
+        await Promise.all(parallelPromises);
+    
+        // --- STEP 2: RUN DEPENDENT AGENTS SEQUENTIALLY ---
+        console.log(`⏳ Running ${dependentAgents.length} dependent agents sequentially`);
+        for (const agent of dependentAgents) {
+            console.log(`⏳ Running dependent agent: ${agent.id} (depends on ${agent.dependsOn})`);
+            
+            // Inject the background result into the prompt
             if (agent.dependsOn && agentResults[agent.dependsOn]) {
-
-                console.log(`agent prompt before:`, agent.prompt);
-
                 const backgroundResult = agentResults[agent.dependsOn];
                 agent.prompt = agent.prompt.replace(
                     `{INPUT_FROM_${agent.dependsOn.toUpperCase().replace(/-/g, '_')}}`,
                     backgroundResult.explanation
                 );
-
-                console.log(`agent prompt updated to:`, agent.prompt);
             }
             
-            return analyzeAgent(agent);
-        });
-        await Promise.all(promises);
+            await analyzeAgent(agent);
+        }
     }
 
     // Analyze individual agent (Updated for Dynamic Sorting)

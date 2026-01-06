@@ -9,7 +9,7 @@ function saveToCache(url, pageData, agents, score) {
     const cacheData = {
         timestamp: Date.now(),
         pageData: pageData,
-        agents: agents,
+        agents: agents.filter(a => !a.isBackground), // Exclude background agents
         score: score
     };
     chrome.storage.local.set({ [key]: cacheData });
@@ -40,7 +40,7 @@ async function checkCache(url) {
 
 // --- Render cached results instantly ---
 
-function loadFromCache(cacheData) {
+function loadFromCache(cacheData, currentTabId) {
     setupView.style.display = "none";
     resultsView.style.display = "flex";
 
@@ -63,11 +63,14 @@ function loadFromCache(cacheData) {
 
     // Render cards
     sorted.forEach(agent => {
-        const card = createCompletedAgentCard(agent);
-        agentGrid.appendChild(card);
+        if(!agent.isBackgroundAgent) {
+            const card = createCompletedAgentCard(agent, currentTabId);
+            agentGrid.appendChild(card);
+        }
     });
 
     displayOverallScore(cacheData.agents);
+    attachQuoteLinkListeners();
 }
 
 // -- Helper: Re-sorts the grid based on current scores --
@@ -230,6 +233,19 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// scripts/utils.js
+
+// 1. Basic Safety Escaping
+// function escapeHtml(text) {
+//     if (!text) return "";
+//     return text
+//         .replace(/&/g, "&amp;")
+//         .replace(/</g, "&lt;")
+//         .replace(/>/g, "&gt;")
+//         .replace(/"/g, "&quot;")
+//         .replace(/'/g, "&#039;");
+// }
+
 function exportResultsToMarkdown(analysisResults) {
     if (!analysisResults) {
         alert("No results to export yet!");
@@ -281,7 +297,7 @@ function displayPageHeader(pageData) {
 }
 
 // Helper to create a card that is ALREADY done (for cache loading)
-function createCompletedAgentCard(agent) {
+function createCompletedAgentCard(agent, tabId) {
     const card = document.createElement("div");
     const result = agent.result;
     
@@ -308,19 +324,19 @@ function createCompletedAgentCard(agent) {
             <span class="toggle-icon">▼</span>
         </div>
         <div class="agent-content">
-            <div class="agent-explanation">${getRelevantCachedResult(agent)}</div>
+            <div class="agent-explanation">${getRelevantCachedResult(agent, tabId)}</div>
     `;
     
     card.addEventListener("click", () => card.classList.toggle("expanded"));
     return card;
 }
 
-function getRelevantCachedResult(agent) {
+function getRelevantCachedResult(agent, tabId) {
     const result = agent.result;
     if(agent.id === 'bias') {
-        return parseAndLinkifyQuotes(escapeHtml(result.explanation));
+        return parseAndLinkifyQuotes(result.explanation, tabId);
     } 
-    else if(agent.id === 'consensus') {
+    else if(agent.id === 'consensus-format') {
         return parseAndLinkifySources(escapeHtml(result.explanation));
     } else {
         return escapeHtml(result.explanation);
@@ -480,70 +496,86 @@ function attachQuoteLinkListeners() {
         });
     });
 }
-// function attachQuoteLinkListeners(containerElement = document) {
-//     // Use event delegation on container or document
-//     containerElement.addEventListener('click', async (e) => {
-//         const link = e.target.closest('.quote-link');
-//         if (!link) return;
-        
-//         e.stopPropagation();
-        
-//         const quote = link.getAttribute('data-quote');
-//         const tabId = parseInt(link.getAttribute('data-tab-id'));
-//         const quoteId = link.getAttribute('data-quote-id');
-        
-//         console.log('🔍 Searching for quote:', JSON.stringify(quote));
-        
-//         // Your search logic here
-//         try {
-//             await chrome.tabs.sendMessage(tabId, {
-//                 type: 'FIND_QUOTE',
-//                 quote: quote,
-//                 quoteId: quoteId
-//             });
-//         } catch (err) {
-//             console.error('Failed to send message to tab:', err);
-//         }
-//     }, { once: false });
-// }
-
 
 // ========================================
 // NEW FUNCTION: Parse and linkify source citations
 // ========================================
 
-function parseAndLinkifySources(rawExplanation) {
-    let safeExplanation = rawExplanation;
+// function parseAndLinkifySources(rawExplanation) {
+//     let safeExplanation = rawExplanation;
     
-    // Track found sources for debugging
-    const foundSources = [];
+//     // Track found sources for debugging
+//     const foundSources = [];
 
-    // Parse SUPPORTING sources: [[SOURCE::title::url::SOURCE]]
-    const sourceRegex = /\[\[SOURCE::(.*?)::(https?:\/\/[^\]]+?)::SOURCE\]\]/g;
-    safeExplanation = safeExplanation.replace(sourceRegex, (match, title, url) => {
-        const cleanUrl = url.trim();
-        const cleanTitle = title.trim();
-        foundSources.push({ type: 'supporting', cleanTitle, cleanUrl});
+//     // Parse SUPPORTING sources: [[SOURCE::title::url::SOURCE]]
+//     const sourceRegex = /\[\[SOURCE::(.*?)::(https?:\/\/[^\]]+?)::SOURCE\]\]/g;
+//     safeExplanation = safeExplanation.replace(sourceRegex, (match, title, url) => {
+//         const cleanUrl = url.trim();
+//         const cleanTitle = title.trim();
+//         foundSources.push({ type: 'supporting', cleanTitle, cleanUrl});
         
+//         return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
+//             <span class="source-icon">✓</span> ${escapeHtml(cleanTitle)}
+//         </a>`;
+//     });
+    
+//     // Parse CONTRADICTING sources: [[CONTRA::title::url::CONTRA]]
+//     const contraRegex = /\[\[CONTRA::(.*?)::(https?:\/\/[^\]]+?)::CONTRA\]\]/g;
+//     safeExplanation = safeExplanation.replace(contraRegex, (match, title, url) => {
+//         const cleanUrl = url.trim();
+//         const cleanTitle = title.trim();
+//         foundSources.push({ type: 'contradicting', cleanTitle, cleanUrl });
+        
+//         return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
+//             <span class="source-icon">✗</span> ${escapeHtml(cleanTitle)}
+//         </a>`;
+//     });
+    
+//     // Debug logging
+//     console.log('🔗 Found source links:', foundSources);
+    
+//     return safeExplanation;
+// }
+
+function parseAndLinkifySources(rawExplanation){
+    if (!rawExplanation) return "";
+
+    // Step A: Security First (Escape ALL raw text)
+    let safeText = escapeHtml(rawExplanation);
+    // Step B: Link Parsing (Supporting)
+    // Regex allows for optional spaces around the separators (::)
+    const sourceRegex = /\[\[SOURCE::(.*?)::(.*?)::SOURCE\]\]/g;
+    safeText = safeText.replace(sourceRegex, (match, title, url) => {
+        let cleanUrl = url.trim();
+        let cleanTitle = title.trim();
+        // Fix: Remove Google Redirects if present (cleaner links)
+        if (cleanUrl.includes("/url?q=")) {
+            cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
+        }
         return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
-            <span class="source-icon">✓</span> ${escapeHtml(cleanTitle)}
-        </a>`;
+                <span class="source-icon">✓</span> ${escapeHtml(cleanTitle)}
+            </a>`;
     });
-    
-    // Parse CONTRADICTING sources: [[CONTRA::title::url::CONTRA]]
-    const contraRegex = /\[\[CONTRA::(.*?)::(https?:\/\/[^\]]+?)::CONTRA\]\]/g;
-    safeExplanation = safeExplanation.replace(contraRegex, (match, title, url) => {
-        const cleanUrl = url.trim();
-        const cleanTitle = title.trim();
-        foundSources.push({ type: 'contradicting', cleanTitle, cleanUrl });
-        
+
+    // Step C: Link Parsing (Contradicting)
+    const contraRegex = /\[\[CONTRA::(.*?)::(.*?)::CONTRA\]\]/g;
+    safeText = safeText.replace(contraRegex, (match, title, url) => {
+        let cleanUrl = url.trim();
+        let cleanTitle = title.trim();
+        if (cleanUrl.includes("/url?q=")) {
+            cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
+        }
         return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
-            <span class="source-icon">✗</span> ${escapeHtml(cleanTitle)}
-        </a>`;
+                <span class="source-icon">✗</span> ${escapeHtml(cleanTitle)}
+            </a>`;
     });
+
+    // Step D: Text Formatting (Crucial for readability!)
+    // 1. Convert **Bold** to <strong>
+    safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     
-    // Debug logging
-    console.log('🔗 Found source links:', foundSources);
-    
-    return safeExplanation;
+    // 2. Convert Newlines to <br> (This fixes the "messy block" look)
+    safeText = safeText.replace(/\n/g, '<br>');
+
+    return safeText;
 }

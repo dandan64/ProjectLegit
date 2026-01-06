@@ -196,26 +196,30 @@ EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4
         weight: 0,  // Background agent - no weight in final score
         useSearch: true,
         isBackgroundAgent: true,  // Flag for background processing
-        prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story.
+        prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher.
+TITLE: "${pageData.title}"
+CONTENT: "${longExcerpt}"
+Current Date: ${today}
 
-    TITLE: "${pageData.title}"
-    CONTENT: "${longExcerpt}"
-    Current Date: ${today}
+Your Goal: Search Google and verify the claims.
 
-    --- EXECUTION PROTOCOL ---
-    1. CLAIM ATOMIZATION: Break down into atomic facts
-    2. VERIFICATION: Search for embedding similarity across sources
-    3. OUTPUT FORMAT: Embed raw links in the explanation like:
-    - Supporting: [Supporting] Title (https://example.com)
-    - Contradicting: [Contradicting] Title (https://example.com)
+OUTPUT REQUIREMENT:
+You must output a JSON-like list of sources you found, followed by your analysis.
+Do NOT use citation numbers like [1]. Use the full URL.
 
-    Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
+Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
 
-    Format:
-    RATING: [your rating]
-    EXPLANATION: [3-4 sentences with embedded links like [Supporting] BBC News (https://bbc.com/news/123)]` : 
-    `...Hebrew version with same format...`
-        },
+Format:
+RATING: [your rating]
+SOURCES_LIST:
+- STATUS: [SUPPORTING/CONTRADICTING]
+- SOURCE_NAME: [e.g. BBC]
+- URL: [The actual link found in search]
+
+ANALYSIS:
+[Write your 3-4 sentence analysis here. Do not worry about linking sources here, just summarize the consensus.]
+` : `...Hebrew version...`
+    },
 
         {
             id: "consensus-format",
@@ -225,26 +229,27 @@ EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4
             weight: 0.10,  // This one counts toward final score
             useSearch: false,
             dependsOn: "consensus-verify",  // Receives input from first agent
-            prompt: `You are a Link Formatter. Convert the following explanation (which contains raw links) into standardized format.
+            prompt: `You are a Citation Formatter.
+I will give you a list of sources and an analysis text.
+Your task is to append the sources to the text using a specific format.
 
-    INPUT EXPLANATION:
-    {INPUT_FROM_CONSENSUS_VERIFY}
+INPUT DATA:
+{INPUT_FROM_CONSENSUS_VERIFY}
 
-    YOUR TASK:
-    1. Find all links in format: [Supporting] Title (url) or [Contradicting] Title (url)
-    **CRITICAL**:
-    2. Convert to standardized format:
-    - Supporting → [[SOURCE::Title::url::SOURCE]]
-    - Contradicting → [[CONTRA::Title::url::CONTRA]]
-    3. Return the same explanation with converted links
+INSTRUCTIONS:
+1. Read the "ANALYSIS" text.
+2. Read the "SOURCES_LIST".
+3. Re-write the analysis. Whenever a specific point is made that is supported by a source in the list, insert the citation immediately after it.
+4. If general support, list sources at the end.
 
+REQUIRED CITATION FORMAT:
+For supporting: [[SOURCE::Name::URL::SOURCE]]
+For contradicting: [[CONTRA::Name::URL::CONTRA]]
 
-    Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
-
-    Format:
-    RATING: [same rating as input]
-    EXPLANATION: [same text with converted links]`
-    },
+Final Output Structure:
+RATING: [Keep the original rating]
+EXPLANATION: [The text with the formatted citations inserted]`
+        },
         {
             id: "headline",
             name: TRANSLATIONS[currentLang].headline,

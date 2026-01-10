@@ -196,16 +196,44 @@ EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4
         weight: 0,  // Background agent - no weight in final score
         useSearch: true,
         isBackgroundAgent: true,  // Flag for background processing
-        prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher.
+        prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story presented by ${pageData.siteName}, and provide a detailed analysis with source citations.
+
 TITLE: "${pageData.title}"
 CONTENT: "${longExcerpt}"
 Current Date: ${today}
 
-Your Goal: Search Google and verify the claims.
+If the date is the same as today, treat this as "Breaking News".
+
+--- EXECUTION PROTOCOL ---
+
+1. CLAIM ATOMIZATION:
+- Do not search for the entire headline as one string.
+- Break the story down into "Atomic Facts" (e.g., "Person X did Action Y", "Event Z occurred at Time T").
+- Search for these specific atomic components independently.
+
+2. SEMANTIC MATCHING:
+- Do not rely on exact keyword matches (Lexical Overlap).
+- Look for "Embedding Similarity" (matching meaning). For example, if a source says "The bill cost $50M" and another says "The legislation price tag was $50 million", treat this as CONFIRMED.
+
+3. SOURCE GENEALOGY (Circular Reporting Check):
+- Check if the search results are truly independent or if they all cite a single root source (e.g., "According to AP...").
+- If 10 articles all cite the same "base" report, count that as ONE source, not ten.
+
+4. TEMPORAL CONTEXT (Breaking News Check):
+- Check the timestamps. If the story is less than 24 hours old (eg. , "Breaking News"), a lack of consensus is normal. Do not penalize heavily.
+- If the story is old but has NO corroboration, flag it as suspicious.
 
 OUTPUT REQUIREMENT:
 You must output a JSON-like list of sources you found, followed by your analysis.
 Do NOT use citation numbers like [1]. Use the full URL.
+Do NOT add to the SOURCES_LIST a source with the same domain name as ${pageData.domain}.
+
+--- SCORING CRITERIA ---
+- CORROBORATED: Multiple independent Tier-1 outlets report the same Atomic Facts.
+- PLAUSIBLE: Reported by secondary sources, but no "Circular Reporting" found.
+- UNIQUE_REPORTING: True "Breaking News" (fresh timestamp) or exclusive investigation.
+- CONTRADICTS_CONSENSUS: Major outlets explicitly debunk this specific claim.
+- UNVERIFIABLE: No independent matches found after 24+ hours.
 
 Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
 
@@ -214,13 +242,12 @@ RATING: [your rating]
 SOURCES_LIST:
 - STATUS: [SUPPORTING/CONTRADICTING]
 - SOURCE_NAME: [e.g. BBC]
-- URL: [The actual link found in search]
+- URL: [The actual link found in search] 
 
 ANALYSIS:
 [Write your 3-4 sentence analysis here. Do not worry about linking sources here, just summarize the consensus.]
 ` : `...Hebrew version...`
     },
-
         {
             id: "consensus-format",
             name: TRANSLATIONS[currentLang].consensus,
@@ -238,11 +265,11 @@ INPUT DATA:
 
 INSTRUCTIONS:
 1. Read the "ANALYSIS" text.
-2. Read the "SOURCES_LIST".
-3. Re-write the analysis. Whenever a specific point is made that is supported by a source in the list, insert the citation immediately after it.
-4. If general support, list sources at the end.
+2. Read the "SOURCES_LIST". If a URL is a 'vertexaisearch' link, look at the content to find the REAL publisher name and URL and use that instead.
+3. Re-write the analysis. Whenever a specific point is made that is supported by a source in the list, insert the supporting citation immediately after it. Whenever a point is contradicted by a source in the list, insert the contradicting citation immediately after it.
+4. Use at max 2 different sources per point.
 
-REQUIRED CITATION FORMAT:
+REQUIRED CITATION INSERTION FORMAT:
 For supporting: [[SOURCE::Name::URL::SOURCE]]
 For contradicting: [[CONTRA::Name::URL::CONTRA]]
 
@@ -261,7 +288,7 @@ EXPLANATION: [The text with the formatted citations inserted]`
             
 Headline: "${pageData.title}"
 
-Content Snippet: "${shortExcerpt}"
+Content Snippet: "${longExcerpt}"
 
 Current Date: ${today}
 
@@ -365,8 +392,7 @@ EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4
         
         Current Date: ${today}
         
-        Text Start: "${longExcerpt}"
-        Text End: "${excerptEnd}"
+        Text: "${longExcerpt}"
         
         YOUR TASK:
         1. Check for these bias types:
@@ -386,11 +412,11 @@ EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4
         3. use google search to check if important perspectives are omitted.
         
         CRITICAL OUTPUT RULES:
-        - You MUST use EXACT quotes from the article as evidence
+        - You MUST use EXACT quotes from the article as evidence.
         - Format quotes as: [[QUOTE::text from article::QUOTE]]
-        - Do NOT use quotation marks inside the markers
-        - Keep quotes under 15 words
-        - Use 1-3 specific quotes that are of the most significant bias.
+        - Keep quotes under 15 words.
+        - DO NOT translate the quotes - keep them in original language.
+        - Use 1-5 specific quotes that are of the most significant bias.
         
         Rate as: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, or STRONG_BIAS
         

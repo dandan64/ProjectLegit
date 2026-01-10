@@ -233,19 +233,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// scripts/utils.js
-
-// 1. Basic Safety Escaping
-// function escapeHtml(text) {
-//     if (!text) return "";
-//     return text
-//         .replace(/&/g, "&amp;")
-//         .replace(/</g, "&lt;")
-//         .replace(/>/g, "&gt;")
-//         .replace(/"/g, "&quot;")
-//         .replace(/'/g, "&#039;");
-// }
-
 function exportResultsToMarkdown(analysisResults) {
     if (!analysisResults) {
         alert("No results to export yet!");
@@ -496,46 +483,6 @@ function attachQuoteLinkListeners() {
         });
     });
 }
-
-// ========================================
-// NEW FUNCTION: Parse and linkify source citations
-// ========================================
-
-// function parseAndLinkifySources(rawExplanation) {
-//     let safeExplanation = rawExplanation;
-    
-//     // Track found sources for debugging
-//     const foundSources = [];
-
-//     // Parse SUPPORTING sources: [[SOURCE::title::url::SOURCE]]
-//     const sourceRegex = /\[\[SOURCE::(.*?)::(https?:\/\/[^\]]+?)::SOURCE\]\]/g;
-//     safeExplanation = safeExplanation.replace(sourceRegex, (match, title, url) => {
-//         const cleanUrl = url.trim();
-//         const cleanTitle = title.trim();
-//         foundSources.push({ type: 'supporting', cleanTitle, cleanUrl});
-        
-//         return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
-//             <span class="source-icon">✓</span> ${escapeHtml(cleanTitle)}
-//         </a>`;
-//     });
-    
-//     // Parse CONTRADICTING sources: [[CONTRA::title::url::CONTRA]]
-//     const contraRegex = /\[\[CONTRA::(.*?)::(https?:\/\/[^\]]+?)::CONTRA\]\]/g;
-//     safeExplanation = safeExplanation.replace(contraRegex, (match, title, url) => {
-//         const cleanUrl = url.trim();
-//         const cleanTitle = title.trim();
-//         foundSources.push({ type: 'contradicting', cleanTitle, cleanUrl });
-        
-//         return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
-//             <span class="source-icon">✗</span> ${escapeHtml(cleanTitle)}
-//         </a>`;
-//     });
-    
-//     // Debug logging
-//     console.log('🔗 Found source links:', foundSources);
-    
-//     return safeExplanation;
-// }
 
 function parseAndLinkifySources(rawExplanation){
     if (!rawExplanation) return "";

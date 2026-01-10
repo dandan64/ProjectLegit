@@ -1,5 +1,5 @@
 // ========================================
-// IMPROVED contentHighlighter.js
+// ADVANCED contentHighlighter.js
 // ========================================
 
 function highlightAndScroll(searchText, index = 0) {
@@ -8,83 +8,113 @@ function highlightAndScroll(searchText, index = 0) {
     // Remove previous highlights
     clearHighlights();
     
-    // Try multiple search strategies
+    // Clean up the search text once
+    const cleanSearch = searchText.trim();
+    if (!cleanSearch) return false;
+
     let matches = [];
     
-    // Strategy 1: Exact match
-    matches = findTextInPage(searchText, false);
+    // --- STRATEGY 1: Exact Match (Fastest) ---
+    // Finds exact string: "Hello World"
+    matches = findTextInPage(cleanSearch, { mode: 'exact' });
     
-    // Strategy 2: Case-insensitive if exact fails
+    // --- STRATEGY 2: Flexible Whitespace (Common) ---
+    // Finds: "Hello\nWorld", "Hello   World", "Hello&nbsp;World"
     if (matches.length === 0) {
-        console.log('⚠️ Exact match failed, trying case-insensitive...');
-        matches = findTextInPage(searchText, true);
+        console.log('⚠️ Exact match failed, trying flexible whitespace...');
+        matches = findTextInPage(cleanSearch, { mode: 'whitespace' });
     }
     
-    // Strategy 3: Fuzzy match (remove extra whitespace)
+    // --- STRATEGY 3: Punctuation Agnostic (Smart) ---
+    // Finds: "It's true" matches "Its true", "Hello 'World'" matches "Hello World"
     if (matches.length === 0) {
-        console.log('⚠️ Case-insensitive failed, trying normalized text...');
-        const normalized = searchText.replace(/\s+/g, ' ').trim();
-        matches = findTextInPage(normalized, true);
+        console.log('⚠️ Whitespace match failed, trying fuzzy punctuation...');
+        matches = findTextInPage(cleanSearch, { mode: 'fuzzy' });
     }
     
-    // Strategy 4: Try first 10 words if quote is long
-    if (matches.length === 0 && searchText.split(' ').length > 10) {
-        console.log('⚠️ Trying first 10 words...');
-        const shortQuote = searchText.split(' ').slice(0, 10).join(' ');
-        matches = findTextInPage(shortQuote, true);
+    // --- STRATEGY 4: First 8 Words (Fallback) ---
+    // If the quote is huge, maybe the end got cut off. Try the start.
+    if (matches.length === 0 && cleanSearch.split(/\s+/).length > 8) {
+        console.log('⚠️ Trying shortened quote...');
+        const shortQuote = cleanSearch.split(/\s+/).slice(0, 8).join(' ');
+        matches = findTextInPage(shortQuote, { mode: 'whitespace' });
     }
     
     if (matches.length === 0) {
-        console.warn('❌ Quote not found on page:', searchText);
+        console.warn('❌ Quote not found on page:', cleanSearch);
         return false;
     }
     
     console.log(`✅ Found ${matches.length} match(es)`);
     
-    // Use the specified occurrence or first one
+    // Select the best match (default to first)
     const targetMatch = matches[Math.min(index, matches.length - 1)];
     
-    // Highlight the text
+    // Highlight and Scroll
     highlightNode(targetMatch.node, targetMatch.start, targetMatch.end);
     
-    // Scroll to it
     const highlightedElement = document.querySelector('.legit-highlight');
     if (highlightedElement) {
         highlightedElement.scrollIntoView({ 
             behavior: 'smooth', 
             block: 'center' 
         });
-        
-        // Add extra visual feedback
+        // Visual Pulse
         highlightedElement.style.animation = 'pulse 1s ease-in-out 3';
     }
     
     return true;
 }
 
-function findTextInPage(searchText, caseInsensitive = false) {
+// --- CORE SEARCH FUNCTION ---
+function findTextInPage(query, options = { mode: 'exact' }) {
     const matches = [];
+    let regex;
+
+    // Build the Regex based on mode
+    try {
+        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex special chars
+
+        if (options.mode === 'exact') {
+            // Simple case-insensitive exact string
+            // We use regex here just to keep the logic consistent
+            regex = new RegExp(escapedQuery, 'gi');
+        } 
+        else if (options.mode === 'whitespace') {
+            // Replace spaces with \s+ (matches space, tab, newline, nbsp)
+            const pattern = escapedQuery.replace(/\s+/g, '\\s+');
+            regex = new RegExp(pattern, 'gi');
+        } 
+        else if (options.mode === 'fuzzy') {
+            // Split by non-word characters and join with "ignore junk" pattern
+            // "It's true" -> "It", "s", "true" -> /It[\W_]*s[\W_]*true/gi
+            const words = query.split(/[\W_]+/); // Split by punctuation/space
+            const pattern = words.filter(w => w.length > 0).join('[\\W_]+');
+            regex = new RegExp(pattern, 'gi');
+        }
+    } catch (e) {
+        console.error("Regex build error", e);
+        return [];
+    }
+
     const walker = document.createTreeWalker(
         document.body,
         NodeFilter.SHOW_TEXT,
         {
             acceptNode: function(node) {
-                // Skip script, style, and hidden elements
+                // Skip hidden/script tags
                 const parent = node.parentElement;
                 if (!parent) return NodeFilter.FILTER_REJECT;
                 
-                if (parent.tagName === 'SCRIPT' || 
-                    parent.tagName === 'STYLE' ||
-                    parent.tagName === 'NOSCRIPT') {
+                const tag = parent.tagName;
+                if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'TEXTAREA') {
                     return NodeFilter.FILTER_REJECT;
                 }
                 
-                // Skip hidden elements
-                const style = window.getComputedStyle(parent);
-                if (style.display === 'none' || 
-                    style.visibility === 'hidden' ||
-                    style.opacity === '0') {
-                    return NodeFilter.FILTER_REJECT;
+                // Check visibility
+                if (parent.offsetParent === null) { 
+                    // Simple check for visibility (works for display:none)
+                    return NodeFilter.FILTER_REJECT; 
                 }
                 
                 return NodeFilter.FILTER_ACCEPT;
@@ -95,18 +125,20 @@ function findTextInPage(searchText, caseInsensitive = false) {
     let node;
     while (node = walker.nextNode()) {
         const text = node.textContent;
-        const searchIn = caseInsensitive ? text.toLowerCase() : text;
-        const searchFor = caseInsensitive ? searchText.toLowerCase() : searchText;
-        
-        let index = searchIn.indexOf(searchFor);
-        
-        while (index !== -1) {
+        // Skip empty nodes to save performance
+        if (!text.trim()) continue;
+
+        // Reset regex state for each node
+        regex.lastIndex = 0; 
+
+        let match;
+        // Exec loop to find ALL matches in this node (in case it appears twice)
+        while ((match = regex.exec(text)) !== null) {
             matches.push({
                 node: node,
-                start: index,
-                end: index + searchText.length
+                start: match.index,
+                end: match.index + match[0].length
             });
-            index = searchIn.indexOf(searchFor, index + 1);
         }
     }
     
@@ -114,46 +146,41 @@ function findTextInPage(searchText, caseInsensitive = false) {
 }
 
 function highlightNode(textNode, start, end) {
+    // Safety check: ensure the indices are valid for this node
+    if (start < 0 || end > textNode.textContent.length || start >= end) return;
+
     const text = textNode.textContent;
     const before = text.substring(0, start);
     const highlighted = text.substring(start, end);
     const after = text.substring(end);
     
-    // Create highlight span
     const span = document.createElement('span');
     span.className = 'legit-highlight';
+    // Inline styles ensure it works even if external CSS fails
     span.style.cssText = `
-        background-color: #fef08a !important;
-        border: 2px solid #eab308 !important;
-        border-radius: 3px !important;
-        padding: 2px 4px !important;
-        box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.2) !important;
-        transition: all 0.3s ease !important;
-        display: inline !important;
-        animation: pulse 1s ease-in-out 3 !important;
+        background-color: #f3ff47;
+        color: #000;
+        border: 2px solid #d6c50b;
+        border-radius: 2px;
+        box-shadow: 0 0 5px rgba(234, 179, 8, 0.4);
+        transition: all 0.5s ease;
     `;
     span.textContent = highlighted;
     
-    // Add pulse animation keyframes
+    // Inject Styles for Animation
     if (!document.getElementById('legit-highlight-styles')) {
         const style = document.createElement('style');
         style.id = 'legit-highlight-styles';
         style.textContent = `
             @keyframes pulse {
-                0%, 100% { 
-                    transform: scale(1); 
-                    background-color: #fef08a; 
-                }
-                50% { 
-                    transform: scale(1.05); 
-                    background-color: #fde047; 
-                }
+                0% { background-color: #fef08a; transform: scale(1); }
+                50% { background-color: #f3ff47; transform: scale(1.1); }
+                100% { background-color: #fef08a; transform: scale(1); }
             }
         `;
         document.head.appendChild(style);
     }
     
-    // Replace text node with fragments
     const parent = textNode.parentNode;
     parent.insertBefore(document.createTextNode(before), textNode);
     parent.insertBefore(span, textNode);
@@ -165,22 +192,20 @@ function clearHighlights() {
     document.querySelectorAll('.legit-highlight').forEach(highlight => {
         const text = highlight.textContent;
         const parent = highlight.parentNode;
-        parent.replaceChild(document.createTextNode(text), highlight);
-        parent.normalize();
+        if(parent) {
+            parent.replaceChild(document.createTextNode(text), highlight);
+            parent.normalize(); // Merges adjacent text nodes back together
+        }
     });
 }
 
-// Listen for messages from the extension
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'HIGHLIGHT_QUOTE') {
-        console.log('📨 Received highlight request:', message.quote);
         const success = highlightAndScroll(message.quote, message.index || 0);
         sendResponse({ success });
     } else if (message.type === 'CLEAR_HIGHLIGHTS') {
         clearHighlights();
         sendResponse({ success: true });
     }
-    return true;
+    return true; // Keep channel open
 });
-
-console.log('✅ Legit Content Highlighter loaded');

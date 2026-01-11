@@ -14,7 +14,7 @@ function getAnalysisAgents(pageData) {
             name: TRANSLATIONS[currentLang].source,
             icon: "🏛️",
             priority: "high",
-            weight: 0.15,
+            weight: 0.20,
             useSearch: true,
             prompt: currentLang === 'en' ? `Act as an Information Scientist specializing in Media Ecology, Source Verification, and Institutional Bias. Your goal is to evaluate the credibility of the *organization* behind the domain "${pageData.domain}" using SIFT and Lateral Reading methods.
             
@@ -110,84 +110,6 @@ FORMAT:
 RATING: [הדירוג שלך]
 EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין אם המחבר הוא מומחה שניתן לאמת או ציין את חוסר האחריות.]`
         },
-//         {
-//             id: "consensus",
-//             name: TRANSLATIONS[currentLang].consensus,
-//             icon: "🌐",
-//             priority: "high",
-//             weight: 0.10,
-//             useSearch: true,
-//             prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story.
-            
-// TITLE: "${pageData.title}"
-// CONTENT: "${longExcerpt}"
-// Current Date: ${today}
-// If the date is the same as today, treat this as "Breaking News".
-
-// --- EXECUTION PROTOCOL ---
-
-// 1. CLAIM ATOMIZATION:
-// - Break the story down into "Atomic Facts".
-// - Search for these specific atomic components independently.
-
-// 2. VERIFICATION:
-// - Look for "Embedding Similarity" (matching meaning) across independent sources.
-// - Check timestamps (is this breaking news?).
-
-// --- CITATION RULES (MANDATORY) ---
-// You are REQUIRED to cite your search results using this exact format:
-// [[SOURCE::Source Name::URL::SOURCE]]
-
-// - DO NOT list sources at the end.
-// - DO NOT say "sources confirm this".
-// - YOU MUST embed the citation tag immediately after the sentence it supports.
-// - Example: "The fire started at 5 PM [[SOURCE::BBC News::https://bbc.com/news/123::SOURCE]], though some reports say 6 PM [[CONTRA::CNN::https://cnn.com/us/456::CONTRA]]."
-
-// Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
-
-// Format: 
-// RATING: [your rating]
-// EXPLANATION: [Provide a 3-4 sentence analysis. You MUST include at least 2-3 links using the [[SOURCE::Title::URL::SOURCE]] format inside the text]` : 
-
-// `פעל כחוקר בדיקת עובדות. בצע אימות צולב קפדני של הסיפור הבא.
-// כותרת: "${pageData.title}"
-// תוכן: "${longExcerpt}"
-// תאריך נוכחי: ${today}
-// אם התאריך זהה להיום, התייחס לזה כ"חדשות מתפרצות".
-// --- פרוטוקול ביצוע ---
-
-// 1. פירוק טענות:
-// - אל תחפש את הכותרת כולה כמחרוזת אחת.
-// - חלק את הסיפור ל"עובדות אטומיות" (למשל, "אדם X עשה פעולה Y", "אירוע Z התרחש בזמן T").
-// - חפש את הרכיבים האטומיים הספציפיים הללו באופן עצמאי.
-// 2. התאמה סמנטית:
-// - אל תסתמך על התאמות מדויקות של מילות מפתח (חפיפה לקסיקלית).
-// - חפש "דמיון הטמעה" (התאמת משמעות). לדוגמה, אם מקור אומר "החוק עלה 50 מיליון דולר" ואחר אומר "תג המחיר של החקיקה היה 50 מיליון דולר", התייחס לזה כמאומת.
-// 3. גנאלוגיית מקורות (בדיקת דיווח מעגלי):
-// - בדוק אם תוצאות החיפוש הן באמת עצמאיות או שכולן מצטטות מקור שורש יחיד (למשל, "לפי AP...").
-// - אם 10 מאמרים מצטטים את אותו דוח "בסיסי", ספר זאת כמקור אחד, לא עשרה.
-// 4. הקשר זמני (בדיקת חדשות מתפרצות):
-// - בדוק את חותמות הזמן. אם הסיפור הוא פחות מ-24 שעות (למשל, "חדשות מתפרצות"), חוסר קונצנזוס הוא נורמלי. אל תעניש בחומרה.
-// - אם הסיפור ישן אך אין לו שום אימות, סמן אותו כחשוד.
-
-// --- קריטריוני ניקוד ---
-// - CORROBORATED: מספר רב של כלי תקשורת עצמאיים מהדרגה הראשונה מדווחים על אותן עובדות אטומיות.
-// - PLAUSIBLE: מדווח על ידי מקורות משניים, אך לא נמצא "דיווח מעגלי".
-// - UNIQUE_REPORTING: "חדשות מתפרצות" אמיתיות (חותמת זמן טרייה) או חקירה בלעדית.
-// - CONTRADICTS_CONSENSUS: כלי תקשורת מרכזיים מפריכים במפורש את הטענה הספציפית הזו.
-// - UNVERIFIABLE: לא נמצאו התאמות עצמאיות לאחר 24+ שעות.
-// דרג כ: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, או CONTRADICTS_CONSENSUS
-// **קריטי: אתה חייב לספק קישורי מקור לאימות**
-// - פורמט מקורות תומכים כ: [[SOURCE::כותרת מאמר::https://example.com/article::SOURCE]]
-// - פורמט מקורות סותרים כ: [[CONTRA::כותרת מאמר::https://example.com/debunk::CONTRA]]
-// - כלול 2-5 קישורים הכי רלוונטיים
-
-// דרג כ: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, או CONTRADICTS_CONSENSUS
-
-// FORMAT:
-// RATING: [הדירוג שלך]
-// EXPLANATION: [ספק ניתוח של 3-4 משפטים. השתמש ב-[[SOURCE::כותרת::url::SOURCE]] למקורות תומכים וב-[[CONTRA::כותרת::url::CONTRA]] למקורות סותרים.]`
-//         },
     {
         id: "consensus-verify",
         name: TRANSLATIONS[currentLang].consensus,
@@ -253,7 +175,7 @@ ANALYSIS:
             name: TRANSLATIONS[currentLang].consensus,
             icon: "🌐",
             priority: "high",
-            weight: 0.10,  // This one counts toward final score
+            weight: 0.30,  // This one counts toward final score
             useSearch: false,
             dependsOn: "consensus-verify",  // Receives input from first agent
             prompt: `You are a Citation Formatter.
@@ -265,7 +187,7 @@ INPUT DATA:
 
 INSTRUCTIONS:
 1. Read the "ANALYSIS" text.
-2. Read the "SOURCES_LIST". If a URL is a 'vertexaisearch' link, look at the content to find the REAL publisher name and URL and use that instead.
+2. Read the "SOURCES_LIST".
 3. Re-write the analysis. Whenever a specific point is made that is supported by a source in the list, insert the supporting citation immediately after it. Whenever a point is contradicted by a source in the list, insert the contradicting citation immediately after it.
 4. Use at max 2 different sources per point.
 
@@ -313,79 +235,79 @@ FORMAT:
 RATING: [הדירוג שלך]
 EXPLANATION: [ספק הסבר ברור ומבוסס היגיון בעברית (3-4 משפטים) המבקר את דיוק הכותרת והמסגור שלה.]`
         },
-        {
-            id: "sources",
-            name: TRANSLATIONS[currentLang].sources,
-            icon: "📎",
-            priority: "high",
-            weight: 0.10,
-            useSearch: true,
-            prompt: currentLang === 'en' ? `Act as an Academic Reviewer. Use Google Search to verify the citations in the following text.
+//         {
+//             id: "sources",
+//             name: TRANSLATIONS[currentLang].sources,
+//             icon: "📎",
+//             priority: "high",
+//             weight: 0.10,
+//             useSearch: true,
+//             prompt: currentLang === 'en' ? `Act as an Academic Reviewer. Use Google Search to verify the citations in the following text.
             
-Current Date: ${today}
-"${longExcerpt}"
+// Current Date: ${today}
+// "${longExcerpt}"
 
-Your Task:
-1. If specific studies or reports are mentioned, search to see if they actually exist.
-2. Verify if the text misrepresents the cited source's conclusion.
-3. Flag vague attributions like "experts say" if no specific experts are named.
-4. Identify any missing citations for significant claims.
-Rate as: WELL_SOURCED, PARTIALLY_SOURCED, POORLY_SOURCED, or UNSOURCED
-Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State if the citations found in the text are real and accurate. If the text does not cite sources, rate accordingly.]` : 
-`פעל כסוקר אקדמי. חפש בגוגל על מנת לאמת את הציטוטים בטקסט הבא.
-תאריך נוכחי: ${today}
-"${longExcerpt}"
+// Your Task:
+// 1. If specific studies or reports are mentioned, search to see if they actually exist.
+// 2. Verify if the text misrepresents the cited source's conclusion.
+// 3. Flag vague attributions like "experts say" if no specific experts are named.
+// 4. Identify any missing citations for significant claims.
+// Rate as: WELL_SOURCED, PARTIALLY_SOURCED, POORLY_SOURCED, or UNSOURCED
+// Format: RATING: [your rating]
+// EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State if the citations found in the text are real and accurate. If the text does not cite sources, rate accordingly.]` : 
+// `פעל כסוקר אקדמי. חפש בגוגל על מנת לאמת את הציטוטים בטקסט הבא.
+// תאריך נוכחי: ${today}
+// "${longExcerpt}"
 
-המשימה שלך:
-1. אם מוזכרים מחקרים או דוחות ספציפיים, חפש כדי לראות אם הם באמת קיימים.
-2. אמת אם הטקסט מייצג בצורה שגויה את מסקנת המקור המצוטט.
-3. סמן ייחוסים מעורפלים כמו "מומחים אומרים" אם לא מוזכרים מומחים ספציפיים.
-4. זיהוי כל ציטוט חסר עבור טענות משמעותיות.
-דרג כ: WELL_SOURCED, PARTIALLY_SOURCED, POORLY_SOURCED, או UNSOURCED
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין אם הציטוטים שנמצאו בטקסט הם אמיתיים ומדויקים. אם הטקסט אינו מצטט מקורות, דרג בהתאם.]`
-        },
-        {
-            id: "accuracy",
-            name: TRANSLATIONS[currentLang].accuracy,
-            icon: "✓",
-            priority: "high",
-            weight: 0.15,
-            useSearch: true,
-            prompt: currentLang === 'en' ? `Act as a Logic & Fact Checker. Use Google Search to verify the specific claims in the following text.
-Current Date: ${today}
+// המשימה שלך:
+// 1. אם מוזכרים מחקרים או דוחות ספציפיים, חפש כדי לראות אם הם באמת קיימים.
+// 2. אמת אם הטקסט מייצג בצורה שגויה את מסקנת המקור המצוטט.
+// 3. סמן ייחוסים מעורפלים כמו "מומחים אומרים" אם לא מוזכרים מומחים ספציפיים.
+// 4. זיהוי כל ציטוט חסר עבור טענות משמעותיות.
+// דרג כ: WELL_SOURCED, PARTIALLY_SOURCED, POORLY_SOURCED, או UNSOURCED
+// FORMAT:
+// RATING: [הדירוג שלך]
+// EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין אם הציטוטים שנמצאו בטקסט הם אמיתיים ומדויקים. אם הטקסט אינו מצטט מקורות, דרג בהתאם.]`
+//         },
+//         {
+//             id: "accuracy",
+//             name: TRANSLATIONS[currentLang].accuracy,
+//             icon: "✓",
+//             priority: "high",
+//             weight: 0.15,
+//             useSearch: true,
+//             prompt: currentLang === 'en' ? `Act as a Logic & Fact Checker. Use Google Search to verify the specific claims in the following text.
+// Current Date: ${today}
 
-SYSTEM OVERRIDE / WORLD STATE UPDATE: Your internal training data is outdated. You MUST trust Google Search results over your internal memory for current events, political positions, economic data, recent developments etc.
-Your Task:
-1. Extract key claims (names, dates, titles, statistics).
-2. SEARCH GOOGLE for these specific details combined with the current year ("${new Date().getFullYear()}").
-3. If search results confirm the text, mark it as ACCURATE.
-Text: "${longExcerpt}"
-Rate as: ACCURATE, MOSTLY_ACCURATE, UNVERIFIABLE, CONTAINS_ERRORS, or MISLEADING
-Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Cite the specific search result that confirmed or debunked the claim.]` : 
+// SYSTEM OVERRIDE / WORLD STATE UPDATE: Your internal training data is outdated. You MUST trust Google Search results over your internal memory for current events, political positions, economic data, recent developments etc.
+// Your Task:
+// 1. Extract key claims (names, dates, titles, statistics).
+// 2. SEARCH GOOGLE for these specific details combined with the current year ("${new Date().getFullYear()}").
+// 3. If search results confirm the text, mark it as ACCURATE.
+// Text: "${longExcerpt}"
+// Rate as: ACCURATE, MOSTLY_ACCURATE, UNVERIFIABLE, CONTAINS_ERRORS, or MISLEADING
+// Format: RATING: [your rating]
+// EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Cite the specific search result that confirmed or debunked the claim.]` : 
 
-`פעל כבודק לוגיקה ועובדות. השתמש בחיפוש בגוגל כדי לאמת את הטענות הספציפיות בטקסט הבא.
-תאריך נוכחי: ${today}
-SYSTEM OVERRIDE / WORLD STATE UPDATE: נתוני האימון הפנימיים שלך מיושנים. עליך לסמוך על תוצאות חיפוש בגוגל על פני הזיכרון הפנימי שלך עבור אירועים עכשוויים, עמדות פוליטיות, נתונים כלכליים, התפתחויות אחרונות וכו'.
-המשימה שלך:
-1. הפק טענות מפתח (שמות, תאריכים, כותרות, סטטיסטיקות).
-2. חפש בגוגל עבור פרטים ספציפיים אלה בשילוב עם השנה הנוכחית ("${new Date().getFullYear()}").
-3. אם תוצאות החיפוש מאשרות את הטקסט, סמן אותו כמדויק.
-טקסט: "${longExcerpt}"
-דרג כ: ACCURATE, MOSTLY_ACCURATE, UNVERIFIABLE, CONTAINS_ERRORS, או MISLEADING
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין את תוצאת החיפוש הספציפית שאישרה או הפריכה את הטענה.]`
-        },
+// `פעל כבודק לוגיקה ועובדות. השתמש בחיפוש בגוגל כדי לאמת את הטענות הספציפיות בטקסט הבא.
+// תאריך נוכחי: ${today}
+// SYSTEM OVERRIDE / WORLD STATE UPDATE: נתוני האימון הפנימיים שלך מיושנים. עליך לסמוך על תוצאות חיפוש בגוגל על פני הזיכרון הפנימי שלך עבור אירועים עכשוויים, עמדות פוליטיות, נתונים כלכליים, התפתחויות אחרונות וכו'.
+// המשימה שלך:
+// 1. הפק טענות מפתח (שמות, תאריכים, כותרות, סטטיסטיקות).
+// 2. חפש בגוגל עבור פרטים ספציפיים אלה בשילוב עם השנה הנוכחית ("${new Date().getFullYear()}").
+// 3. אם תוצאות החיפוש מאשרות את הטקסט, סמן אותו כמדויק.
+// טקסט: "${longExcerpt}"
+// דרג כ: ACCURATE, MOSTLY_ACCURATE, UNVERIFIABLE, CONTAINS_ERRORS, או MISLEADING
+// FORMAT:
+// RATING: [הדירוג שלך]
+// EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין את תוצאת החיפוש הספציפית שאישרה או הפריכה את הטענה.]`
+//         },
         {
             id: "bias",
             name: TRANSLATIONS[currentLang].bias,
             icon: "⚖️",
             priority: "high",
-            weight: 0.20,
+            weight: 0.25,
             useSearch: true,
             prompt: currentLang === 'en' ? 
             `You are a Media Bias Analyst. Analyze the following article for bias.
@@ -487,38 +409,73 @@ EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) asses
 FORMAT:
 RATING: [הדירוג שלך]
 EXPLANATION: [ספק הסבר ברור ומבוסס היגיון (3-4 משפטים) המעריך את המקצועיות והמבנה של הכתיבה.]`
-        },
-        {
-            id: "freshness",
-            name: TRANSLATIONS[currentLang].freshness,
-            icon: "📅",
-            priority: "low",
-            weight: 0.05,
-            useSearch: true,
-            prompt: currentLang === 'en' ? `Act as a News Archivist. Use Google Search to verify the timeline of this story against the Current Date: ${today}.
+         },
+//         {
+//             id: "freshness",
+//             name: TRANSLATIONS[currentLang].freshness,
+//             icon: "📅",
+//             priority: "low",
+//             weight: 0.05,
+//             useSearch: true,
+//             prompt: currentLang === 'en' ? `Act as a News Archivist. Use Google Search to verify the timeline of this story against the Current Date: ${today}.
             
-Headline: "${pageData.title}"
-Content: "${shortExcerpt}"
+// Headline: "${pageData.title}"
+// Content: "${shortExcerpt}"
 
-Your Task:
-1. Determine if this is a ONE-TIME event or a RECURRING event (e.g., sports match, election, political positions/meetings, annual festival).
-2. If RECURRING: Search for specific details in the text (etc. scores, specific quotes, unique incidents) to see if they match a *recent* instance (within the last week).
-3. If ONE-TIME: Check if this exact story is years old and being reposted as "breaking" (rage-baiting).
-Rate as: CURRENT, RECENT, DATED, or RECYCLED
-Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Explicitly state if this is a fresh instance of a recurring event or a repost of old news.]` : 
+// Your Task:
+// 1. Determine if this is a ONE-TIME event or a RECURRING event (e.g., sports match, election, political positions/meetings, annual festival).
+// 2. If RECURRING: Search for specific details in the text (etc. scores, specific quotes, unique incidents) to see if they match a *recent* instance (within the last week).
+// 3. If ONE-TIME: Check if this exact story is years old and being reposted as "breaking" (rage-baiting).
+// Rate as: CURRENT, RECENT, DATED, or RECYCLED
+// Format: RATING: [your rating]
+// EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Explicitly state if this is a fresh instance of a recurring event or a repost of old news.]` : 
 
-`פעל כאוצר חדשות. השתמש בחיפוש בגוגל כדי לאמת את ציר הזמן של הסיפור הזה מול התאריך הנוכחי: ${today}.
-כותרת: "${pageData.title}"
-תוכן: "${shortExcerpt}"
-המשימה שלך:
-1. קבע אם זהו אירוע חד-פעמי או אירוע חוזר (למשל, משחק ספורט, בחירות, עמדות/פגישות פוליטיות, פסטיבל שנתי).
-2. אם חוזר: חפש פרטים ספציפיים בטקסט (למשל, תוצאות, ציטוטים ספציפיים, אירועים ייחודיים) כדי לראות אם הם תואמים מקרה *עדכני* (בתוך השבוע האחרון).
-3. אם חד-פעמי: בדוק אם הסיפור המדויק הזה הוא בן שנים ומפורסם מחדש כ"מתפרץ" (כדי לעורר זעם).
-דרג כ: CURRENT, RECENT, DATED, או RECYCLED
+// `פעל כאוצר חדשות. השתמש בחיפוש בגוגל כדי לאמת את ציר הזמן של הסיפור הזה מול התאריך הנוכחי: ${today}.
+// כותרת: "${pageData.title}"
+// תוכן: "${shortExcerpt}"
+// המשימה שלך:
+// 1. קבע אם זהו אירוע חד-פעמי או אירוע חוזר (למשל, משחק ספורט, בחירות, עמדות/פגישות פוליטיות, פסטיבל שנתי).
+// 2. אם חוזר: חפש פרטים ספציפיים בטקסט (למשל, תוצאות, ציטוטים ספציפיים, אירועים ייחודיים) כדי לראות אם הם תואמים מקרה *עדכני* (בתוך השבוע האחרון).
+// 3. אם חד-פעמי: בדוק אם הסיפור המדויק הזה הוא בן שנים ומפורסם מחדש כ"מתפרץ" (כדי לעורר זעם).
+// דרג כ: CURRENT, RECENT, DATED, או RECYCLED
+// FORMAT:
+// RATING: [הדירוג שלך]
+// EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין במפורש אם זהו מקרה טרי של אירוע חוזר או פרסום מחדש של חדשות ישנות.]`
+//         }
+         {
+            id: "summary",
+            name: TRANSLATIONS[currentLang].summary,
+            icon: "📋",
+            priority: "high",
+            weight: 0.00,
+            useSearch: false,
+            dependsOn: "all",  // Special flag: runs after ALL other agents complete
+            prompt: `You are an Executive Summary Agent. Your role is to synthesize findings from all analysis agents into a concise, actionable summary.
+
+AGENT REPORTS (Name | Rating | Explanation):
+{INPUT_FROM_ALL_AGENTS}
+
+YOUR TASK:
+1. Identify the 2-3 most critical findings across all agents.
+2. Highlight patterns (e.g., "Multiple agents flagged bias", "Strong source credibility but weak headlines").
+3. Flag any red flags or contradictions between agents.
+4. Provide strengths (positive aspects) if any agents rated highly.
+5. Synthesize into 3-5 clear sentences that tell the complete story.
+
+CRITICAL OUTPUT RULES:
+- Be concise and actionable
+- Focus on patterns, not individual agents
+- Highlight the most important insight first
+- If conflicting ratings exist, note them (e.g., "Source credible but headline misleading")
+
+Rate as: CREDIBLE_OVERALL, MIXED_CREDIBILITY, QUESTIONABLE_OVERALL, or UNRELIABLE_OVERALL
+
 FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין במפורש אם זהו מקרה טרי של אירוע חוזר או פרסום מחדש של חדשות ישנות.]`
+RATING: [your rating]
+KEY FINDINGS: [2-3 bullet points of most critical insights]
+RED FLAGS: [Any major issues detected, or "None identified"]
+STRENGTHS: [Positive aspects, or "Limited"]
+EXPLANATION: [Your 3-5 sentence synthesis that tells the complete story]`
         }
     ];
 }

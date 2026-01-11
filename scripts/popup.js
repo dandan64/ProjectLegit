@@ -284,8 +284,21 @@ document.addEventListener("DOMContentLoaded", () => {
         for (const agent of dependentAgents) {
             console.log(`⏳ Running dependent agent: ${agent.id} (depends on ${agent.dependsOn})`);
             
-            // Inject the background result into the prompt
-            if (agent.dependsOn && agentResults[agent.dependsOn]) {
+            // Handle special case: "all" dependency (Summary Agent)
+            if (agent.dependsOn === "all") {
+                // Consolidate all completed agent results
+                const completedAgents = agents.filter(a => a.result && !a.isBackgroundAgent);
+                const agentReport = completedAgents.map(a => 
+                    `${TRANSLATIONS[currentLang][a.id] || a.name} | ${formatRating(a.result.rating)} | ${a.result.explanation}`
+                ).join('\n\n');
+                
+                agent.prompt = agent.prompt.replace(
+                    '{INPUT_FROM_ALL_AGENTS}',
+                    agentReport
+                );
+            } 
+            // Handle regular dependency injection
+            else if (agent.dependsOn && agentResults[agent.dependsOn]) {
                 const backgroundResult = agentResults[agent.dependsOn];
                 agent.prompt = agent.prompt.replace(
                     `{INPUT_FROM_${agent.dependsOn.toUpperCase().replace(/-/g, '_')}}`,

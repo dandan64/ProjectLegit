@@ -28,6 +28,7 @@ let currentLang = 'en'; // Default
             // Agent Names
             source: "Source Credibility",
             author: "Author Analysis",
+            summary: "Executive Summary",
             consensus: "Cross-Verification",
             headline: "Headline Analysis",
             sources: "Source Attribution",
@@ -96,6 +97,7 @@ let currentLang = 'en'; // Default
             // Agent Names
             source: "אמינות המקור",
             author: "ניתוח המחבר",
+            summary: "סיכום ניהולי",
             consensus: "הצלבת מקורות",
             headline: "ניתוח כותרת",
             sources: "בדיקת ציטוטים",

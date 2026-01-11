@@ -217,6 +217,20 @@ function displayOverallScore(agents) {
     scoreLabel.style.color = color;
     scoreDisplay.style.display = "block";
 
+    // Display Executive Summary from agent result
+    const summaryAgent = agents.find(a => a.id === 'summary');
+    const executiveSummary = document.getElementById('executiveSummary');
+    
+    console.log('📝 Executive Summary Agent Result:', summaryAgent.result.explanation);
+
+    if (summaryAgent && summaryAgent.result) {
+        executiveSummary.style.display = 'block';
+        const summaryContent = executiveSummary.querySelector('.summary-content');
+        summaryContent.innerHTML = escapeHtml(summaryAgent.result.explanation);
+    } else {
+        executiveSummary.style.display = 'none';
+    }
+
     return overallScore;
 }
 

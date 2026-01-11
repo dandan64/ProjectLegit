@@ -24,6 +24,18 @@ document.addEventListener("DOMContentLoaded", () => {
         activateBtn.disabled = false;
     });
 
+    const overallScoreBox = document.getElementById('overallScore');
+    const scoreHeader = overallScoreBox.querySelector('.score-header');
+
+    // Initialize as collapsed
+    overallScoreBox.classList.add('collapsed');
+
+    // Click handler for accordion
+    scoreHeader.addEventListener('click', function() {
+        overallScoreBox.classList.toggle('expanded');
+        overallScoreBox.classList.toggle('collapsed');
+    });
+
     // global variable for export
     let analysisResults = null;
 
@@ -229,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
         agentGrid.innerHTML = "";
         
         const backgroundAgents = agents.filter(a => a.isBackgroundAgent);
-        const regularAgents = agents.filter(a => !a.isBackgroundAgent);
+        const regularAgents = agents.filter(a => !a.isBackgroundAgent && a.id !== 'summary');
 
         // Initial Layout: Priority Order
         const sorted = [...regularAgents].sort((a, b) => {
@@ -238,7 +250,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         for (const agent of sorted) {
-            if (agent.isBackgroundAgent) continue; // Skip background agents here
             const card = createAgentCard(agent);
             agentGrid.appendChild(card);
         }
@@ -350,11 +361,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             //new of trying to link quotes 
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
             // for bias agent
             let linkedExplanation = result.explanation;
             if(agent.id === 'bias') {
                 linkedExplanation = parseAndLinkifyQuotes(result.explanation, tab.id);
             }
+            
             //for consensus agent
             if (agent.id === 'consensus-format') {
                 linkedExplanation = parseAndLinkifySources(linkedExplanation);

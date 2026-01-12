@@ -176,7 +176,7 @@ function formatRating(rating) {
     return rating.replace(/_/g, ' ').toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-function displayOverallScore(agents) {
+function displayOverallScore(agents, summaryText = null) {
     let totalScore = 0;
     let totalWeight = 0;
     agents.forEach(agent => {
@@ -216,22 +216,6 @@ function displayOverallScore(agents) {
     
     scoreLabel.style.color = color;
     scoreDisplay.style.display = "block";
-
-    // Display Executive Summary from agent result
-    const summaryAgent = agents.find(a => a.id === 'summary');
-    console.log('HERE!!!!!!!1');
-    const executiveSummary = document.getElementById('executiveSummary');
-    console.log(summaryAgent);
-    
-    console.log('📝 Executive Summary Agent Result:', summaryAgent.content);
-
-    if (summaryAgent && summaryAgent.content) {
-        executiveSummary.style.display = 'block';
-        const summaryContent = executiveSummary.querySelector('.summary-content');
-        summaryContent.innerHTML = escapeHtml(summaryAgent.content);
-    } else {
-        executiveSummary.style.display = 'none';
-    }
 
     return overallScore;
 }
@@ -541,4 +525,72 @@ function parseAndLinkifySources(rawExplanation){
     safeText = safeText.replace(/\n/g, '<br>');
 
     return safeText;
+}
+
+async function generateFinalSummary(agents) {
+    const summaryDiv = document.querySelector('#scoreSummary');
+    
+    // 1. Show loading state in the UI
+    if(summaryDiv) {
+        summaryDiv.style.display = "block";
+        summaryDiv.innerHTML = `<span style="color:#9ca3af; font-style:italic;">✨ Summarizing...</span>`;
+    }
+
+    // 2. Find the Summary Agent Config (Safe Mode)
+    // We check 'a && a.id' to skip any empty slots in the array
+    const summaryAgentConfig = agents.find(a => a && a.id === 'summary');
+    
+    if (!summaryAgentConfig) {
+        console.error("Summary agent not found in configuration");
+        if(summaryDiv) summaryDiv.style.display = 'none';
+        return null;
+    }
+
+    // 3. Compile findings from the ALREADY COMPLETED agents
+    let findings = "";
+    agents.forEach(a => {
+        // Only include valid, completed agents (exclude summary and background)
+        if (a && a.id !== 'summary' && !a.isBackgroundAgent && a.result) {
+            findings += `- ${a.name} | ${a.result.rating} | ${a.result.explanation}\n`;
+        }
+    });
+
+    if (!findings) {
+        console.warn("No findings available for summary generation");
+        return null;
+    }
+
+    // 4. Inject findings into the prompt template
+    const prompt = summaryAgentConfig.prompt.replace('{INPUT_FROM_ALL_AGENTS}', findings);
+
+    try {
+        // 5. Call Gemini
+        const response = await chrome.runtime.sendMessage({
+            type: "CALL_GEMINI",
+            prompt: prompt,
+            useSearch: false
+        });
+
+        if (response.result) {
+            let finalSummary = response.result;
+            console.log("Raw summary response:", finalSummary);
+
+            // ✅ FIX: specific check to handle if Gemini returns an Object instead of String
+            if (typeof finalSummary === 'object') {
+                console.warn("Summary returned as Object, extracting text...", finalSummary);
+                // Try to find the text path, or fallback to stringify
+                finalSummary = finalSummary.candidates?.[0]?.content?.parts?.[0]?.text 
+                            || finalSummary.text 
+                            || JSON.stringify(finalSummary);
+            }
+
+            // Cleanup: Remove common prefixes like "Summary:" or "Verdict:"
+            summaryDiv.innerHTML = `<span>${finalSummary.replace(/^(Summary|Verdict|Analysis):/i, '').trim()}</span>`; 
+            
+        }
+    } catch (e) {
+        console.error("Summary generation failed", e);
+        if(summaryDiv) summaryDiv.textContent = "Error generating summary.";
+    }
+    return null;
 }

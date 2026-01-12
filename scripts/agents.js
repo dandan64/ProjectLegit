@@ -450,33 +450,28 @@ EXPLANATION: [ספק הסבר ברור ומבוסס היגיון (3-4 משפטי
             weight: 0.00,
             useSearch: false,
             dependsOn: "all",  // Special flag: runs after ALL other agents complete
-            content: "",
-            prompt: `You are an Executive Summary Agent. Your role is to synthesize findings from all analysis agents into a concise, actionable summary.
+             prompt: // `You are an Executive Summary Agent. Your role is to synthesize findings from all analysis agents into a concise, actionable summary.
 
-AGENT REPORTS (Name | Rating | Explanation):
-{INPUT_FROM_ALL_AGENTS}
+// AGENT REPORTS (Name | Rating | Explanation):
+// {INPUT_FROM_ALL_AGENTS}
 
-YOUR TASK:
-1. Identify the 2-3 most critical findings across all agents.
-2. Highlight patterns (e.g., "Multiple agents flagged bias", "Strong source credibility but weak headlines").
-3. Flag any red flags or contradictions between agents.
-4. Provide strengths (positive aspects) if any agents rated highly.
-5. Synthesize into 3-5 clear sentences that tell the complete story.
+// YOUR TASK:
+// 1. Identify the 2-3 most critical findings across all agents.
+// 2. Highlight patterns (e.g., "Multiple agents flagged bias", "Strong source credibility but weak headlines").
+// 3. Flag any red flags or contradictions between agents.
+// 4. Provide strengths (positive aspects) if any agents rated highly.
+// 5. Synthesize into 3-5 clear sentences that tell the complete story.
 
-CRITICAL OUTPUT RULES:
-- Be concise and actionable
-- Focus on patterns, not individual agents
-- Highlight the most important insight first
-- If conflicting ratings exist, note them (e.g., "Source credible but headline misleading")
+// CRITICAL OUTPUT RULES:
+// - Be concise and actionable
+// - Focus on patterns, not individual agents
+// - Highlight the most important insight first
+// - If conflicting ratings exist, note them (e.g., "Source credible but headline misleading")
 
-Rate as: CREDIBLE_OVERALL, MIXED_CREDIBILITY, QUESTIONABLE_OVERALL, or UNRELIABLE_OVERALL
+// FORMAT:
+// EXPLANATION: [Your 3-5 sentence synthesis that tells the complete story]`
 
-FORMAT:
-RATING: [your rating]
-KEY FINDINGS: [2-3 bullet points of most critical insights]
-RED FLAGS: [Any major issues detected, or "None identified"]
-STRENGTHS: [Positive aspects, or "Limited"]
-EXPLANATION: [Your 3-5 sentence synthesis that tells the complete story]`
+'Write me a 10 word poem about my friend Daniel Ben Zeev'
         }
     ];
 }

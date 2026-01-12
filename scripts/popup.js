@@ -150,6 +150,12 @@ document.addEventListener("DOMContentLoaded", () => {
             // Update export score
             analysisResults.score = finalScore;
 
+            const summaryText = await generateFinalSummary(agents);
+
+            if (summaryText) {
+                displayOverallScore(agents, summaryText);
+            }
+
             // 3. SAVE TO CACHE
             saveToCache(tab.url, pageData, agents, finalScore);
 
@@ -239,11 +245,16 @@ document.addEventListener("DOMContentLoaded", () => {
     async function runProgressiveAnalysis(agents) {
         const agentGrid = document.getElementById("agentGrid");
         agentGrid.innerHTML = "";
-        
-        const backgroundAgents = agents.filter(a => a.isBackgroundAgent);
-        const regularAgents = agents.filter(a => !a.isBackgroundAgent && a.id !== 'summary');
 
-        // Initial Layout: Priority Order
+        // 1. SPLIT AGENTS
+        // Filter out Background agents AND the Summary agent (it runs later)
+        // We use the flag 'isSummaryAgent' or check the ID explicitly
+        const activeAgents = agents.filter(a => a.id !== 'summary');
+
+        const backgroundAgents = activeAgents.filter(a => a.isBackgroundAgent);
+        const regularAgents = activeAgents.filter(a => !a.isBackgroundAgent);
+
+        // 2. Initial Layout: Create Cards for Regular Agents
         const sorted = [...regularAgents].sort((a, b) => {
             const priorityOrder = { high: 0, medium: 1, low: 2 };
             return priorityOrder[a.priority] - priorityOrder[b.priority];
@@ -256,12 +267,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const agentResults = {};
 
+        // 3. Define Batches
         const independentAgents = sorted.filter(a => !a.dependsOn);
-        const dependentAgents = sorted.filter(a => a.dependsOn);
-        
+        const dependentAgents = activeAgents.filter(a => a.dependsOn); // Includes background dependents
+
+        // --- PHASE A: Parallel Execution (Background + Independent) ---
         const parallelPromises = [
-            // Background agents
-            ...backgroundAgents.map(agent => (async () => {
+            // Background Agents
+            ...backgroundAgents.map(async agent => {
                 console.log(`⚙️ Running background agent: ${agent.id}`);
                 try {
                     const response = await chrome.runtime.sendMessage({
@@ -275,49 +288,44 @@ document.addEventListener("DOMContentLoaded", () => {
                     const result = parseAgentResponse(response.result);
                     agent.result = result;
                     agentResults[agent.id] = result;
-                    
                     console.log(`✅ Background agent complete: ${agent.id}`);
                 } catch (err) {
                     console.error(`❌ Background agent failed: ${agent.id}`, err);
                     agentResults[agent.id] = null;
                 }
-            })()),
+            }),
             
-            // Independent agents
-            ...independentAgents.map(agent => analyzeAgent(agent))
+            // Independent Regular Agents
+            ...independentAgents.map(async agent => {
+                await analyzeAgent(agent);
+                if (agent.result) agentResults[agent.id] = agent.result;
+            })
         ];
     
-        // Wait for all background + independent agents to complete
         await Promise.all(parallelPromises);
     
-        // --- STEP 2: RUN DEPENDENT AGENTS SEQUENTIALLY ---
+        // --- PHASE B: Sequential Execution (Dependent) ---
         console.log(`⏳ Running ${dependentAgents.length} dependent agents sequentially`);
+        
         for (const agent of dependentAgents) {
             console.log(`⏳ Running dependent agent: ${agent.id} (depends on ${agent.dependsOn})`);
             
-            // Handle special case: "all" dependency (Summary Agent)
-            if (agent.dependsOn === "all") {
-                // Consolidate all completed agent results
-                const completedAgents = agents.filter(a => a.result && !a.isBackgroundAgent);
-                const agentReport = completedAgents.map(a => 
-                    `${TRANSLATIONS[currentLang][a.id] || a.name} | ${formatRating(a.result.rating)} | ${a.result.explanation}`
-                ).join('\n\n');
+            // Inject Dependency
+            if (agent.dependsOn && agentResults[agent.dependsOn]) {
+                const parentResult = agentResults[agent.dependsOn];
+                const placeholder = `{INPUT_FROM_${agent.dependsOn.toUpperCase().replace(/-/g, '_')}}`;
+                agent.prompt = agent.prompt.replace(placeholder, parentResult.explanation);
                 
-                agent.prompt = agent.prompt.replace(
-                    '{INPUT_FROM_ALL_AGENTS}',
-                    agentReport
-                );
-            } 
-            // Handle regular dependency injection
-            else if (agent.dependsOn && agentResults[agent.dependsOn]) {
-                const backgroundResult = agentResults[agent.dependsOn];
-                agent.prompt = agent.prompt.replace(
-                    `{INPUT_FROM_${agent.dependsOn.toUpperCase().replace(/-/g, '_')}}`,
-                    backgroundResult.explanation
-                );
+                // If the dependent agent is a background agent, run it manually
+                if (agent.isBackgroundAgent) {
+                     // ... (copy background logic here if needed, or assume manual run)
+                } else {
+                    await analyzeAgent(agent);
+                    if (agent.result) agentResults[agent.id] = agent.result;
+                }
+            } else {
+                 console.warn(`Skipping ${agent.id} because dependency ${agent.dependsOn} is missing.`);
             }
-            
-            await analyzeAgent(agent);
         }
     }
 

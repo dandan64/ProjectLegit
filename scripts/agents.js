@@ -450,6 +450,7 @@ EXPLANATION: [ספק הסבר ברור ומבוסס היגיון (3-4 משפטי
             weight: 0.00,
             useSearch: false,
             dependsOn: "all",  // Special flag: runs after ALL other agents complete
+            content: "",
             prompt: `You are an Executive Summary Agent. Your role is to synthesize findings from all analysis agents into a concise, actionable summary.
 
 AGENT REPORTS (Name | Rating | Explanation):

@@ -219,14 +219,16 @@ function displayOverallScore(agents) {
 
     // Display Executive Summary from agent result
     const summaryAgent = agents.find(a => a.id === 'summary');
+    console.log('HERE!!!!!!!1');
     const executiveSummary = document.getElementById('executiveSummary');
+    console.log(summaryAgent);
     
-    console.log('📝 Executive Summary Agent Result:', summaryAgent.result.explanation);
+    console.log('📝 Executive Summary Agent Result:', summaryAgent.content);
 
-    if (summaryAgent && summaryAgent.result) {
+    if (summaryAgent && summaryAgent.content) {
         executiveSummary.style.display = 'block';
         const summaryContent = executiveSummary.querySelector('.summary-content');
-        summaryContent.innerHTML = escapeHtml(summaryAgent.result.explanation);
+        summaryContent.innerHTML = escapeHtml(summaryAgent.content);
     } else {
         executiveSummary.style.display = 'none';
     }

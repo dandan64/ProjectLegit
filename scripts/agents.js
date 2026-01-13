@@ -471,7 +471,7 @@ EXPLANATION: [ספק הסבר ברור ומבוסס היגיון (3-4 משפטי
 // FORMAT:
 // EXPLANATION: [Your 3-5 sentence synthesis that tells the complete story]`
 
-'Write me a 10 word poem about my friend Daniel Ben Zeev'
+'write a Haiku about the three frineds, Daniel sadMosh and eddie'
         }
     ];
 }

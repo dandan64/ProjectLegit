@@ -151,13 +151,15 @@ document.addEventListener("DOMContentLoaded", () => {
             analysisResults.score = finalScore;
 
             const summaryText = await generateFinalSummary(agents);
+            console.log("!!!!!!!!!!!!1 Final Summary Text:", summaryText);
+            analysisResults.summaryText = summaryText;
 
             if (summaryText) {
                 displayOverallScore(agents, summaryText);
             }
 
             // 3. SAVE TO CACHE
-            saveToCache(tab.url, pageData, agents, finalScore);
+            saveToCache(tab.url, pageData, agents, finalScore, summaryText);
 
         } catch (err) {
             console.error("Analysis error:", err);

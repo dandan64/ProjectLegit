@@ -4,13 +4,14 @@ function getCacheKey(url) {
     return `legit_cache_${url}`;
 }
 
-function saveToCache(url, pageData, agents, score) {
+function saveToCache(url, pageData, agents, score, summaryText) {
     const key = getCacheKey(url);
     const cacheData = {
         timestamp: Date.now(),
-        pageData: pageData,
-        agents: agents.filter(a => !a.isBackground), // Exclude background agents
-        score: score
+        pageData: pageData, 
+        agents: agents.filter(a => !a.isBackground || !a.id === 'summary'), // Exclude background agents
+        score: score,
+        summaryText : summaryText
     };
     chrome.storage.local.set({ [key]: cacheData });
 }
@@ -41,6 +42,9 @@ async function checkCache(url) {
 // --- Render cached results instantly ---
 
 function loadFromCache(cacheData, currentTabId) {
+    console.log("🔍 Loading from cache:", cacheData); // Debug log
+    console.log("📊 Cached score:", cacheData.score); // Debug log
+    console.log("📋 Cached agents:", cacheData.agents); // Debug log
     setupView.style.display = "none";
     resultsView.style.display = "flex";
 
@@ -63,14 +67,39 @@ function loadFromCache(cacheData, currentTabId) {
 
     // Render cards
     sorted.forEach(agent => {
-        if(!agent.isBackgroundAgent) {
+        if(!agent.isBackgroundAgent && agent.result) {
             const card = createCompletedAgentCard(agent, currentTabId);
             agentGrid.appendChild(card);
         }
     });
+    const scoreDisplay = document.getElementById("overallScore");
+    const scoreSpinner = document.getElementById("scoreSpinner");
+    const scoreValue = document.getElementById("scoreValue");
+    const scoreBar = document.getElementById("scoreBar");
+    
+    // Hide spinner, show value
+    scoreSpinner.style.display = "none";
+    scoreValue.style.display = "block";
+    
+    // Make sure the overall score box is visible
+    scoreDisplay.style.display = "block";
 
     displayOverallScore(cacheData.agents);
+
     attachQuoteLinkListeners();
+    console.log("summary text:" , cacheData.summaryText);
+    if(cacheData.summaryText) {
+        const summaryDiv = document.querySelector('#scoreSummary');
+        if(summaryDiv) {
+            summaryDiv.style.display = "block";
+            summaryDiv.innerHTML = `<span>${cacheData.summaryText}</span>`;
+        }
+
+        console.log("✅ Summary display: ", cacheData.summaryText); // Debug log
+        console.log("Curr URL:", currentTabId); // Debug log
+    }
+
+    console.log("✅ Score display completed"); // Debug log
 }
 
 // -- Helper: Re-sorts the grid based on current scores --
@@ -176,7 +205,7 @@ function formatRating(rating) {
     return rating.replace(/_/g, ' ').toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 }
 
-function displayOverallScore(agents, summaryText = null) {
+function displayOverallScore(agents) {
     let totalScore = 0;
     let totalWeight = 0;
     agents.forEach(agent => {
@@ -208,6 +237,7 @@ function displayOverallScore(agents, summaryText = null) {
     setTimeout(() => {
         scoreBar.style.width = `${overallScore}%`;
         scoreBar.style.backgroundColor = color;
+        scoreBar.style.boxShadow = `0 0 10px ${color}40`;
     }, 100);
 
     // TRANSLATED LABEL
@@ -243,6 +273,12 @@ function exportResultsToMarkdown(analysisResults) {
     md += `**Target URL:** ${analysisResults.page.url}\n`;
     md += `**Analyzed on:** ${analysisResults.timestamp}\n`;
     md += `**Overall Credibility Score:** ${analysisResults.score}/100\n\n`;
+
+    if(analysisResults.summaryText) {
+        md += `## Summary\n\n`;
+        md += `${analysisResults.summaryText}\n\n`;
+    }
+
     md += `--- \n\n`;
 
     analysisResults.agents.forEach(agent => {
@@ -584,8 +620,12 @@ async function generateFinalSummary(agents) {
                             || JSON.stringify(finalSummary);
             }
 
+            finalSummary = finalSummary.replace(/^(Summary|Verdict|Analysis):/i, '').trim();
+
             // Cleanup: Remove common prefixes like "Summary:" or "Verdict:"
-            summaryDiv.innerHTML = `<span>${finalSummary.replace(/^(Summary|Verdict|Analysis):/i, '').trim()}</span>`; 
+            summaryDiv.innerHTML = `<span>${finalSummary}</span>`; 
+
+            return finalSummary;
             
         }
     } catch (e) {

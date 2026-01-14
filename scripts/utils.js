@@ -88,7 +88,7 @@ function loadFromCache(cacheData, currentTabId) {
     displayOverallScore(cacheData.agents);
 
     attachQuoteLinkListeners();
-    
+
     console.log("summary text:" , cacheData.summaryText);
     if(cacheData.summaryText) {
         const summaryDiv = document.querySelector('#scoreSummary');
@@ -352,7 +352,13 @@ function createCompletedAgentCard(agent, tabId) {
             <div class="agent-explanation">${getRelevantCachedResult(agent, tabId)}</div>
     `;
     
-    card.addEventListener("click", () => card.classList.toggle("expanded"));
+    card.addEventListener("click", (e) => {
+        // Only toggle if clicking the header, not on links or other interactive elements
+        if (!e.target.closest('a') && !e.target.closest('.quote-link')) {
+            card.classList.toggle("expanded");
+        }
+    });
+    
     return card;
 }
 
@@ -387,6 +393,14 @@ function createAgentCard(agent) {
             <div class="agent-loading">${TRANSLATIONS[currentLang].analyzing}</div>
         </div>
     `;
+
+    card.addEventListener("click", (e) => {
+        // Only toggle if clicking the header, not on links or other interactive elements
+        if (!e.target.closest('a') && !e.target.closest('.quote-link')) {
+            card.classList.toggle("expanded");
+        }
+    });
+    
     return card;
 }
 

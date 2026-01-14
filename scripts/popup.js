@@ -14,15 +14,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const langEnBtn = document.getElementById("langEn");
     const langHeBtn = document.getElementById("langHe");
 
-    // Reset view when switching tabs
-    chrome.tabs.onActivated.addListener(async (activeInfo) => {
-        setupView.style.display = "flex";
-        resultsView.style.display = "none";
-        statusMsg.textContent = TRANSLATIONS[currentLang].readyMsg;
-        statusMsg.className = "status info";
-        statusMsg.style.opacity = "1";
-        activateBtn.disabled = false;
-    });
+    // // Reset view when switching tabs
+    // chrome.tabs.onActivated.addListener(async (activeInfo) => {
+    //     setupView.style.display = "flex";
+    //     resultsView.style.display = "none";
+    //     statusMsg.textContent = TRANSLATIONS[currentLang].readyMsg;
+    //     statusMsg.className = "status info";
+    //     statusMsg.style.opacity = "1";
+    //     activateBtn.disabled = false;
+    // });
 
     const overallScoreBox = document.getElementById('overallScore');
     const scoreHeader = overallScoreBox.querySelector('.score-header');

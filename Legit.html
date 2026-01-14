@@ -83,7 +83,7 @@
         }
 
         body {
-            font-family: 'Courier New', monospace;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             width: 100%;
             min-height: 100vh;
             margin: 0;
@@ -176,7 +176,7 @@
             border-radius: 8px;
             font-size: 14px;
             transition: all 0.2s;
-            font-family: 'Courier New', monospace;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             background: #f9fafb;
         }
 
@@ -194,7 +194,7 @@
             border-radius: 8px;
             font-size: 14px;
             font-weight: 600;
-            font-family: 'Courier New', monospace;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
@@ -327,15 +327,19 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
+            align-items: center;
+            justify-content: center;
         }
         
         .score-header h2 { 
             font-size: 14px; 
             text-transform: uppercase; 
-            letter-spacing: 1px;
+            letter-spacing: 0.7px;
             color: #36363c; 
             margin: 0;
             font-weight: 700;
+            text-align: center;
+            width: 100%;
         }
         
         #scoreLabel { 
@@ -343,11 +347,14 @@
             font-weight: 800; 
             display: block; 
             transition: color 0.5s ease, text-shadow 0.5s ease;
+            text-align: center;
+            justify-content: center;
         }
 
         .score-display {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 12px;
             margin-bottom: 4px;
         }
@@ -370,6 +377,7 @@
             min-width: 60px;
             line-height: 1;
             transition: color 0.5s ease, text-shadow 0.5s ease;
+            text-align: center;
         }
 
         .score-bar-container {
@@ -378,6 +386,7 @@
             background: #e2e8f0;
             border-radius: 4px;
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+            max-width: 150px;
         }
 
         #scoreBar {
@@ -409,25 +418,92 @@
             padding: 12px 16px;
         }
 
-        /* --- SUMMARY AGENT STYLES --- */
-
-        #scoreSummary {
-            display: none; /* Hidden by default, will be shown by JS */
-            margin-top: 12px;
-            padding: 12px 16px;
-            background: rgba(0, 255, 183, 0.016);
-            color: rgb(21, 21, 21);
-            font-size: 14px;
+        /* --- EXECUTIVE SUMMARY DESIGN --- */
+        .summary-container {
+            display: none; /* JS will toggle this to 'flex' */
+            flex-direction: row;
+            gap: 12px;
+            margin-top: 16px;
+            margin-bottom: 8px;
+            padding: 16px;
+            
+            /* The "Glass" Look */
+            background: linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(240, 253, 250, 0.8));
+            backdrop-filter: blur(8px);
+            
+            /* Borders */
+            border: 1px solid rgba(20, 184, 166, 0.2); /* Subtle teal border */
+            border-left: 4px solid #0f766e; /* Strong accent on left (Default Teal) */
             border-radius: 8px;
-            border: 1px solid rgba(15, 118, 110, 0.1);
-            animation: fadeIn 0.5s ease;
+            
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            animation: slideDown 0.4s ease-out;
         }
 
-        #scoreSummary.visible {
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
+        .summary-icon {
+            font-size: 20px;
+            padding-top: 2px; /* Align with title */
+            flex-shrink: 0;
         }
+
+        .summary-body {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .summary-title {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            color: #0f766e; /* Matches branding */
+            margin: 0;
+            opacity: 0.8;
+        }
+
+        .summary-content {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #1f2937;
+            font-weight: 500;
+        }
+
+        /* Optional: Highlight critical words if your agent adds <b> tags */
+        .summary-content b, .summary-content strong {
+            color: #0f766e;
+            font-weight: 700;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* SAFE (Green) */
+        .summary-container.safe {
+            border-left-color: #10b981;
+            background: linear-gradient(to right, rgba(236, 253, 245, 0.8), rgba(255, 255, 255, 0.9));
+        }
+        .summary-container.safe .summary-title { color: #047857; }
+
+        /* WARNING (Yellow/Orange) */
+        .summary-container.warning {
+            border-left-color: #f59e0b;
+            background: linear-gradient(to right, rgba(255, 251, 235, 0.8), rgba(255, 255, 255, 0.9));
+        }
+        .summary-container.warning .summary-title { color: #b45309; }
+
+        /* CRITICAL (Red) */
+        .summary-container.critical {
+            border-left-color: #ef4444;
+            background: linear-gradient(to right, rgba(254, 242, 242, 0.8), rgba(255, 255, 255, 0.9));
+        }
+        .summary-container.critical .summary-title { color: #b91c1c; }
+
+        /* DONE WITH EXECUTIVE SUMMARY DESIGN */
 
         .score-header {
             display: flex;
@@ -757,7 +833,7 @@
             border-radius: 6px;
             color: #9ca3af;
             transition: all 0.2s ease;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
 
         .lang-btn:hover {
@@ -867,7 +943,12 @@
                     <div id="scoreBar" style="width: 0%"></div>
                 </div>
             </div>
-            <div id="scoreSummary" class="summaryContainer">
+            <div id="scoreSummary" class="summary-container">
+                <div class="summary-body">
+                    <h3 class="summary-title">📝Analysis Summary</h3>
+                    <div class="summary-content" id="summaryText">
+                    </div>
+                </div>
             </div>
                 <div class="agentExplanations">
                     <div id="agentGrid"></div>

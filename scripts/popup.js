@@ -131,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
             scoreLabel.textContent = TRANSLATIONS[currentLang].calculating;
             scoreLabel.style.color = "#94a3b8"; 
 
-            const summaryDiv = document.querySelector("#scoreSummary");
+            const summaryDiv = document.getElementById("scoreSummary");
             summaryDiv.style.display = "none";
             
             displayPageHeader(pageData);
@@ -153,13 +153,11 @@ document.addEventListener("DOMContentLoaded", () => {
             // Update export score
             analysisResults.score = finalScore;
 
-            const summaryText = await generateFinalSummary(agents);
+            const summaryText = await generateFinalSummary(agents, finalScore);
             
             analysisResults.summaryText = summaryText;
 
-            if (summaryText) {
-                displayOverallScore(agents, summaryText);
-            }
+            displayOverallScore(agents);
 
             // 3. SAVE TO CACHE
             saveToCache(tab.url, pageData, agents, finalScore, summaryText);
@@ -387,12 +385,6 @@ document.addEventListener("DOMContentLoaded", () => {
             } 
 
             contentDiv.innerHTML = `<div class="agent-explanation">${linkedExplanation}</div>`;
-
-            card.addEventListener("click", (e) => {
-                if(e.target.classList.contains('quote-link')) return;
-                card.classList.toggle("expanded");
-
-            });
 
             setTimeout(() => attachQuoteLinkListeners(), 100);
 

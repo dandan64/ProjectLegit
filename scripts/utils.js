@@ -52,7 +52,7 @@ function loadFromCache(cacheData, currentTabId) {
 
     const header = document.getElementById("pageHeader");
     if (!document.getElementById("cacheBadge")) {
-        header.insertAdjacentHTML('beforeend', `<div id="cacheBadge" style="font-size:11px; color:#0d9488; margin-top:5px; font-weight:600;">⚡ Result from previous scan</div>`);
+        header.insertAdjacentHTML('beforeend', `<div id="cacheBadge" style="font-size:11px; color:#0d9488; margin-top:5px; font-weight:600;">♻️Result from previous scan</div>`);
     }
 
     const agentGrid = document.getElementById("agentGrid");
@@ -85,23 +85,27 @@ function loadFromCache(cacheData, currentTabId) {
     // Make sure the overall score box is visible
     scoreDisplay.style.display = "block";
 
-    displayOverallScore(cacheData.agents);
+    const overallScore = displayOverallScore(cacheData.agents);
 
     attachQuoteLinkListeners();
 
-    console.log("summary text:" , cacheData.summaryText);
     if(cacheData.summaryText) {
-        const summaryDiv = document.querySelector('#scoreSummary');
+        const summaryDiv = document.getElementById('scoreSummary');
         if(summaryDiv) {
+            if (overallScore >= 80) summaryDiv.classList.add('safe');
+            else if (overallScore >= 50) summaryDiv.classList.add('warning');
+            else summaryDiv.classList.add('critical');
+
             summaryDiv.style.display = "block";
-            summaryDiv.innerHTML = `<span>${cacheData.summaryText}</span>`;
+            summaryDiv.innerHTML = `
+                <div class="summary-body">
+                    <h3 class="summary-title">📝Analysis Summary</h3>
+                    <div class="summary-content" id="summaryText">
+                        <span>${cacheData.summaryText}</span>
+                    </div>
+                </div>`;
         }
-
-        console.log("✅ Summary display: ", cacheData.summaryText); // Debug log
-        console.log("Curr URL:", currentTabId); // Debug log
     }
-
-    console.log("✅ Score display completed"); // Debug log
 }
 
 // -- Helper: Re-sorts the grid based on current scores --
@@ -400,7 +404,7 @@ function createAgentCard(agent) {
             card.classList.toggle("expanded");
         }
     });
-    
+
     return card;
 }
 
@@ -579,13 +583,22 @@ function parseAndLinkifySources(rawExplanation){
     return safeText;
 }
 
-async function generateFinalSummary(agents) {
-    const summaryDiv = document.querySelector('#scoreSummary');
+async function generateFinalSummary(agents, finalScore) {
+
+    const summaryBox = document.getElementById('scoreSummary');
+
+    // Reset classes
+    summaryBox.className = 'summary-container'; 
+
+    // Add dynamic class
+    if (finalScore >= 80) summaryBox.classList.add('safe');
+    else if (finalScore >= 50) summaryBox.classList.add('warning');
+    else summaryBox.classList.add('critical');
     
     // 1. Show loading state in the UI
-    if(summaryDiv) {
-        summaryDiv.style.display = "block";
-        summaryDiv.innerHTML = `<span style="color:#9ca3af; font-style:italic;">✨ Summarizing...</span>`;
+    if(summaryBox) {
+        summaryBox.style.display = "block";
+        summaryBox.innerHTML = `<span style="color:#9ca3af; font-style:italic;">✨ Summarizing...</span>`;
     }
 
     // 2. Find the Summary Agent Config (Safe Mode)
@@ -594,7 +607,7 @@ async function generateFinalSummary(agents) {
     
     if (!summaryAgentConfig) {
         console.error("Summary agent not found in configuration");
-        if(summaryDiv) summaryDiv.style.display = 'none';
+        if(summaryBox) summaryBox.style.display = 'none';
         return null;
     }
 
@@ -639,14 +652,20 @@ async function generateFinalSummary(agents) {
             finalSummary = finalSummary.replace(/^(Summary|Verdict|Analysis):/i, '').trim();
 
             // Cleanup: Remove common prefixes like "Summary:" or "Verdict:"
-            summaryDiv.innerHTML = `<span>${finalSummary}</span>`; 
+            summaryBox.innerHTML = `
+                <div class="summary-body">
+                    <h3 class="summary-title">📝Analysis Summary</h3>
+                    <div class="summary-content" id="summaryText">
+                        <span>${finalSummary}</span>
+                    </div>
+                </div>`;
 
             return finalSummary;
             
         }
     } catch (e) {
         console.error("Summary generation failed", e);
-        if(summaryDiv) summaryDiv.textContent = "Error generating summary.";
+        if(summaryBox) summaryBox.textContent = "Error generating summary.";
     }
     return null;
 }

@@ -128,8 +128,49 @@ document.addEventListener("DOMContentLoaded", () => {
             scoreBar.style.backgroundColor = "#e5e7eb"; 
             
             const scoreLabel = document.getElementById("scoreLabel");
-            scoreLabel.textContent = TRANSLATIONS[currentLang].calculating;
-            scoreLabel.style.color = "#94a3b8"; 
+            scoreLabel.style.color = "#94a3b8";
+
+            const baseText = TRANSLATIONS[currentLang].calculating;
+            const letters = baseText.split('');
+
+            // 1. Create static spans (no animation initially)
+            const html = letters.map((letter) => {
+                // Handle spaces so they take up width
+                const content = letter === ' ' ? '&nbsp;' : letter;
+                return `<span class="jumping-letter">${content}</span>`;
+            }).join('');
+
+            scoreLabel.innerHTML = html;
+
+            // 2. The Logic: Trigger one letter at a time
+            const letterSpans = scoreLabel.querySelectorAll('.jumping-letter');
+            let currentIndex = 0;
+
+            // Clear any old interval if it exists
+            if (scoreLabel.dataset.animationInterval) {
+                clearInterval(parseInt(scoreLabel.dataset.animationInterval));
+            }
+
+            const jumpInterval = setInterval(() => {
+                // a. Remove 'active' from ALL letters to be safe
+                letterSpans.forEach(span => span.classList.remove('active'));
+
+                // b. Add 'active' to the CURRENT letter
+                if (letterSpans[currentIndex]) {
+                    letterSpans[currentIndex].classList.add('active');
+                }
+
+                // c. Move to next letter
+                currentIndex++;
+
+                // d. If we reached the end, reset to 0
+                if (currentIndex >= letterSpans.length) {
+                    currentIndex = 0;
+                }
+            }, 300); // 300ms matches the CSS animation duration exactly
+
+            // Save ID to stop it later
+            scoreLabel.dataset.animationInterval = jumpInterval; 
 
             const summaryDiv = document.getElementById("scoreSummary");
             summaryDiv.style.display = "none";

@@ -4,6 +4,20 @@ function getCacheKey(url) {
     return `legit_cache_${url}`;
 }
 
+function createJumpyCalculatingText(baseText, dotCount) {
+    const letters = baseText.split('');
+    const dots = '.'.repeat(dotCount);
+    
+    return letters.map((letter, index) => {
+        const delay = (index * 0.08) % 0.6; // Stagger each letter
+        return `<span style="
+            display: inline-block;
+            animation: jump 0.6s ease-in-out infinite;
+            animation-delay: ${delay}s;
+        ">${letter}</span>`;
+    }).join('') + dots;
+}
+
 function saveToCache(url, pageData, agents, score, summaryText) {
     const key = getCacheKey(url);
     const cacheData = {
@@ -230,6 +244,12 @@ function displayOverallScore(agents) {
 
     scoreSpinner.style.display = "none";
     scoreValue.style.display = "block";
+
+    // Stop the animation
+    if (scoreLabel.dataset.animationInterval) {
+        clearInterval(parseInt(scoreLabel.dataset.animationInterval));
+        delete scoreLabel.dataset.animationInterval;
+    }
 
     let color, labelKey, emoji;
     if (overallScore >= 80) { color = "#10b981"; labelKey = "HIGHLY_CREDIBLE"; emoji = "✅"; } 

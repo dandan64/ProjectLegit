@@ -349,6 +349,22 @@
             transition: color 0.5s ease, text-shadow 0.5s ease;
             text-align: center;
             justify-content: center;
+            min-height: 1.2em;
+        }
+
+        /* A single, slow, distinct jump */
+        @keyframes single-jump {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-10px); } /* Jump Up */
+            100% { transform: translateY(0); } /* Land Down */
+        }
+
+        .jumping-letter {
+            display: inline-block;
+        }
+
+        .jumping-letter.active {
+            animation: single-jump 0.3s ease-in-out; /* 0.3s duration */
         }
 
         .score-display {

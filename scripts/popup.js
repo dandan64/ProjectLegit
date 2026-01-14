@@ -130,6 +130,9 @@ document.addEventListener("DOMContentLoaded", () => {
             const scoreLabel = document.getElementById("scoreLabel");
             scoreLabel.textContent = TRANSLATIONS[currentLang].calculating;
             scoreLabel.style.color = "#94a3b8"; 
+
+            const summaryDiv = document.querySelector("#scoreSummary");
+            summaryDiv.style.display = "none";
             
             displayPageHeader(pageData);
 
@@ -151,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
             analysisResults.score = finalScore;
 
             const summaryText = await generateFinalSummary(agents);
-            console.log("!!!!!!!!!!!!1 Final Summary Text:", summaryText);
+            
             analysisResults.summaryText = summaryText;
 
             if (summaryText) {

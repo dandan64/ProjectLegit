@@ -72,6 +72,7 @@ function loadFromCache(cacheData, currentTabId) {
             agentGrid.appendChild(card);
         }
     });
+
     const scoreDisplay = document.getElementById("overallScore");
     const scoreSpinner = document.getElementById("scoreSpinner");
     const scoreValue = document.getElementById("scoreValue");
@@ -87,6 +88,7 @@ function loadFromCache(cacheData, currentTabId) {
     displayOverallScore(cacheData.agents);
 
     attachQuoteLinkListeners();
+    
     console.log("summary text:" , cacheData.summaryText);
     if(cacheData.summaryText) {
         const summaryDiv = document.querySelector('#scoreSummary');

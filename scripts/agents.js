@@ -165,6 +165,7 @@ SOURCES_LIST:
 - STATUS: [SUPPORTING/CONTRADICTING]
 - SOURCE_NAME: [e.g. BBC]
 - URL: [The actual link found in search] 
+- RELEVANT_QUOTE: [Copy a short, unique sentence (approx 10 words) from the source that proves the point. Do not use quotation marks.]
 
 ANALYSIS:
 [Write your 3-4 sentence analysis here. Do not worry about linking sources here, just summarize the consensus.]
@@ -188,12 +189,12 @@ INPUT DATA:
 INSTRUCTIONS:
 1. Read the "ANALYSIS" text.
 2. Read the "SOURCES_LIST".
-3. Re-write the analysis. Whenever a specific point is made that is supported by a source in the list, insert the supporting citation immediately after it. Whenever a point is contradicted by a source in the list, insert the contradicting citation immediately after it.
-4. Use at max 2 different sources per point.
+3. Re-write the analysis. Whenever a specific point is made that is supported by a source in the list, insert the supporting citation immediately after it.
+4. Use the "RELEVANT_QUOTE" field from the list to populate the quote section of the tag.
 
 REQUIRED CITATION INSERTION FORMAT:
-For supporting: [[SOURCE::Name::URL::SOURCE]]
-For contradicting: [[CONTRA::Name::URL::CONTRA]]
+For supporting: [[SOURCE::Name::URL::Quote::SOURCE]]
+For contradicting: [[CONTRA::Name::URL::Quote::CONTRA]]
 
 Final Output Structure:
 RATING: [Keep the original rating]

@@ -560,44 +560,119 @@ function attachQuoteLinkListeners() {
     });
 }
 
-function parseAndLinkifySources(rawExplanation){
+// function parseAndLinkifySources(rawExplanation){
+//     if (!rawExplanation) return "";
+
+//     // Step A: Security First (Escape ALL raw text)
+//     let safeText = escapeHtml(rawExplanation);
+//     // Step B: Link Parsing (Supporting)
+
+//     // Helper to generate Text Fragment URL
+//     const createFragmentUrl = (url, quote) => {
+//         let cleanUrl = url.trim();
+//         // Remove Google redirects if present
+//         if (cleanUrl.includes("/url?q=")) {
+//             cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
+//         }
+        
+//         // If we have a quote, append the text fragment
+//         if (quote && quote.trim().length > 5) {
+//             const cleanQuote = quote.trim();
+//             // We use encodeURIComponent to ensure special chars don't break the URL
+//             return `${cleanUrl}#:~:text=${encodeURIComponent(cleanQuote)}`;
+//         }
+//         return cleanUrl;
+//     };
+//     // Regex allows for optional spaces around the separators (::)
+//     const sourceRegex = /\[\[SOURCE::(.*?)::(.*?)::(.*?)::SOURCE\]\]/g;
+//     safeText = safeText.replace(sourceRegex, (match, title, url, quote) => {
+//         const finalUrl = createFragmentUrl(url, quote);
+//         let cleanTitle = title.trim();
+//         // Fix: Remove Google Redirects if present (cleaner links)
+//         // if (cleanUrl.includes("/url?q=")) {
+//         //     cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
+//         // }
+//         return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
+//                 <span class="source-icon">✓</span> ${escapeHtml(cleanTitle)}
+//             </a>`;
+//     });
+
+//     // Step C: Link Parsing (Contradicting)
+//     const contraRegex = /\[\[CONTRA::(.*?)::(.*?)::(.*?)::CONTRA\]\]/g;
+//     safeText = safeText.replace(contraRegex, (match, title, url, quote) => {
+//         const finalUrl = createFragmentUrl(url, quote);
+//         let cleanTitle = title.trim();
+//         // if (cleanUrl.includes("/url?q=")) {
+//         //     cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
+//         // }
+//         return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
+//                 <span class="source-icon">✗</span> ${escapeHtml(cleanTitle)}
+//             </a>`;
+//     });
+
+//     // Step D: Text Formatting (Crucial for readability!)
+//     // 1. Convert **Bold** to <strong>
+//     safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+//     // 2. Convert Newlines to <br> (This fixes the "messy block" look)
+//     safeText = safeText.replace(/\n/g, '<br>');
+
+//     return safeText;
+// }
+function parseAndLinkifySources(rawExplanation) {
     if (!rawExplanation) return "";
 
-    // Step A: Security First (Escape ALL raw text)
     let safeText = escapeHtml(rawExplanation);
-    // Step B: Link Parsing (Supporting)
-    // Regex allows for optional spaces around the separators (::)
-    const sourceRegex = /\[\[SOURCE::(.*?)::(.*?)::SOURCE\]\]/g;
-    safeText = safeText.replace(sourceRegex, (match, title, url) => {
+
+    const createFragmentUrl = (url, quote) => {
+        if (!url) return "";
         let cleanUrl = url.trim();
-        let cleanTitle = title.trim();
-        // Fix: Remove Google Redirects if present (cleaner links)
+        
+        // Remove Google redirects if present
         if (cleanUrl.includes("/url?q=")) {
             cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
         }
-        return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
+        
+        // --- HIGHLIGHT FIX ---
+        if (quote && quote.trim().length > 5) {
+            let cleanQuote = quote.trim();
+            
+            // 1. Remove surrounding quotes (The AI often outputs "Quote" instead of Quote)
+            cleanQuote = cleanQuote.replace(/^["']+|["']+$|["”]+$|^["“]+/g, '');
+            
+            // 2. Remove trailing punctuation which often breaks matches
+            cleanQuote = cleanQuote.replace(/[.,;:]$/, '');
+
+            // 3. Create the text fragment
+            // We use encodeURIComponent to ensure spaces and symbols don't break the link
+            return `${cleanUrl}#:~:text=${encodeURIComponent(cleanQuote)}`;
+        }
+        return cleanUrl;
+    };
+
+    // Step B: Link Parsing (Supporting)
+    const sourceRegex = /\[\[SOURCE::(.*?)::(.*?)::(.*?)::SOURCE\]\]/g;
+    safeText = safeText.replace(sourceRegex, (match, title, url, quote) => {
+        const finalUrl = createFragmentUrl(url, quote);
+        const cleanTitle = title.trim();
+        
+        return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
                 <span class="source-icon">✓</span> ${escapeHtml(cleanTitle)}
             </a>`;
     });
 
     // Step C: Link Parsing (Contradicting)
-    const contraRegex = /\[\[CONTRA::(.*?)::(.*?)::CONTRA\]\]/g;
-    safeText = safeText.replace(contraRegex, (match, title, url) => {
-        let cleanUrl = url.trim();
-        let cleanTitle = title.trim();
-        if (cleanUrl.includes("/url?q=")) {
-            cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
-        }
-        return `<a href="${escapeHtml(cleanUrl)}" target="_blank" rel="noopener noreferrer" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
+    const contraRegex = /\[\[CONTRA::(.*?)::(.*?)::(.*?)::CONTRA\]\]/g;
+    safeText = safeText.replace(contraRegex, (match, title, url, quote) => {
+        const finalUrl = createFragmentUrl(url, quote); 
+        const cleanTitle = title.trim();
+
+        return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
                 <span class="source-icon">✗</span> ${escapeHtml(cleanTitle)}
             </a>`;
     });
 
-    // Step D: Text Formatting (Crucial for readability!)
-    // 1. Convert **Bold** to <strong>
     safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
-    // 2. Convert Newlines to <br> (This fixes the "messy block" look)
     safeText = safeText.replace(/\n/g, '<br>');
 
     return safeText;

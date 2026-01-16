@@ -428,6 +428,7 @@ document.addEventListener("DOMContentLoaded", () => {
             contentDiv.innerHTML = `<div class="agent-explanation">${linkedExplanation}</div>`;
 
             setTimeout(() => attachQuoteLinkListeners(), 100);
+            setTimeout(() => attachSourceLinkListeners(), 100);
 
 
             card.classList.add("completed");

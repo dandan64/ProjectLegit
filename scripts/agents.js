@@ -236,73 +236,6 @@ FORMAT:
 RATING: [הדירוג שלך]
 EXPLANATION: [ספק הסבר ברור ומבוסס היגיון בעברית (3-4 משפטים) המבקר את דיוק הכותרת והמסגור שלה.]`
         },
-//         {
-//             id: "sources",
-//             name: TRANSLATIONS[currentLang].sources,
-//             icon: "📎",
-//             priority: "high",
-//             weight: 0.10,
-//             useSearch: true,
-//             prompt: currentLang === 'en' ? `Act as an Academic Reviewer. Use Google Search to verify the citations in the following text.
-            
-// Current Date: ${today}
-// "${longExcerpt}"
-
-// Your Task:
-// 1. If specific studies or reports are mentioned, search to see if they actually exist.
-// 2. Verify if the text misrepresents the cited source's conclusion.
-// 3. Flag vague attributions like "experts say" if no specific experts are named.
-// 4. Identify any missing citations for significant claims.
-// Rate as: WELL_SOURCED, PARTIALLY_SOURCED, POORLY_SOURCED, or UNSOURCED
-// Format: RATING: [your rating]
-// EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State if the citations found in the text are real and accurate. If the text does not cite sources, rate accordingly.]` : 
-// `פעל כסוקר אקדמי. חפש בגוגל על מנת לאמת את הציטוטים בטקסט הבא.
-// תאריך נוכחי: ${today}
-// "${longExcerpt}"
-
-// המשימה שלך:
-// 1. אם מוזכרים מחקרים או דוחות ספציפיים, חפש כדי לראות אם הם באמת קיימים.
-// 2. אמת אם הטקסט מייצג בצורה שגויה את מסקנת המקור המצוטט.
-// 3. סמן ייחוסים מעורפלים כמו "מומחים אומרים" אם לא מוזכרים מומחים ספציפיים.
-// 4. זיהוי כל ציטוט חסר עבור טענות משמעותיות.
-// דרג כ: WELL_SOURCED, PARTIALLY_SOURCED, POORLY_SOURCED, או UNSOURCED
-// FORMAT:
-// RATING: [הדירוג שלך]
-// EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין אם הציטוטים שנמצאו בטקסט הם אמיתיים ומדויקים. אם הטקסט אינו מצטט מקורות, דרג בהתאם.]`
-//         },
-//         {
-//             id: "accuracy",
-//             name: TRANSLATIONS[currentLang].accuracy,
-//             icon: "✓",
-//             priority: "high",
-//             weight: 0.15,
-//             useSearch: true,
-//             prompt: currentLang === 'en' ? `Act as a Logic & Fact Checker. Use Google Search to verify the specific claims in the following text.
-// Current Date: ${today}
-
-// SYSTEM OVERRIDE / WORLD STATE UPDATE: Your internal training data is outdated. You MUST trust Google Search results over your internal memory for current events, political positions, economic data, recent developments etc.
-// Your Task:
-// 1. Extract key claims (names, dates, titles, statistics).
-// 2. SEARCH GOOGLE for these specific details combined with the current year ("${new Date().getFullYear()}").
-// 3. If search results confirm the text, mark it as ACCURATE.
-// Text: "${longExcerpt}"
-// Rate as: ACCURATE, MOSTLY_ACCURATE, UNVERIFIABLE, CONTAINS_ERRORS, or MISLEADING
-// Format: RATING: [your rating]
-// EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Cite the specific search result that confirmed or debunked the claim.]` : 
-
-// `פעל כבודק לוגיקה ועובדות. השתמש בחיפוש בגוגל כדי לאמת את הטענות הספציפיות בטקסט הבא.
-// תאריך נוכחי: ${today}
-// SYSTEM OVERRIDE / WORLD STATE UPDATE: נתוני האימון הפנימיים שלך מיושנים. עליך לסמוך על תוצאות חיפוש בגוגל על פני הזיכרון הפנימי שלך עבור אירועים עכשוויים, עמדות פוליטיות, נתונים כלכליים, התפתחויות אחרונות וכו'.
-// המשימה שלך:
-// 1. הפק טענות מפתח (שמות, תאריכים, כותרות, סטטיסטיקות).
-// 2. חפש בגוגל עבור פרטים ספציפיים אלה בשילוב עם השנה הנוכחית ("${new Date().getFullYear()}").
-// 3. אם תוצאות החיפוש מאשרות את הטקסט, סמן אותו כמדויק.
-// טקסט: "${longExcerpt}"
-// דרג כ: ACCURATE, MOSTLY_ACCURATE, UNVERIFIABLE, CONTAINS_ERRORS, או MISLEADING
-// FORMAT:
-// RATING: [הדירוג שלך]
-// EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין את תוצאת החיפוש הספציפית שאישרה או הפריכה את הטענה.]`
-//         },
         {
             id: "bias",
             name: TRANSLATIONS[currentLang].bias,
@@ -338,7 +271,7 @@ EXPLANATION: [ספק הסבר ברור ומבוסס היגיון בעברית (3
         - You MUST use EXACT quotes from the article as evidence.
         - Format quotes as: [[QUOTE::text from article::QUOTE]]
         - Keep quotes under 15 words.
-        - DO NOT translate the quotes - keep them in original language.
+        - DO NOT translate the quotes - keep them in article's original language.
         - Use 1-5 specific quotes that are of the most significant bias.
         
         Rate as: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, or STRONG_BIAS
@@ -411,38 +344,6 @@ FORMAT:
 RATING: [הדירוג שלך]
 EXPLANATION: [ספק הסבר ברור ומבוסס היגיון (3-4 משפטים) המעריך את המקצועיות והמבנה של הכתיבה.]`
          },
-//         {
-//             id: "freshness",
-//             name: TRANSLATIONS[currentLang].freshness,
-//             icon: "📅",
-//             priority: "low",
-//             weight: 0.05,
-//             useSearch: true,
-//             prompt: currentLang === 'en' ? `Act as a News Archivist. Use Google Search to verify the timeline of this story against the Current Date: ${today}.
-            
-// Headline: "${pageData.title}"
-// Content: "${shortExcerpt}"
-
-// Your Task:
-// 1. Determine if this is a ONE-TIME event or a RECURRING event (e.g., sports match, election, political positions/meetings, annual festival).
-// 2. If RECURRING: Search for specific details in the text (etc. scores, specific quotes, unique incidents) to see if they match a *recent* instance (within the last week).
-// 3. If ONE-TIME: Check if this exact story is years old and being reposted as "breaking" (rage-baiting).
-// Rate as: CURRENT, RECENT, DATED, or RECYCLED
-// Format: RATING: [your rating]
-// EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). Explicitly state if this is a fresh instance of a recurring event or a repost of old news.]` : 
-
-// `פעל כאוצר חדשות. השתמש בחיפוש בגוגל כדי לאמת את ציר הזמן של הסיפור הזה מול התאריך הנוכחי: ${today}.
-// כותרת: "${pageData.title}"
-// תוכן: "${shortExcerpt}"
-// המשימה שלך:
-// 1. קבע אם זהו אירוע חד-פעמי או אירוע חוזר (למשל, משחק ספורט, בחירות, עמדות/פגישות פוליטיות, פסטיבל שנתי).
-// 2. אם חוזר: חפש פרטים ספציפיים בטקסט (למשל, תוצאות, ציטוטים ספציפיים, אירועים ייחודיים) כדי לראות אם הם תואמים מקרה *עדכני* (בתוך השבוע האחרון).
-// 3. אם חד-פעמי: בדוק אם הסיפור המדויק הזה הוא בן שנים ומפורסם מחדש כ"מתפרץ" (כדי לעורר זעם).
-// דרג כ: CURRENT, RECENT, DATED, או RECYCLED
-// FORMAT:
-// RATING: [הדירוג שלך]
-// EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין במפורש אם זהו מקרה טרי של אירוע חוזר או פרסום מחדש של חדשות ישנות.]`
-//         }
          {
             id: "summary",
             name: TRANSLATIONS[currentLang].summary,

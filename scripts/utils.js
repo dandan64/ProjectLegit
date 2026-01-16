@@ -102,11 +102,13 @@ function loadFromCache(cacheData, currentTabId) {
     const overallScore = displayOverallScore(cacheData.agents);
 
     attachQuoteLinkListeners();
+    attachSourceLinkListeners();
 
     if(cacheData.summaryText) {
         const summaryDiv = document.getElementById('scoreSummary');
         if(summaryDiv) {
             if (overallScore >= 80) summaryDiv.classList.add('safe');
+            else if (overallScore >= 60) summaryDiv.classList.add('caution');
             else if (overallScore >= 50) summaryDiv.classList.add('warning');
             else summaryDiv.classList.add('critical');
 
@@ -624,39 +626,50 @@ function parseAndLinkifySources(rawExplanation) {
 
     let safeText = escapeHtml(rawExplanation);
 
-    const createFragmentUrl = (url, quote) => {
+    const createFragmentUrl = (url, quote, type) => {
         if (!url) return "";
         let cleanUrl = url.trim();
         
-        // Remove Google redirects if present
+        // Remove Google redirects
         if (cleanUrl.includes("/url?q=")) {
             cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
         }
-        
-        // --- HIGHLIGHT FIX ---
-        if (quote && quote.trim().length > 5) {
-            let cleanQuote = quote.trim();
-            
-            // 1. Remove surrounding quotes (The AI often outputs "Quote" instead of Quote)
-            cleanQuote = cleanQuote.replace(/^["']+|["']+$|["”]+$|^["“]+/g, '');
-            
-            // 2. Remove trailing punctuation which often breaks matches
-            cleanQuote = cleanQuote.replace(/[.,;:]$/, '');
 
-            // 3. Create the text fragment
-            // We use encodeURIComponent to ensure spaces and symbols don't break the link
-            return `${cleanUrl}#:~:text=${encodeURIComponent(cleanQuote)}`;
+        // If we have a quote, build the custom URL
+        if (quote && quote.trim().length > 5) {
+            try {
+                // Check if URL is valid before parsing
+                const urlObj = new URL(cleanUrl);
+                
+                let cleanQuote = quote.trim()
+                    .replace(/^["'“]+|["'”]+$/g, '') // Remove surrounding quotes
+                    .replace(/[.,;:]$/, '');          // Remove trailing punctuation
+
+                // Add Legit Params
+                urlObj.searchParams.set('legit_quote', cleanQuote);
+                urlObj.searchParams.set('legit_type', type); // 'supporting' or 'contra'
+
+                return urlObj.toString();
+            } catch (e) {
+                console.warn("Invalid URL for parsing, returning raw:", cleanUrl);
+                // Fallback: If URL parsing fails, return raw URL without highlight
+                return cleanUrl;
+            }
         }
+        
         return cleanUrl;
     };
 
     // Step B: Link Parsing (Supporting)
     const sourceRegex = /\[\[SOURCE::(.*?)::(.*?)::(.*?)::SOURCE\]\]/g;
     safeText = safeText.replace(sourceRegex, (match, title, url, quote) => {
-        const finalUrl = createFragmentUrl(url, quote);
+        const finalUrl = createFragmentUrl(url, quote, 'supporting');
+
+        console.log('Creating supporting source FINAL URL:', finalUrl);
         const cleanTitle = title.trim();
-        
-        return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
+        const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
+
+        return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
                 <span class="source-icon">✓</span> ${escapeHtml(cleanTitle)}
             </a>`;
     });
@@ -664,10 +677,11 @@ function parseAndLinkifySources(rawExplanation) {
     // Step C: Link Parsing (Contradicting)
     const contraRegex = /\[\[CONTRA::(.*?)::(.*?)::(.*?)::CONTRA\]\]/g;
     safeText = safeText.replace(contraRegex, (match, title, url, quote) => {
-        const finalUrl = createFragmentUrl(url, quote); 
+        const finalUrl = createFragmentUrl(url, quote, 'contra'); 
         const cleanTitle = title.trim();
+        const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 
-        return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
+        return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
                 <span class="source-icon">✗</span> ${escapeHtml(cleanTitle)}
             </a>`;
     });
@@ -676,6 +690,98 @@ function parseAndLinkifySources(rawExplanation) {
     safeText = safeText.replace(/\n/g, '<br>');
 
     return safeText;
+}
+
+function attachSourceLinkListeners() {
+    document.querySelectorAll('.source-link').forEach(link => {
+        link.replaceWith(link.cloneNode(true));
+    });
+    
+    document.querySelectorAll('.source-link').forEach(link => {
+        link.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const quote = link.getAttribute('data-quote');
+            const sourceType = link.classList.contains('source-supporting') ? 'supporting' : 'contra';
+            const href = link.getAttribute('href');
+            
+            console.log('🔗 Source link clicked:', href);
+            console.log('📝 Quote to highlight:', quote);
+            
+            try {
+                // Open the new tab FIRST
+                const newTab = await chrome.tabs.create({ 
+                    url: href,
+                    active: true 
+                });
+                
+                console.log('📂 New tab opened:', newTab.id);
+                
+                if (!quote || quote.length < 2) {
+                    console.log('No quote to highlight');
+                    return;
+                }
+                
+                // Wait for the page to load
+                const waitForLoad = (tabId) => {
+                    return new Promise((resolve) => {
+                        const checkStatus = () => {
+                            chrome.tabs.get(tabId, (tab) => {
+                                if (chrome.runtime.lastError) {
+                                    resolve();
+                                    return;
+                                }
+                                if (tab.status === 'complete') {
+                                    console.log('✅ Tab fully loaded');
+                                    resolve();
+                                } else {
+                                    setTimeout(checkStatus, 100);
+                                }
+                            });
+                        };
+                        checkStatus();
+                    });
+                };
+                
+                // Wait for the new tab to load
+                await waitForLoad(newTab.id);
+                
+                // Small additional delay to ensure content script can execute
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Inject content script on new tab
+                try {
+                    await chrome.scripting.executeScript({
+                        target: { tabId: newTab.id },
+                        files: ['scripts/contentHighlighter.js']
+                    });
+                    console.log('✅ Content script injected');
+                } catch (err) {
+                    console.error('Failed to inject script:', err);
+                    return;
+                }
+                
+                // Send highlight message to NEW tab
+                chrome.tabs.sendMessage(newTab.id, {
+                    type: 'HIGHLIGHT_QUOTE',
+                    quote: quote,
+                    highlightType: sourceType
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.warn('Highlight failed:', chrome.runtime.lastError.message);
+                    } else if (response?.success) {
+                        console.log('✅ Quote highlighted on source page');
+                    } else {
+                        console.warn('⚠️ Quote not found on source page');
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error with source link:', error);
+            }
+        });
+    });
 }
 
 async function generateFinalSummary(agents, finalScore) {
@@ -687,7 +793,8 @@ async function generateFinalSummary(agents, finalScore) {
 
     // Add dynamic class
     if (finalScore >= 80) summaryBox.classList.add('safe');
-    else if (finalScore >= 50) summaryBox.classList.add('warning');
+    else if (finalScore >= 60) summaryBox.classList.add('caution');
+    else if (finalScore >= 40) summaryBox.classList.add('warning');
     else summaryBox.classList.add('critical');
     
     // 1. Show loading state in the UI

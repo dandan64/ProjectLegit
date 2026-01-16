@@ -2,7 +2,7 @@
 // ADVANCED contentHighlighter.js
 // ========================================
 
-function highlightAndScroll(searchText, index = 0) {
+function highlightAndScroll(searchText, index = 0, type = 'default') {
     console.log('🔍 Searching for quote:', searchText);
     
     // Remove previous highlights
@@ -51,7 +51,7 @@ function highlightAndScroll(searchText, index = 0) {
     const targetMatch = matches[Math.min(index, matches.length - 1)];
     
     // Highlight and Scroll
-    highlightNode(targetMatch.node, targetMatch.start, targetMatch.end);
+    highlightNode(targetMatch.node, targetMatch.start, targetMatch.end, type);
     
     const highlightedElement = document.querySelector('.legit-highlight');
     if (highlightedElement) {
@@ -145,9 +145,18 @@ function findTextInPage(query, options = { mode: 'exact' }) {
     return matches;
 }
 
-function highlightNode(textNode, start, end) {
+function highlightNode(textNode, start, end, type = 'default') {
     // Safety check: ensure the indices are valid for this node
     if (start < 0 || end > textNode.textContent.length || start >= end) return;
+
+    // Color definitions
+    const palettes = {
+        supporting: { bg: '#86efac', border: '#16a34a', shadow: 'rgba(22, 163, 74, 0.4)' }, // Green
+        contra:     { bg: '#fca5a5', border: '#dc2626', shadow: 'rgba(220, 38, 38, 0.4)' }, // Red
+        default:    { bg: '#fde047', border: '#ca8a04', shadow: 'rgba(234, 179, 8, 0.4)' }  // Yellow
+    };
+
+    const theme = palettes[type] || palettes.default;
 
     const text = textNode.textContent;
     const before = text.substring(0, start);
@@ -158,12 +167,14 @@ function highlightNode(textNode, start, end) {
     span.className = 'legit-highlight';
     // Inline styles ensure it works even if external CSS fails
     span.style.cssText = `
-        background-color: #f3ff47;
+        background-color: ${theme.bg};
         color: #000;
-        border: 2px solid #d6c50b;
+        border: 2px solid ${theme.border};
         border-radius: 2px;
-        box-shadow: 0 0 5px rgba(234, 179, 8, 0.4);
+        box-shadow: 0 0 5px ${theme.shadow};
         transition: all 0.5s ease;
+        cursor: pointer;
+        display: inline;
     `;
     span.textContent = highlighted;
     
@@ -173,9 +184,9 @@ function highlightNode(textNode, start, end) {
         style.id = 'legit-highlight-styles';
         style.textContent = `
             @keyframes pulse {
-                0% { background-color: #fef08a; transform: scale(1); }
-                50% { background-color: #f3ff47; transform: scale(1.1); }
-                100% { background-color: #fef08a; transform: scale(1); }
+                0% { background-color: ${theme.bg}; transform: scale(1); }
+                50% { background-color: ${theme.bg}; transform: scale(1.1); }
+                100% { background-color: ${theme.bg}; transform: scale(1); }
             }
         `;
         document.head.appendChild(style);
@@ -201,7 +212,7 @@ function clearHighlights() {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'HIGHLIGHT_QUOTE') {
-        const success = highlightAndScroll(message.quote, message.index || 0);
+        const success = highlightAndScroll(message.quote, message.index || 0, message.highlightType || 'default');
         sendResponse({ success });
     } else if (message.type === 'CLEAR_HIGHLIGHTS') {
         clearHighlights();

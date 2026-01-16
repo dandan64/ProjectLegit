@@ -505,7 +505,14 @@
         }
         .summary-container.safe .summary-title { color: #047857; }
 
-        /* WARNING (Yellow/Orange) */
+        /* CAUTION (Yellow) */
+        .summary-container.caution {
+            border-left-color: #eff613;
+            background: linear-gradient(to right, rgba(255, 255, 235, 0.8), rgba(255, 255, 255, 0.9));
+        }
+        .summary-container.caution .summary-title { color: #c5c505; }
+
+        /* WARNING (Orange) */
         .summary-container.warning {
             border-left-color: #f59e0b;
             background: linear-gradient(to right, rgba(255, 251, 235, 0.8), rgba(255, 255, 255, 0.9));

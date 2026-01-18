@@ -352,11 +352,10 @@
             min-height: 1.2em;
         }
 
-        /* A single, slow, distinct jump */
-        @keyframes single-jump {
+        /* @keyframes single-jump {
             0% { transform: translateY(0); }
-            50% { transform: translateY(-10px); } /* Jump Up */
-            100% { transform: translateY(0); } /* Land Down */
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0); }  
         }
 
         .jumping-letter {
@@ -364,7 +363,23 @@
         }
 
         .jumping-letter.active {
-            animation: single-jump 0.3s ease-in-out; /* 0.3s duration */
+            animation: single-jump 0.3s ease-in-out;
+        } */
+
+        @keyframes wave-jump {
+            0% { transform: translateY(0); color: #94a3b8; /* Original text color */ }
+            50% { transform: translateY(-10px); color: #0fbd83; /* Green at peak */ }
+            100% { transform: translateY(0); color: #94a3b8; }
+        }
+
+        .jumping-letter {
+            display: inline-block;
+            /* No animation by default */
+        }
+
+        .jumping-letter.active {
+            /* We keep the animation duration constant (e.g. 0.4s) for the jump itself */
+            animation: wave-jump 0.4s ease-in-out;
         }
 
         .score-display {

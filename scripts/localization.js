@@ -13,7 +13,7 @@ let currentLang = 'en'; // Default
             getKey: "Get one free",
             analysis: "🔍 Starting analysis...",
             overallScoreTitle: "Overall Legitimacy Score",
-            newScanBtn: "🔄 New Analysis",
+            newScanBtn: "✨ New Analysis",
             exportBtn: "📥 Export Results",
             
             // Status & Errors
@@ -82,7 +82,7 @@ let currentLang = 'en'; // Default
             getKey: "השג אחד בחינם",
             analysis: "🔍 מתחיל ניתוח...",
             overallScoreTitle: "ציון אמינות כללי",
-            newScanBtn: "🔄 ניתוח חדש",
+            newScanBtn: "✨ ניתוח חדש",
             exportBtn: "📥 ייצוא תוצאות",
             
             // Status & Errors

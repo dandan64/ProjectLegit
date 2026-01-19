@@ -74,8 +74,6 @@
             transform: scale(0.98);
         }
 
-
-
         * {
             margin: 0;
             padding: 0;
@@ -818,17 +816,6 @@
             transform: scale(1.02);
             box-shadow: 0 6px 20px rgba(15, 118, 110, 0.3);
         }
-        
-        #exportBtn {
-            background: white;
-            color: #0f766e;
-            border: 2px solid #0f766e;
-        }
-        #exportBtn:hover:not(:disabled) {
-            background: #f0fdfa; color: #134e4a;
-            transform: scale(1.02);
-            box-shadow: 0 6px 20px rgba(15, 118, 110, 0.3);
-        }
 
         /* Language Switcher - Fixed Top Left */
         .lang-switch {
@@ -906,6 +893,30 @@
         body.rtl .score-header h2 { letter-spacing: 0; } /* Hebrew doesn't need letter spacing */
         body.rtl .score-spinner { margin-right: 0; margin-left: 12px; border-left-color: rgba(20, 184, 166, 0.1); border-right-color: #0f766e; }
 
+        #reanalyzeBtn {
+            background: rgb(245, 255, 251);
+            color: #115e59; 
+            border: 2px solid #115e59;
+        }
+
+        #reanalyzeBtn:hover:not(:disabled) {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(64, 163, 2, 0.2);
+        }
+
+        #reanalyzeBtn:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        #reanalyzeBtn:disabled {
+            background: #d1d5db;
+            color: #5e7c6c;
+            border: none;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
     </style>
 </head>
 <body>
@@ -981,10 +992,10 @@
 
         <div class="action-buttons">
             <button id="newAnalysisBtn" data-i18n="newScanBtn">
-                🔄 New Analysis
+                ✨ New Analysis
             </button>
-            <button id="exportBtn" data-i18n="exportBtn">
-                📥 Export Results
+            <button id="reanalyzeBtn" data-i18n="reanalyzeBtn">
+                🔄 Re-Analyze Page
             </button>
         </div>
     </div>

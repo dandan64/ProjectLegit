@@ -14,16 +14,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const langEnBtn = document.getElementById("langEn");
     const langHeBtn = document.getElementById("langHe");
 
-    // // Reset view when switching tabs
-    // chrome.tabs.onActivated.addListener(async (activeInfo) => {
-    //     setupView.style.display = "flex";
-    //     resultsView.style.display = "none";
-    //     statusMsg.textContent = TRANSLATIONS[currentLang].readyMsg;
-    //     statusMsg.className = "status info";
-    //     statusMsg.style.opacity = "1";
-    //     activateBtn.disabled = false;
-    // });
-
     const overallScoreBox = document.getElementById('overallScore');
     const scoreHeader = overallScoreBox.querySelector('.score-header');
 
@@ -88,10 +78,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- MAIN LOGIC ---
 
     async function startAnalysis() {
-        showStatus(TRANSLATIONS[currentLang].analysis, "info");
-        loader.style.display = "block";
-        activateBtn.disabled = true;
-
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             if (!tab) throw new Error("No active tab found");
@@ -109,6 +95,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // 2. FRESH ANALYSIS
+            showStatus(TRANSLATIONS[currentLang].analysis, "info");
+            loader.style.display = "block";
+            activateBtn.disabled = true;
+
             const pageData = await extractPageData(tab);
             
             // Check if page extraction actually got text
@@ -416,18 +406,41 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    document.getElementById("exportBtn")?.addEventListener("click", () => exportResultsToMarkdown(analysisResults));
+    document.getElementById('reanalyzeBtn')?.addEventListener('click', async () => {
+        // re-set UI
+        const scoreBox = document.getElementById('overallScore');
+        scoreBox.classList.remove('expanded');
+        
+        const btn = document.getElementById('reanalyzeBtn');
+
+        btn.disabled = true;
+        btn.innerHTML = 'Re-analyzing...';
+
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            
+            if (tab && tab.url) {
+                await removeFromCache(tab.url);
+                await startAnalysis();
+            }
+        } catch (error) {
+            console.error("Re-analysis failed:", error);
+        } finally {
+            btn.disabled = false;
+            // Translate back or hardcode text
+            const originalText = TRANSLATIONS && TRANSLATIONS[currentLang] 
+                ? TRANSLATIONS[currentLang].reanalyzeBtn 
+                : "🔄Re-Analyze Page";
+            btn.innerHTML = originalText || "🔄 Re-Analyze Page";
+        }
+    });
 
     // Updated Reset Functionality with Cache Clearing
     document.getElementById("newAnalysisBtn")?.addEventListener("click", () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if(tabs[0]) {
                 const url = tabs[0].url;
-                
-                // 1. Clear Cache for this URL
-                removeFromCache(url);
-                
-                // 2. Clear UI Logic
+            
                 setupView.style.display = "flex";
                 resultsView.style.display = "none";
                 statusMsg.style.opacity = "0";

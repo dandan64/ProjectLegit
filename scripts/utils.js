@@ -723,32 +723,37 @@ function attachSourceLinkListeners() {
                     return;
                 }
                 
-                // Wait for the page to load
-                const waitForLoad = (tabId) => {
-                    return new Promise((resolve) => {
-                        const checkStatus = () => {
-                            chrome.tabs.get(tabId, (tab) => {
-                                if (chrome.runtime.lastError) {
-                                    resolve();
-                                    return;
-                                }
-                                if (tab.status === 'complete') {
-                                    console.log('✅ Tab fully loaded');
-                                    resolve();
-                                } else {
-                                    setTimeout(checkStatus, 100);
-                                }
+                try {
+                    await chrome.scripting.executeScript({
+                        target: { tabId: newTab.id },
+                        args: [quote],
+                        func: (textToFind) => {
+                            return new Promise((resolve) => {
+                                // A. Helper to check if text exists yet
+                                const hasText = () => document.body && document.body.innerText.includes(textToFind);
+
+                                if (hasText()) return resolve();
+
+                                // B. If not, watch for changes
+                                const observer = new MutationObserver(() => {
+                                    if (hasText()) {
+                                        observer.disconnect();
+                                        resolve();
+                                    }
+                                });
+
+                                // C. Start watching the document root
+                                observer.observe(document.documentElement, {
+                                    childList: true,
+                                    subtree: true,
+                                    characterData: true
+                                });
                             });
-                        };
-                        checkStatus();
+                        }
                     });
-                };
-                
-                // Wait for the new tab to load
-                await waitForLoad(newTab.id);
-                
-                // Small additional delay to ensure content script can execute
-                await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (err) {
+                    console.error('Error waiting for text:', err);
+                }
                 
                 // Inject content script on new tab
                 try {
@@ -870,4 +875,71 @@ async function generateFinalSummary(agents, finalScore) {
         if(summaryBox) summaryBox.textContent = "Error generating summary.";
     }
     return null;
+}
+
+function startCalculatingAnimation(container, text) {
+    // 1. Setup HTML structure
+    const letters = text.split('');
+    const html = letters.map((letter) => {
+        const content = letter === ' ' ? '&nbsp;' : letter;
+        return `<span class="jumping-letter">${content}</span>`;
+    }).join('');
+
+    container.innerHTML = html;
+    container.style.color = "#94a3b8"; // Reset color to gray
+
+    const letterSpans = container.querySelectorAll('.jumping-letter');
+    let currentIndex = 0;
+
+    // Helper: Clean up CSS classes automatically
+    letterSpans.forEach(span => {
+        span.addEventListener('animationend', () => {
+            span.classList.remove('active');
+        });
+    });
+
+    // Reset Flags
+    container.dataset.stopAnimation = 'false';
+    if (container.dataset.animationTimeout) {
+        clearTimeout(parseInt(container.dataset.animationTimeout));
+    }
+
+    // 2. The Recursive Loop
+    function triggerNextLetter() {
+        // Check stop flag or if element was removed
+        if (!document.body.contains(container) || container.dataset.stopAnimation === 'true') return;
+
+        // Reset index at end of word
+        if (currentIndex >= letterSpans.length) {
+            currentIndex = 0;
+            container.dataset.animationTimeout = setTimeout(triggerNextLetter, 1000); // Pause before restarting
+            return;
+        }
+
+        // Trigger Animation
+        const span = letterSpans[currentIndex];
+        span.classList.remove('active');
+        void span.offsetWidth; // Force reflow
+        span.classList.add('active');
+
+        // Calculate Delay (Wave Effect)
+        let delayToNext = 150; // Standard speed
+        if (currentIndex >= letterSpans.length - 3) {
+            delayToNext = 300; // Slow down at end
+        }
+
+        currentIndex++;
+        container.dataset.animationTimeout = setTimeout(triggerNextLetter, delayToNext);
+    }
+
+    // Start!
+    triggerNextLetter();
+
+    // 3. Return a clean "Stop" function
+    return function stop() {
+        container.dataset.stopAnimation = 'true';
+        if (container.dataset.animationTimeout) {
+            clearTimeout(parseInt(container.dataset.animationTimeout));
+        }
+    };
 }

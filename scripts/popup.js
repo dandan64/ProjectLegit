@@ -130,69 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const scoreLabel = document.getElementById("scoreLabel");
             scoreLabel.style.color = "#94a3b8";
 
-            const baseText = TRANSLATIONS[currentLang].calculating;
-            const letters = baseText.split('');
-
-            // 1. Render static spans
-            const html = letters.map((letter) => {
-                const content = letter === ' ' ? '&nbsp;' : letter;
-                return `<span class="jumping-letter">${content}</span>`;
-            }).join('');
-
-            scoreLabel.innerHTML = html;
-
-            const letterSpans = scoreLabel.querySelectorAll('.jumping-letter');
-            let currentIndex = 0;
-            let isAnimating = true;
-
-            // Helper to remove 'active' class after animation ends
-            // This prevents the class from sticking if the JS loop is faster than CSS
-            letterSpans.forEach(span => {
-                span.addEventListener('animationend', () => {
-                    span.classList.remove('active');
-                });
-            }); 
-
-            // 2. The Wave Loop function
-            function triggerNextLetter() {
-                // Stop if the user navigated away or analysis finished
-                if (!document.body.contains(scoreLabel) || scoreLabel.dataset.stopAnimation === 'true') return;
-
-                // Reset index if we reached the end
-                if (currentIndex >= letterSpans.length) {
-                    currentIndex = 0;
-                    // Optional: Pause briefly between full words?
-                    setTimeout(triggerNextLetter, 1000); 
-                    return;
-                }
-
-                // Trigger the jump
-                const span = letterSpans[currentIndex];
-                span.classList.remove('active'); // reset to be safe
-                void span.offsetWidth; // force reflow (allows restarting animation instantly)
-                span.classList.add('active');
-
-                // 3. Calculate Delay for the NEXT letter
-                // Default speed: Fast (e.g., 100ms) for a wave effect
-                let delayToNext = 150; 
-
-                // If we are in the last 3 letters, slow down significantly
-                if (currentIndex >= letterSpans.length - 3) {
-                    delayToNext = 300; // Slow down the end
-                }
-
-                currentIndex++;
-
-                // Recursive call
-                scoreLabel.dataset.animationTimeout = setTimeout(triggerNextLetter, delayToNext);
-            }
-
-            // Clear old timers if re-running
-            if (scoreLabel.dataset.animationTimeout) clearTimeout(parseInt(scoreLabel.dataset.animationTimeout));
-            scoreLabel.dataset.stopAnimation = 'false';
-
-            // Start the loop
-            triggerNextLetter();
+            stopAnimation = startCalculatingAnimation(scoreLabel, TRANSLATIONS[currentLang].calculating);
 
             const summaryDiv = document.getElementById("scoreSummary");
             summaryDiv.style.display = "none";
@@ -211,11 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             await runProgressiveAnalysis(agents);
 
-            // Stop the calculating animation
-            scoreLabel.dataset.stopAnimation = 'true';
-            if (scoreLabel.dataset.animationTimeout) {
-                clearTimeout(parseInt(scoreLabel.dataset.animationTimeout));
-            }
+            if (stopAnimation) stopAnimation();
             
             const finalScore = displayOverallScore(agents);
             

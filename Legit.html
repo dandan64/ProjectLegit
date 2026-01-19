@@ -352,20 +352,6 @@
             min-height: 1.2em;
         }
 
-        /* @keyframes single-jump {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0); }  
-        }
-
-        .jumping-letter {
-            display: inline-block;
-        }
-
-        .jumping-letter.active {
-            animation: single-jump 0.3s ease-in-out;
-        } */
-
         @keyframes wave-jump {
             0% { transform: translateY(0); color: #94a3b8; /* Original text color */ }
             50% { transform: translateY(-10px); color: #0fbd83; /* Green at peak */ }
@@ -494,13 +480,13 @@
             opacity: 0.8;
         }
 
-        .summary-content {
+        /* .summary-content {
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             font-size: 14px;
             line-height: 1.5;
             color: #1f2937;
             font-weight: 500;
-        }
+        } */
 
         /* Optional: Highlight critical words if your agent adds <b> tags */
         .summary-content b, .summary-content strong {
@@ -643,7 +629,7 @@
         .summary-content {
             font-size: 13px;
             line-height: 1.6;
-            color: #374151;
+            color: #1f242d;
             font-weight: 500;
         }
 
@@ -795,12 +781,12 @@
         .rating-badge.rating-accurate, .rating-badge.rating-mostly_accurate, .rating-badge.rating-balanced,
         .rating-badge.rating-professional, .rating-badge.rating-current, .rating-badge.rating-expert,
         .rating-badge.rating-corroborated, .rating-badge.rating-plausible, .rating-badge.rating-recent,
-        .rating-badge.rating-journalist {
+        .rating-badge.rating-neutral, .rating-badge.rating-journalist {
             background: rgba(16, 185, 129, 0.15); color: #065f46; border-color: rgba(16, 185, 129, 0.3);
         }
 
         /* Yellow */
-        .rating-badge.rating-neutral, .rating-badge.rating-partially_sourced, .rating-badge.rating-adequate,
+        .rating-badge.rating-partially_sourced, .rating-badge.rating-adequate,
         .rating-badge.rating-citizen_journalist, .rating-badge.rating-unique_reporting, .rating-badge.rating-slight_bias,
         .rating-badge.rating-dated {
             background: rgba(219, 234, 8, 0.15); color: #7e7a0c; border-color: rgba(227, 234, 8, 0.3);

@@ -148,7 +148,6 @@ If the date is the same as today, treat this as "Breaking News".
 OUTPUT REQUIREMENT:
 You must output a JSON-like list of sources you found, followed by your analysis.
 Do NOT use citation numbers like [1]. Use the full URL.
-Do NOT add to the SOURCES_LIST a source with the same domain name as ${pageData.domain}.
 
 --- SCORING CRITERIA ---
 - CORROBORATED: Multiple independent Tier-1 outlets report the same Atomic Facts.
@@ -165,7 +164,7 @@ SOURCES_LIST:
 - STATUS: [SUPPORTING/CONTRADICTING]
 - SOURCE_NAME: [e.g. BBC]
 - URL: [The actual link found in search] 
-- RELEVANT_QUOTE: [Copy a short, unique sentence (approx 10 words) from the source that proves the point. Do not use quotation marks.]
+- RELEVANT_QUOTE: [Quote an exact short sentence (approx. 10-15 words) from the source that proves the point. Do not use quotation marks.]
 
 ANALYSIS:
 [Write your 3-4 sentence analysis here. Do not worry about linking sources here, just summarize the consensus.]
@@ -191,6 +190,9 @@ INSTRUCTIONS:
 2. Read the "SOURCES_LIST".
 3. Re-write the analysis. Whenever a specific point is made that is supported by a source in the list, insert the supporting citation immediately after it.
 4. Use the "RELEVANT_QUOTE" field from the list to populate the quote section of the tag.
+5. Add at MAX 2 citation per point, and DO NOT use the same source twice for the same point. 
+6. If possible, DO NOT use the same source twice in the entire analysis.
+7. DO NOT use sources in SOURCES_LIST with a similar name to the original source name (e.g., "ynet.co.il" is similar to "ynetnews.com"). Original source name: ${pageData.domain}.
 
 REQUIRED CITATION INSERTION FORMAT:
 For supporting: [[SOURCE::Name::URL::Quote::SOURCE]]

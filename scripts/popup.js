@@ -120,6 +120,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const scoreLabel = document.getElementById("scoreLabel");
             scoreLabel.style.color = "#94a3b8";
 
+            // RESET: Remove the final style so "Calculating..." looks normal
+            scoreLabel.classList.remove('score-final'); 
+            scoreLabel.style.backgroundImage = '';     
+            scoreLabel.style.filter = '';
+
             stopAnimation = startCalculatingAnimation(scoreLabel, TRANSLATIONS[currentLang].calculating);
 
             const summaryDiv = document.getElementById("scoreSummary");
@@ -149,8 +154,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const summaryText = await generateFinalSummary(agents, finalScore);
             
             analysisResults.summaryText = summaryText;
-
-            displayOverallScore(agents);
 
             // 3. SAVE TO CACHE
             saveToCache(tab.url, pageData, agents, finalScore, summaryText);

@@ -228,6 +228,7 @@ function formatRating(rating) {
 }
 
 function displayOverallScore(agents) {
+    // ... (Your existing calculation logic) ...
     let totalScore = 0;
     let totalWeight = 0;
     agents.forEach(agent => {
@@ -247,32 +248,79 @@ function displayOverallScore(agents) {
     scoreSpinner.style.display = "none";
     scoreValue.style.display = "block";
 
-    // Stop the animation
+    // Stop Animation
     if (scoreLabel.dataset.animationInterval) {
+        if (scoreLabel.dataset.stopAnimation === 'false') {
+             scoreLabel.dataset.stopAnimation = 'true';
+        }
         clearInterval(parseInt(scoreLabel.dataset.animationInterval));
         delete scoreLabel.dataset.animationInterval;
     }
 
-    let color, labelKey, emoji;
-    if (overallScore >= 80) { color = "#10b981"; labelKey = "HIGHLY_CREDIBLE"; emoji = "✅"; } 
-    else if (overallScore >= 60) { color = "#e0d212ff"; labelKey = "CREDIBLE"; emoji = "⭐"; } 
-    else if (overallScore >= 40) { color = "#f59e0b"; labelKey = "QUESTIONABLE"; emoji = "⚠️"; } 
-    else { color = "#ef4444"; labelKey = "UNRELIABLE"; emoji = "🚨"; }
+    // --- DESIGN LOGIC ---
+    let color, gradient, labelKey, emoji;
+
+    if (overallScore >= 80) { 
+        color = "#10b981"; 
+        // Vibrant Emerald Gradient
+        gradient = "linear-gradient(135deg, #34d399 0%, #047857 100%)";
+        labelKey = "HIGHLY_CREDIBLE"; 
+        emoji = "✅"; 
+    } 
+    else if (overallScore >= 60) { 
+        color = "#d9bc00"; 
+        // Rich Gold Gradient
+        gradient = "linear-gradient(135deg, #fdfd02 0%, #d8b400 100%)";
+        labelKey = "CREDIBLE"; 
+        emoji = "⭐"; 
+    } 
+    else if (overallScore >= 40) { 
+        color = "#f97316"; 
+        // Burnt Orange Gradient
+        gradient = "linear-gradient(135deg, #fb923c 0%, #9a3412 100%)";
+        labelKey = "QUESTIONABLE"; 
+        emoji = "⚠️"; 
+    } 
+    else { 
+        color = "#ef4444"; 
+        // Deep Red Gradient
+        gradient = "linear-gradient(135deg, #f87171 0%, #991b1b 100%)";
+        labelKey = "UNRELIABLE"; 
+        emoji = "🚨"; 
+    }
 
     scoreValue.textContent = overallScore;
     scoreValue.style.color = color;
+    scoreValue.className = '';
+    scoreValue.classList.add('score-value-final');
+    scoreValue.style.backgroundImage = gradient;
+    scoreValue.style.filter = `drop-shadow(0 4px 6px ${color}33)`; // 33 = 20% opacity
+    scoreValue.style.display = "block";
     
     setTimeout(() => {
         scoreBar.style.width = `${overallScore}%`;
-        scoreBar.style.backgroundColor = color;
+        scoreBar.style.backgroundImage = gradient; // Apply the gradient background
         scoreBar.style.boxShadow = `0 0 10px ${color}40`;
+        scoreBar.style.filter = `drop-shadow(0 2px 4px ${color}33)`;
+        
+        // Ensure it is visible
+        scoreBar.style.display = "block";
     }, 100);
 
-    // TRANSLATED LABEL
     const translatedLabel = TRANSLATIONS[currentLang][labelKey] || labelKey;
-    scoreLabel.textContent = `${emoji} ${translatedLabel}`;
     
-    scoreLabel.style.color = color;
+    // 1. Reset Content & Apply Class
+    scoreLabel.textContent = `${emoji} ${translatedLabel}`;
+    scoreLabel.className = ''; // Clear "jumping-letter" classes
+    scoreLabel.classList.add('score-final'); // Add our new design class
+    
+    // 2. Apply Dynamic Gradient
+    scoreLabel.style.backgroundImage = gradient;
+    
+    // 3. Add a colored glow using drop-shadow filter
+    // (We use the main color variable for the shadow color)
+    scoreLabel.style.filter = `drop-shadow(0 4px 6px ${color}33)`; // 33 = 20% opacity
+
     scoreDisplay.style.display = "block";
 
     return overallScore;
@@ -562,65 +610,6 @@ function attachQuoteLinkListeners() {
     });
 }
 
-// function parseAndLinkifySources(rawExplanation){
-//     if (!rawExplanation) return "";
-
-//     // Step A: Security First (Escape ALL raw text)
-//     let safeText = escapeHtml(rawExplanation);
-//     // Step B: Link Parsing (Supporting)
-
-//     // Helper to generate Text Fragment URL
-//     const createFragmentUrl = (url, quote) => {
-//         let cleanUrl = url.trim();
-//         // Remove Google redirects if present
-//         if (cleanUrl.includes("/url?q=")) {
-//             cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
-//         }
-        
-//         // If we have a quote, append the text fragment
-//         if (quote && quote.trim().length > 5) {
-//             const cleanQuote = quote.trim();
-//             // We use encodeURIComponent to ensure special chars don't break the URL
-//             return `${cleanUrl}#:~:text=${encodeURIComponent(cleanQuote)}`;
-//         }
-//         return cleanUrl;
-//     };
-//     // Regex allows for optional spaces around the separators (::)
-//     const sourceRegex = /\[\[SOURCE::(.*?)::(.*?)::(.*?)::SOURCE\]\]/g;
-//     safeText = safeText.replace(sourceRegex, (match, title, url, quote) => {
-//         const finalUrl = createFragmentUrl(url, quote);
-//         let cleanTitle = title.trim();
-//         // Fix: Remove Google Redirects if present (cleaner links)
-//         // if (cleanUrl.includes("/url?q=")) {
-//         //     cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
-//         // }
-//         return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
-//                 <span class="source-icon">✓</span> ${escapeHtml(cleanTitle)}
-//             </a>`;
-//     });
-
-//     // Step C: Link Parsing (Contradicting)
-//     const contraRegex = /\[\[CONTRA::(.*?)::(.*?)::(.*?)::CONTRA\]\]/g;
-//     safeText = safeText.replace(contraRegex, (match, title, url, quote) => {
-//         const finalUrl = createFragmentUrl(url, quote);
-//         let cleanTitle = title.trim();
-//         // if (cleanUrl.includes("/url?q=")) {
-//         //     cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
-//         // }
-//         return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
-//                 <span class="source-icon">✗</span> ${escapeHtml(cleanTitle)}
-//             </a>`;
-//     });
-
-//     // Step D: Text Formatting (Crucial for readability!)
-//     // 1. Convert **Bold** to <strong>
-//     safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
-//     // 2. Convert Newlines to <br> (This fixes the "messy block" look)
-//     safeText = safeText.replace(/\n/g, '<br>');
-
-//     return safeText;
-// }
 function parseAndLinkifySources(rawExplanation) {
     if (!rawExplanation) return "";
 

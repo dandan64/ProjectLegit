@@ -175,7 +175,7 @@ ANALYSIS:
             name: TRANSLATIONS[currentLang].consensus,
             icon: "🌐",
             priority: "high",
-            weight: 0.30,  // This one counts toward final score
+            weight: 0.25,  // This one counts toward final score
             useSearch: false,
             dependsOn: "consensus-verify",  // Receives input from first agent
             prompt: `You are a Citation Formatter.
@@ -319,32 +319,34 @@ EXPLANATION: [ספק סיכום ברור ומבוסס ראיות בעברית (3
             name: TRANSLATIONS[currentLang].style,
             icon: "✍️",
             priority: "low",
-            weight: 0.05,
+            weight: 0.10,
             useSearch: false,
-            prompt: currentLang === 'en' ? `Act as a Copy Editor. Evaluate the professional standard of the following text.
-            
+            prompt: currentLang === 'en' ? `Act as a Senior News Editor and Quality Analyst. 
+Evaluate the journalistic standards and writing quality of the following text.
+
 Current Date: ${today}
-Text: "${shortExcerpt}"
+Text to Analyze: "${longExcerpt}"
+
+YOUR ANALYSIS CRITERIA:
+1. **Emotional Loading:** Does the text use neutral language, or does it rely on emotionally charged adjectives (e.g., "shocking," "horrible," "miraculous") to manipulate the reader?
+2. **Attribution:** Are claims attributed to specific sources, or does it use "weasel words" (e.g., "Many say," "It is rumored")?
+3. **Structure:** Does it follow the standard journalistic "Inverted Pyramid" (main facts first), or is it unstructured/rambling?
+4. **Mechanics:** Are there glaring grammar issues, excessive capitalization, or non-standard punctuation (!!!)?
+
+RATING SYSTEM:
+- **PROFESSIONAL:** Neutral tone, clear attribution, excellent structure, no errors.
+- **ADEQUATE:** Readable, mostly neutral, minor structural flaws.
+- **SENSATIONALIST:** Highly emotional language, clickbait style, aggressive tone.
+- **POOR_QUALITY:** Riddled with errors, incoherent, or clearly AI-generated spam.
 
 Your Task:
-1. Check for basic grammar and spelling errors.
-2. Does it follow standard journalistic structure (inverted pyramid)?
-3. Does it read like a professional report, a blog rant, or AI-generated spam?
-Rate as: PROFESSIONAL, ADEQUATE, SENSATIONALIST, or POOR_QUALITY
-Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) assessing the professionalism and structure of the writing.]` : 
+Assign a RATING from the list above.
+Then, write a concise EXPLANATION (max 3 sentences) citing specific examples from the text (e.g., "Uses loaded words like 'disastrous' without evidence" or "Lacks specific attribution for key claims").
 
-`פעל כעורך תוכן. הערך את הסטנדרט המקצועי של הטקסט הבא.
-תאריך נוכחי: ${today}
-טקסט: "${shortExcerpt}"
-המשימה שלך:
-1. בדוק שגיאות דקדוק ואיות בסיסיות.
-2. האם הוא עוקב אחר מבנה עיתונאי סטנדרטי (פירמידה הפוכה)?
-3. האם זה נקרא כמו דיווח מקצועי, טור בלוג, או ספאם שנוצר על ידי AI?
-דרג כ: PROFESSIONAL, ADEQUATE, SENSATIONALIST, או POOR_QUALITY
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק הסבר ברור ומבוסס היגיון (3-4 משפטים) המעריך את המקצועיות והמבנה של הכתיבה.]`
+Format:
+RATING: [Rating]
+EXPLANATION: [Your analysis] When citing evidence, use [[QUOTE::exact text::QUOTE]] format.
+` : 'hebrew version...'
          },
          {
             id: "summary",

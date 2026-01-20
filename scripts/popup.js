@@ -398,6 +398,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 linkedExplanation = parseAndLinkifySources(linkedExplanation);
             } 
 
+            if(agent.id === 'style') {
+                linkedExplanation = parseAndLinkifyQuotes(result.explanation, tab.id);
+            }
+
             contentDiv.innerHTML = `<div class="agent-explanation">${linkedExplanation}</div>`;
 
             setTimeout(() => attachQuoteLinkListeners(), 100);

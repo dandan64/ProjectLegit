@@ -768,7 +768,8 @@ button:disabled {
 }
 
 .agent-card.expanded .toggle-icon { 
-    transform: rotate(180deg); 
+    transform: rotate(180deg);
+    color: #41454b;
 }
 
 /* Agent Content (Accordion) */

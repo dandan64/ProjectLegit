@@ -24,6 +24,24 @@ document.addEventListener("DOMContentLoaded", () => {
     scoreHeader.addEventListener('click', function() {
         overallScoreBox.classList.toggle('expanded');
         overallScoreBox.classList.toggle('collapsed');
+
+        if (overallScore.classList.contains('expanded')) {
+                setTimeout(() => {
+                    agentGrid.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }, 100); // Wait for expansion animation to start
+            }
+        
+        if (overallScore.classList.contains('collapsed')) {
+                setTimeout(() => {
+                    resultsView.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }, 100); // Wait for expansion animation to start
+            }
     });
 
     // global variable for export

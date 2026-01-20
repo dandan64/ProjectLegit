@@ -228,7 +228,6 @@ function formatRating(rating) {
 }
 
 function displayOverallScore(agents) {
-    // ... (Your existing calculation logic) ...
     let totalScore = 0;
     let totalWeight = 0;
     agents.forEach(agent => {
@@ -265,7 +264,7 @@ function displayOverallScore(agents) {
         // Vibrant Emerald Gradient
         gradient = "linear-gradient(135deg, #34d399 0%, #047857 100%)";
         labelKey = "HIGHLY_CREDIBLE"; 
-        emoji = "✅"; 
+        emoji = "✓"; 
     } 
     else if (overallScore >= 60) { 
         color = "#d9bc00"; 
@@ -279,51 +278,60 @@ function displayOverallScore(agents) {
         // Burnt Orange Gradient
         gradient = "linear-gradient(135deg, #fb923c 0%, #9a3412 100%)";
         labelKey = "QUESTIONABLE"; 
-        emoji = "⚠️"; 
+        emoji = "⚠"; 
     } 
     else { 
         color = "#ef4444"; 
         // Deep Red Gradient
         gradient = "linear-gradient(135deg, #f87171 0%, #991b1b 100%)";
         labelKey = "UNRELIABLE"; 
-        emoji = "🚨"; 
+        emoji = "☠"; 
     }
 
-    scoreValue.textContent = overallScore;
-    scoreValue.style.color = color;
-    scoreValue.className = '';
-    scoreValue.classList.add('score-value-final');
-    scoreValue.style.backgroundImage = gradient;
-    scoreValue.style.filter = `drop-shadow(0 4px 6px ${color}33)`; // 33 = 20% opacity
-    scoreValue.style.display = "block";
-    
-    setTimeout(() => {
-        scoreBar.style.width = `${overallScore}%`;
-        scoreBar.style.backgroundImage = gradient; // Apply the gradient background
-        scoreBar.style.boxShadow = `0 0 10px ${color}40`;
-        scoreBar.style.filter = `drop-shadow(0 2px 4px ${color}33)`;
-        
-        // Ensure it is visible
-        scoreBar.style.display = "block";
-    }, 100);
-
-    const translatedLabel = TRANSLATIONS[currentLang][labelKey] || labelKey;
-    
-    // 1. Reset Content & Apply Class
-    scoreLabel.textContent = `${emoji} ${translatedLabel}`;
-    scoreLabel.className = ''; // Clear "jumping-letter" classes
-    scoreLabel.classList.add('score-final'); // Add our new design class
-    
-    // 2. Apply Dynamic Gradient
-    scoreLabel.style.backgroundImage = gradient;
-    
-    // 3. Add a colored glow using drop-shadow filter
-    // (We use the main color variable for the shadow color)
-    scoreLabel.style.filter = `drop-shadow(0 4px 6px ${color}33)`; // 33 = 20% opacity
+    styleScoreLabel(scoreLabel, scoreValue, scoreBar, overallScore, color, gradient, labelKey, emoji);
 
     scoreDisplay.style.display = "block";
 
     return overallScore;
+}
+
+function styleScoreLabel(scoreLabelElement, scoreValueElement, scoreBarElement, overallScore, color, gradient, emoji, labelKey) {
+    // Apply styles to score value
+    scoreValueElement.textContent = overallScore;
+    scoreValueElement.style.color = color;
+    scoreValueElement.className = '';
+    scoreValueElement.classList.add('score-value-final');
+    scoreValueElement.style.backgroundImage = gradient;
+    scoreValueElement.style.filter = `drop-shadow(0 4px 6px ${color}33)`; // 33 = 20% opacity
+    scoreValueElement.style.filter = `drop-shadow(0 4px 6px ${color}33) drop-shadow(0 0 20px ${color}66)`;
+    scoreValueElement.style.display = "block";
+
+    // Apply styles to score bar
+    setTimeout(() => {
+        scoreBarElement.style.width = `${overallScore}%`;
+        scoreBarElement.style.backgroundImage = gradient; // Apply the gradient background
+        scoreBarElement.style.boxShadow = `0 0 10px ${color}40`;
+        scoreBarElement.style.filter = `drop-shadow(0 2px 4px ${color}33)`;
+
+        // Ensure it is visible
+        scoreBarElement.style.display = "block";
+    }, 100);
+
+    // Apply styles to score label
+    const translatedLabel = TRANSLATIONS[currentLang][labelKey] || labelKey;
+    
+    // 1. Reset Content & Apply Class
+    scoreLabelElement.textContent = `${emoji} ${translatedLabel}`;
+    scoreLabelElement.className = ''; // Clear "jumping-letter" classes
+    scoreLabelElement.classList.add('score-final'); // Add our new design class
+
+    // 2. Apply Dynamic Gradient
+    scoreLabelElement.style.backgroundImage = gradient;
+    
+    // 3. Add a colored glow using drop-shadow filter
+    // (We use the main color variable for the shadow color)
+    scoreLabelElement.style.filter = `drop-shadow(0 4px 6px ${color}33) drop-shadow(0 0 20px ${color}66)`; // 33 = 20% opacity
+
 }
 
 // Utility function to escape HTML and clean Markdown
@@ -610,49 +618,38 @@ function attachQuoteLinkListeners() {
     });
 }
 
+function extractRealUrl(rawUrl) {
+    if (!rawUrl) return "";
+    let url = rawUrl.trim();
+
+    if (url.includes("/url?q=")) {
+        try {
+            // 1. Get everything after 'q='
+            const queryString = url.split("/url?q=")[1];
+            
+            // 2. Stop at the next '&' (which usually starts Google's tracking params)
+            const encodedUrl = queryString.split("&")[0];
+            
+            // 3. Decode the result (converts 'https%3A%2F%2F' back to 'https://')
+            return decodeURIComponent(encodedUrl);
+        } catch (e) {
+            console.warn("Failed to clean URL:", url);
+            return url; // Fallback to original if parsing fails
+        }
+    }
+
+    return url;
+}
+
 function parseAndLinkifySources(rawExplanation) {
     if (!rawExplanation) return "";
 
     let safeText = escapeHtml(rawExplanation);
 
-    const createFragmentUrl = (url, quote, type) => {
-        if (!url) return "";
-        let cleanUrl = url.trim();
-        
-        // Remove Google redirects
-        if (cleanUrl.includes("/url?q=")) {
-            cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
-        }
-
-        // If we have a quote, build the custom URL
-        if (quote && quote.trim().length > 5) {
-            try {
-                // Check if URL is valid before parsing
-                const urlObj = new URL(cleanUrl);
-                
-                let cleanQuote = quote.trim()
-                    .replace(/^["'“]+|["'”]+$/g, '') // Remove surrounding quotes
-                    .replace(/[.,;:]$/, '');          // Remove trailing punctuation
-
-                // Add Legit Params
-                urlObj.searchParams.set('legit_quote', cleanQuote);
-                urlObj.searchParams.set('legit_type', type); // 'supporting' or 'contra'
-
-                return urlObj.toString();
-            } catch (e) {
-                console.warn("Invalid URL for parsing, returning raw:", cleanUrl);
-                // Fallback: If URL parsing fails, return raw URL without highlight
-                return cleanUrl;
-            }
-        }
-        
-        return cleanUrl;
-    };
-
-    // Step B: Link Parsing (Supporting)
+    // Link Parsing (Supporting)
     const sourceRegex = /\[\[SOURCE::(.*?)::(.*?)::(.*?)::SOURCE\]\]/g;
     safeText = safeText.replace(sourceRegex, (match, title, url, quote) => {
-        const finalUrl = createFragmentUrl(url, quote, 'supporting');
+        const finalUrl = extractRealUrl(url);
 
         console.log('Creating supporting source FINAL URL:', finalUrl);
         const cleanTitle = title.trim();
@@ -663,10 +660,10 @@ function parseAndLinkifySources(rawExplanation) {
             </a>`;
     });
 
-    // Step C: Link Parsing (Contradicting)
+    // Link Parsing (Contradicting)
     const contraRegex = /\[\[CONTRA::(.*?)::(.*?)::(.*?)::CONTRA\]\]/g;
     safeText = safeText.replace(contraRegex, (match, title, url, quote) => {
-        const finalUrl = createFragmentUrl(url, quote, 'contra'); 
+        const finalUrl = extractRealUrl(url);
         const cleanTitle = title.trim();
         const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 

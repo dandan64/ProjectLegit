@@ -863,6 +863,7 @@ button:disabled {
 /* Yellow - Partially Credible */
 .rating-badge.rating-partially_sourced, 
 .rating-badge.rating-adequate,
+.rating-badge.rating-sensational,
 .rating-badge.rating-citizen_journalist, 
 .rating-badge.rating-unique_reporting, 
 .rating-badge.rating-slight_bias,
@@ -876,6 +877,7 @@ button:disabled {
 .rating-badge.rating-questionable, 
 .rating-badge.rating-moderate_bias,
 .rating-badge.rating-unverifiable, 
+.rating-badge.rating-clickbait,
 .rating-badge.rating-unverified {
     background: rgba(245, 158, 11, 0.15); 
     color: #92400e; 
@@ -889,8 +891,7 @@ button:disabled {
 .rating-badge.rating-anonymous, 
 .rating-badge.rating-poor_quality, 
 .rating-badge.rating-recycled,
-.rating-badge.rating-unreliable, 
-.rating-badge.rating-clickbait, 
+.rating-badge.rating-unreliable,  
 .rating-badge.rating-deceptive,
 .rating-badge.rating-misleading, 
 .rating-badge.rating-suspicious,

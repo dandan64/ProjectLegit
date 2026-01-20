@@ -84,18 +84,27 @@ EXPLANATION: [ספק ניתוח פורנזי (3-4 משפטים). התרכז במ
             weight: 0.10,
             useSearch: true,
             prompt: currentLang === 'en' ? `Act as an Investigative Journalist. Use Google Search to investigate the author of this text.
-            
+### INPUT DATA          
 Detected Author Name: "${pageData.author}"
 Domain: "${pageData.domain}"
 Content Snippet: "${shortExcerpt}"
 
-Your Task:
-1. If the "Detected Author Name" above is "Unknown", try to find it in the content snippet.
-2. If found, search for their name + domain. 
-3. Determine if they are a real person with a journalistic track record or a fake persona/admin.
-Rate as: EXPERT, JOURNALIST, CITIZEN_JOURNALIST, ANONYMOUS, or SUSPICIOUS
-Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State if the author is a verifiable expert or note the lack of accountability.]` : 
+### INVESTIGATIVE PROTOCOL (Internal Reasoning)
+1. **Extraction**: If Author is "Unknown", scan the Excerpt for "By [Name]" or "Written by". 
+2. **Verification**: Search for the exact name + the host domain. Check for a dedicated author profile page.
+3. **External Footprint**: Cross-reference the name with Muck Rack, LinkedIn, or Twitter to verify they are a real person and not an AI-generated persona.
+4. **Constraint**: Do not guess. If no information exists outside the current domain, rate as ANONYMOUS or SUSPICIOUS based on the site's reputation.
+
+### RATING SCALE
+- EXPERT: Recognized authority/specialist with advanced credentials.
+- JOURNALIST: Verifiable staff or freelance writer for established news outlets.
+- CITIZEN_JOURNALIST: Independent contributor or blogger with a traceable history.
+- ANONYMOUS: No specific author found; content attributed to "Staff" or "Admin."
+- SUSPICIOUS: Failed verification, no digital footprint, or known misinformation purveyor
+
+### FINAL FORMAT
+RATING: [INSERT RATING]
+EXPLANATION: [Identify the author's primary role. Mention one specific platform where they are verified (e.g., Muck Rack, LinkedIn, or official staff page). Conclude with a statement on their overall accountability.]` : 
 
 `פעל כעיתונאי חוקר. חפש בגוגל על מנת לחקור את מחבר הטקסט הזה.
 שם המחבר שזוהה: "${pageData.author}"
@@ -209,21 +218,28 @@ EXPLANATION: [The text with the formatted citations inserted]`
             priority: "high",
             weight: 0.10,
             useSearch: false,
-            prompt: currentLang === 'en' ? `Act as a Senior Editor. Analyze if this headline is fair or manipulative.
+            prompt: currentLang === 'en' ? `Act as a Skeptical Media Auditor specializing in linguistic manipulation. Your goal is to find the "Truth Gap" between a headline and its source text. You value precision over professional courtesy.
             
+###CONTEXT:
 Headline: "${pageData.title}"
-
 Content Snippet: "${longExcerpt}"
-
 Current Date: ${today}
 
-Your Task:
-1. Does the headline exaggerate the content?
-2. Does it use "Clickbait" tactics (e.g., "You won't believe...", ALL CAPS)?
-3. Does it accurately reflect the story?
-Rate as: ACCURATE, MOSTLY_ACCURATE, SOMEWHAT_MISLEADING, CLICKBAIT, or DECEPTIVE
-Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) critiquing the headline's accuracy and framing.]` : 
+### THE AUDIT LOGIC
+1. **The Shorthand Test**: A headline is only "Accurate Shorthand" if it captures the *primary consequence* of the story. If it skips the main event to focus on a side-detail, it is SOMEWHAT_MISLEADING.
+2. **The Omission Test**: Does the headline withhold the "Who" or "What" to force a click? (e.g., "This happened...") If yes, it is CLICKBAIT.
+3. **The Distortion Test**: Does the headline use high-valence emotional words (Terror, Chaos, Miracle) that aren't justified by the data? If yes, it is SENSATIONAL.
+
+### RATING SCALE
+- ACCURATE: A neutral, factual summary of the core event.
+- SENSATIONAL: Factual, but uses "loud" or emotional language to provoke the reader.
+- SOMEWHAT_MISLEADING: Technically true but framed to suggest a false conclusion or focus on a minor point.
+- CLICKBAIT: Uses a curiosity gap or "mystery" framing to harvest clicks.
+- DECEPTIVE: Directly contradicts or invents claims not found in the snippet.
+
+### OUTPUT FORMAT
+RATING: [RATING]
+EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Sentence 2: Identify the specific linguistic tactic or framing error. Sentence 3: A direct warning or confirmation for the user.]` : 
 
 `פעל כעורך בכיר. נתח אם הכותרת הוגנת או מניפולטיבית.
 כותרת: "${pageData.title}"

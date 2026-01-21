@@ -107,18 +107,42 @@ if (!window.legitHighlighterLoaded) {
         let fullText = "";
         let currentIndex = 0;
         
+        // Define tags that represent "blocks" of text
+        const blockTags = new Set(['P', 'DIV', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'LI', 'BLOCKQUOTE', 'SECTION', 'ARTICLE', 'MAIN', 'ASIDE', 'HEADER', 'FOOTER']);
+        
+        let lastParent = null;
         let node;
+
         while (node = walker.nextNode()) {
             const content = node.textContent;
-            if (content.length > 0) {
+            
+            // 1. Filter out nodes that are ONLY whitespace/newlines
+            if (content.trim().length > 0) {
+                
+                const parent = node.parentElement;
+                
+                // 2. "Virtual Gap" Logic: 
+                // If we changed parents AND the new parent is a Block Element, 
+                // insert a newline in the fullText (but not the DOM). 
+                // This ensures "Paragraph A" and "Paragraph B" don't become "Paragraph AParagraph B"
+                if (lastParent && parent !== lastParent && blockTags.has(parent.tagName)) {
+                    fullText += ' '; // Or '\n' if you prefer, both work with \s+ regex
+                    currentIndex += 1;
+                }
+
                 textNodes.push(node);
+                
+                // Map the current node to the range in fullText
                 nodeMap.push({
                     node: node,
                     start: currentIndex,
                     end: currentIndex + content.length
                 });
+                
                 fullText += content;
                 currentIndex += content.length;
+                
+                lastParent = parent;
             }
         }
         
@@ -188,62 +212,87 @@ if (!window.legitHighlighterLoaded) {
 
     // --- HELPER: Fuzzy Levenshtein Matcher ---
     function findLevenshteinMatch(fullText, query) {
-        // 1. Sanity check: Don't run expensive logic on tiny queries
-        if (query.length < 10) return null;
+        // 1. Sanity Check
+        if (!query || query.length < 10) return null;
 
-        // 2. Normalize query to allow case-insensitive/punctuation-agnostic match
-        const normalize = (str) => str.toLowerCase().replace(/\s+/g, ' ').trim();
-        const target = normalize(query);
-        
-        // 3. Split full text into "sentence-like" candidates
-        // We use a regex to split by periods, question marks, or newlines to get chunks
-        // This is much faster than running Levenshtein on every sliding window character.
-        const candidates = [];
-        let regex = /[^.!?\n]+[.!?\n]+/g; 
+        // 2. Prepare tokens (Words) with their exact locations
+        // We use a regex to capture words AND their start/end indices in the original string
+        const wordMatches = [];
+        const wordRegex = /\S+/g; // Matches non-whitespace chunks
         let match;
-        
-        while ((match = regex.exec(fullText)) !== null) {
-            candidates.push({
+        while ((match = wordRegex.exec(fullText)) !== null) {
+            wordMatches.push({
                 text: match[0],
                 start: match.index,
                 end: match.index + match[0].length
             });
         }
-        
-        // Also add the full text split by newlines just in case punctuation is missing
-        if (candidates.length < 5) {
-             const lines = fullText.split('\n');
-             let currentIdx = 0;
-             lines.forEach(line => {
-                 candidates.push({ text: line, start: currentIdx, end: currentIdx + line.length });
-                 currentIdx += line.length + 1; // +1 for the newline char
-             });
-        }
 
+        console.log("candidates: ", wordMatches);
+
+        // 3. Prepare Query
+        const queryWords = query.trim().split(/\s+/);
+        const queryWordCount = queryWords.length;
+        const target = query.toLowerCase().replace(/\s+/g, ' ').trim();
+
+        // 4. Sliding Window Search
+        // We slide a window of roughly the same number of words across the text
         let bestDistance = Infinity;
-        let bestCandidate = null;
+        let bestLocation = null;
         
-        // 4. Check each candidate
-        for (const candidate of candidates) {
-            const normCandidate = normalize(candidate.text);
-            
-            // Optimization: If lengths differ drastically, skip (Levenshtein is at least the length diff)
-            if (Math.abs(normCandidate.length - target.length) > target.length * 0.5) continue;
+        // Optimization: Don't check every single window if text is huge. 
+        // Checking every 3rd window is usually enough overlap to catch a match.
+        const step = 1; 
 
-            const distance = getLevenshteinDistance(target, normCandidate);
+        for (let i = 0; i <= wordMatches.length - queryWordCount; i += step) {
             
-            // Normalize distance by length to get a "difference ratio"
-            // e.g. distance 5 on a 100 char string is better than distance 5 on a 10 char string
+            // Construct a candidate from a window of words
+            // We look at a window size equal to the quote's word count (+/- margin if needed)
+            const startWord = wordMatches[i];
+            const endWord = wordMatches[i + queryWordCount - 1];
+            
+            // Extract the raw text slice for this window
+            const candidateText = fullText.substring(startWord.start, endWord.end);
+            
+            // Optimization: Quick Length Check
+            // If the candidate text is vastly different in length (e.g., > 50% diff), skip Levenshtein
+            if (Math.abs(candidateText.length - target.length) > target.length * 0.5) {
+                continue;
+            }
+
+            // Normalize for comparison
+            const normCandidate = candidateText.toLowerCase().replace(/\s+/g, ' ').trim();
+
+            // Calculate Score
+            const distance = getLevenshteinDistance(target, normCandidate);
+
             if (distance < bestDistance) {
                 bestDistance = distance;
-                bestCandidate = candidate;
+                bestLocation = {
+                    start: startWord.start,
+                    end: endWord.end,
+                    text: candidateText
+                };
             }
         }
-        
-        return {
-            start: bestCandidate.start,
-            end: bestCandidate.end
-        };
+
+        // 5. Final Threshold Check
+        // We allow about 30-40% difference. 
+        // Note: Levenshtein distance includes insertions/deletions, so a score of 0 is perfect.
+        const threshold = target.length * 0.4; 
+
+        if (bestLocation && bestDistance <= threshold) {
+            console.log(`🎯 Fuzzy Match Found! Score: ${bestDistance} (Threshold: ${threshold})`);
+            console.log(`   Quote: "${target.substring(0, 30)}..."`);
+            console.log(`   Match: "${bestLocation.text.substring(0, 30)}..."`);
+            
+            return {
+                start: bestLocation.start,
+                end: bestLocation.end
+            };
+        }
+
+        return null;
     }
 
     // --- HELPER: Map Global Indices to DOM Nodes ---
@@ -327,7 +376,6 @@ if (!window.legitHighlighterLoaded) {
             border: 2px solid ${theme.border};
             border-radius: 2px;
             box-shadow: 0 0 5px ${theme.shadow};
-            cursor: pointer;
             display: inline;
         `;
 
@@ -391,13 +439,6 @@ if (!window.legitHighlighterLoaded) {
         if (!document.getElementById('legit-highlight-styles')) {
             const style = document.createElement('style');
             style.id = 'legit-highlight-styles';
-            // style.textContent = `
-            //     @keyframes pulse {
-            //         0% { background-color: ${theme.bg}; transform: scale(1); }
-            //         50% { background-color: ${theme.bg}; transform: scale(1.05); }
-            //         100% { background-color: ${theme.bg}; transform: scale(1); }
-            //     }
-            // `;
             document.head.appendChild(style);
         }
     }
@@ -407,7 +448,7 @@ if (!window.legitHighlighterLoaded) {
             highlightTimeoutId = setTimeout(() => {
                 clearHighlights();
                 highlightTimeoutId = null;
-            }, 10000); 
+            }, 20000); 
             
             if (visibilityListener) document.removeEventListener('visibilitychange', visibilityListener);
             

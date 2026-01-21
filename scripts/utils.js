@@ -463,7 +463,7 @@ function createCompletedAgentCard(agent, tabId) {
                 setTimeout(() => {
                     card.scrollIntoView({ 
                         behavior: 'smooth', 
-                        block: 'start' 
+                        block:'start'
                     });
                 }, 100); // Wait for expansion animation to start
             }

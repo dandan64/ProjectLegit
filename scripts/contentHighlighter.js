@@ -1,5 +1,5 @@
 // ========================================
-// SMART FUZZY HIGHLIGHTER (Multi-Node Support)
+// SMART LEVENSHTEIN HIGHLIGHTER (Multi-Node Support)
 // ========================================
 
 if (!window.legitHighlighterLoaded) {
@@ -33,10 +33,10 @@ if (!window.legitHighlighterLoaded) {
             matchType = 'flexible';
         }
         
-        // --- STRATEGY 3: FUZZY SIMILARITY (Fallback) ---
+        // --- STRATEGY 3: LEVENSHTEIN FUZZY MATCH (Fallback) ---
         if (matches.length === 0) {
-            console.log('⚠️ Whitespace match failed, trying fuzzy similarity...');
-            const fuzzyMatch = findFuzzyMatch(fullText, cleanSearch);
+            console.log('Whitespace match failed, running Levenshtein...');
+            const fuzzyMatch = findLevenshteinMatch(fullText, cleanSearch);
             if (fuzzyMatch) {
                 matches = [fuzzyMatch];
                 matchType = 'fuzzy';
@@ -45,14 +45,12 @@ if (!window.legitHighlighterLoaded) {
 
         // --- FAILURE HANDLER ---
         if (matches.length === 0) {
-            console.warn('❌ Quote not found on page:', cleanSearch);
-            showToast('Exact quote not found. Please try searching manually.', 'error');
+            showToast('Quote not found. Please try searching manually.', 'error');
             return false;
         }
 
         console.log(`✅ Found ${matches.length} match(es) via ${matchType}`);
         
-        // Notify user if we had to degrade to fuzzy match
         if (matchType === 'fuzzy') {
             showToast('Exact match not found. Showing closest match.', 'warning');
         }
@@ -69,7 +67,7 @@ if (!window.legitHighlighterLoaded) {
         // 4. Highlight the range
         highlightRange(rangeData, type);
         
-        // 5. Scroll to the first highlighted element
+        // 5. Scroll to view
         const firstHighlight = document.querySelector('.legit-highlight');
         if (firstHighlight) {
             firstHighlight.scrollIntoView({ 
@@ -79,9 +77,7 @@ if (!window.legitHighlighterLoaded) {
             firstHighlight.style.animation = 'pulse 1s ease-in-out 3';
         }
 
-        // Auto-remove logic
         handleAutoRemove(type);
-        
         return true;
     }
 
@@ -129,7 +125,7 @@ if (!window.legitHighlighterLoaded) {
         return { textNodes, fullText, nodeMap };
     }
 
-    // --- HELPER: Standard Search Strategies ---
+    // --- HELPER: Standard Search ---
     function findGlobalMatches(fullText, query, options) {
         let regex;
         const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -138,7 +134,6 @@ if (!window.legitHighlighterLoaded) {
             if (options.mode === 'exact') {
                 regex = new RegExp(escapedQuery, 'gi');
             } else if (options.mode === 'whitespace') {
-                // Collapse multiple spaces into one regex \s+
                 const pattern = escapedQuery.replace(/\s+/g, '\\s+');
                 regex = new RegExp(pattern, 'gi');
             }
@@ -157,49 +152,98 @@ if (!window.legitHighlighterLoaded) {
         return matches;
     }
 
-    // --- HELPER: Advanced Fuzzy Matcher ---
-    // Finds the substring in fullText that shares the most unique 4-char sequences (grams) with query
-    function findFuzzyMatch(fullText, query) {
-        // 1. Sanity check: if query is too short, fuzzy matching is dangerous
-        if (query.length < 15) return null;
+    // --- HELPER: Levenshtein Distance Calculation ---
+    function getLevenshteinDistance(a, b) {
+        const matrix = [];
 
-        const normalize = (str) => str.toLowerCase().replace(/[^\w]/g, '');
-        const target = normalize(query);
-        
-        // Sliding window parameters
-        const windowSize = query.length + 20; // Allow for some extra words/chars
-        const step = Math.floor(query.length / 4); 
-        
-        let bestScore = 0;
-        let bestLocation = null;
+        // Increment along the first column of each row
+        for (let i = 0; i <= b.length; i++) {
+            matrix[i] = [i];
+        }
 
-        // Iterate through text in chunks
-        for (let i = 0; i < fullText.length; i += step) {
-            const chunk = fullText.substring(i, i + windowSize);
-            const normChunk = normalize(chunk);
-            
-            // Simple similarity: Overlapping character count
-            // (For production, Levenshtein distance is better but slower)
-            let score = 0;
-            // Check for shared trigrams
-            for(let j=0; j < target.length - 3; j++) {
-                if(normChunk.includes(target.substring(j, j+3))) {
-                    score++;
+        // Increment each column in the first row
+        for (let j = 0; j <= a.length; j++) {
+            matrix[0][j] = j;
+        }
+
+        // Fill in the rest of the matrix
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1];
+                } else {
+                    matrix[i][j] = Math.min(
+                        matrix[i - 1][j - 1] + 1, // substitution
+                        Math.min(
+                            matrix[i][j - 1] + 1, // insertion
+                            matrix[i - 1][j] + 1  // deletion
+                        )
+                    );
                 }
             }
+        }
 
-            // Threshold: Needs substantial overlap
-            if (score > bestScore && score > (target.length * 0.4)) { // 40% match minimum
-                bestScore = score;
-                bestLocation = { start: i, end: i + chunk.length };
+        return matrix[b.length][a.length];
+    }
+
+    // --- HELPER: Fuzzy Levenshtein Matcher ---
+    function findLevenshteinMatch(fullText, query) {
+        // 1. Sanity check: Don't run expensive logic on tiny queries
+        if (query.length < 10) return null;
+
+        // 2. Normalize query to allow case-insensitive/punctuation-agnostic match
+        const normalize = (str) => str.toLowerCase().replace(/\s+/g, ' ').trim();
+        const target = normalize(query);
+        
+        // 3. Split full text into "sentence-like" candidates
+        // We use a regex to split by periods, question marks, or newlines to get chunks
+        // This is much faster than running Levenshtein on every sliding window character.
+        const candidates = [];
+        let regex = /[^.!?\n]+[.!?\n]+/g; 
+        let match;
+        
+        while ((match = regex.exec(fullText)) !== null) {
+            candidates.push({
+                text: match[0],
+                start: match.index,
+                end: match.index + match[0].length
+            });
+        }
+        
+        // Also add the full text split by newlines just in case punctuation is missing
+        if (candidates.length < 5) {
+             const lines = fullText.split('\n');
+             let currentIdx = 0;
+             lines.forEach(line => {
+                 candidates.push({ text: line, start: currentIdx, end: currentIdx + line.length });
+                 currentIdx += line.length + 1; // +1 for the newline char
+             });
+        }
+
+        let bestDistance = Infinity;
+        let bestCandidate = null;
+        
+        // 4. Check each candidate
+        for (const candidate of candidates) {
+            const normCandidate = normalize(candidate.text);
+            
+            // Optimization: If lengths differ drastically, skip (Levenshtein is at least the length diff)
+            if (Math.abs(normCandidate.length - target.length) > target.length * 0.5) continue;
+
+            const distance = getLevenshteinDistance(target, normCandidate);
+            
+            // Normalize distance by length to get a "difference ratio"
+            // e.g. distance 5 on a 100 char string is better than distance 5 on a 10 char string
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestCandidate = candidate;
             }
         }
-
-        if (bestLocation) {
-            // Refine the boundaries (simple trim to improve visual)
-            return bestLocation;
-        }
-        return null;
+        
+        return {
+            start: bestCandidate.start,
+            end: bestCandidate.end
+        };
     }
 
     // --- HELPER: Map Global Indices to DOM Nodes ---
@@ -238,7 +282,7 @@ if (!window.legitHighlighterLoaded) {
 
     // --- HELPER: Highlight Range ---
     function highlightRange(rangeData, type) {
-        const { startNode, startOffset, endNode, endOffset, nodeMap, globalStart, globalEnd } = rangeData;
+        const { nodeMap, globalStart, globalEnd } = rangeData;
         
         const palettes = {
             supporting: { bg: '#86efac', border: '#16a34a', shadow: 'rgba(22, 163, 74, 0.4)' },
@@ -298,7 +342,6 @@ if (!window.legitHighlighterLoaded) {
 
     // --- HELPER: Toast Notification ---
     function showToast(message, type = 'info') {
-        // Remove existing toast
         const existing = document.getElementById('legit-toast');
         if (existing) existing.remove();
 
@@ -308,8 +351,8 @@ if (!window.legitHighlighterLoaded) {
         
         const bgColors = {
             info: '#3b82f6',
-            warning: '#40bb02',
-            error: '#d10f0f'
+            warning: '#f59e0b',
+            error: '#ef4444'
         };
 
         toast.style.cssText = `
@@ -332,13 +375,11 @@ if (!window.legitHighlighterLoaded) {
 
         document.body.appendChild(toast);
 
-        // Animate in
         requestAnimationFrame(() => {
             toast.style.opacity = '1';
             toast.style.transform = 'translateY(0)';
         });
 
-        // Remove after 3s
         setTimeout(() => {
             toast.style.opacity = '0';
             toast.style.transform = 'translateY(-20px)';
@@ -350,13 +391,13 @@ if (!window.legitHighlighterLoaded) {
         if (!document.getElementById('legit-highlight-styles')) {
             const style = document.createElement('style');
             style.id = 'legit-highlight-styles';
-            style.textContent = `
-                @keyframes pulse {
-                    0% { background-color: ${theme.bg}; transform: scale(1); }
-                    50% { background-color: ${theme.bg}; transform: scale(1.05); }
-                    100% { background-color: ${theme.bg}; transform: scale(1); }
-                }
-            `;
+            // style.textContent = `
+            //     @keyframes pulse {
+            //         0% { background-color: ${theme.bg}; transform: scale(1); }
+            //         50% { background-color: ${theme.bg}; transform: scale(1.05); }
+            //         100% { background-color: ${theme.bg}; transform: scale(1); }
+            //     }
+            // `;
             document.head.appendChild(style);
         }
     }

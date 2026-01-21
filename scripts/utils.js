@@ -395,6 +395,15 @@ function createCompletedAgentCard(agent, tabId) {
         if (!e.target.closest('a') && !e.target.closest('.quote-link')) {
             card.classList.toggle("expanded");
         }
+
+        if (card.classList.contains('expanded')) {
+                setTimeout(() => {
+                    card.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }, 100); // Wait for expansion animation to start
+            }
     });
     
     return card;
@@ -543,24 +552,24 @@ function attachQuoteLinkListeners() {
                     console.warn('❌ Quote not found on page');
                     
                     // Show user-friendly error
-                    const errorMsg = document.createElement('div');
-                    errorMsg.textContent = 'Quote not found on current page';
-                    errorMsg.style.cssText = `
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        background: #fee2e2;
-                        color: #991b1b;
-                        padding: 12px 16px;
-                        border-radius: 8px;
-                        border: 1px solid #f87171;
-                        z-index: 10000;
-                        font-size: 13px;
-                        font-weight: 600;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                    `;
-                    document.body.appendChild(errorMsg);
-                    setTimeout(() => errorMsg.remove(), 3000);
+                    // const errorMsg = document.createElement('div');
+                    // errorMsg.textContent = 'Quote not found on current page';
+                    // errorMsg.style.cssText = `
+                    //     position: fixed;
+                    //     top: 20px;
+                    //     right: 20px;
+                    //     background: #fee2e2;
+                    //     color: #991b1b;
+                    //     padding: 12px 16px;
+                    //     border-radius: 8px;
+                    //     border: 1px solid #f87171;
+                    //     z-index: 10000;
+                    //     font-size: 13px;
+                    //     font-weight: 600;
+                    //     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    // `;
+                    // document.body.appendChild(errorMsg);
+                    // setTimeout(() => errorMsg.remove(), 3000);
                 }
             } catch (error) {
                 console.error('Error highlighting quote:', error);

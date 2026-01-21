@@ -1,5 +1,5 @@
 // ========================================
-// ADVANCED contentHighlighter.js
+// SMART FUZZY HIGHLIGHTER (Multi-Node Support)
 // ========================================
 
 if (!window.legitHighlighterLoaded) {
@@ -8,227 +8,376 @@ if (!window.legitHighlighterLoaded) {
     let highlightTimeoutId = null;
     let visibilityListener = null;
 
+    // --- MAIN ENTRY POINT ---
     function highlightAndScroll(searchText, index = 0, type = 'default') {
         console.log('🔍 Searching for quote:', searchText);
         
-        // Remove previous highlights
         clearHighlights();
         
-        // Clean up the search text once
         const cleanSearch = searchText.trim();
         if (!cleanSearch) return false;
 
+        // 1. Gather all text nodes and the full page text
+        const { textNodes, fullText, nodeMap } = getAllTextNodes();
+        
         let matches = [];
+        let matchType = 'exact';
+
+        // --- STRATEGY 1: EXACT MATCH (Best) ---
+        matches = findGlobalMatches(fullText, cleanSearch, { mode: 'exact' });
         
-        // --- STRATEGY 1: Exact Match (Fastest) ---
-        // Finds exact string: "Hello World"
-        matches = findTextInPage(cleanSearch, { mode: 'exact' });
-        
-        // --- STRATEGY 2: Flexible Whitespace (Common) ---
-        // Finds: "Hello\nWorld", "Hello   World", "Hello&nbsp;World"
+        // --- STRATEGY 2: FLEXIBLE WHITESPACE (Good) ---
         if (matches.length === 0) {
-            console.log('⚠️ Exact match failed, trying flexible whitespace...');
-            matches = findTextInPage(cleanSearch, { mode: 'whitespace' });
+            console.log('Exact match failed, trying flexible whitespace...');
+            matches = findGlobalMatches(fullText, cleanSearch, { mode: 'whitespace' });
+            matchType = 'flexible';
         }
         
-        // --- STRATEGY 3: Punctuation Agnostic (Smart) ---
-        // Finds: "It's true" matches "Its true", "Hello 'World'" matches "Hello World"
+        // --- STRATEGY 3: FUZZY SIMILARITY (Fallback) ---
         if (matches.length === 0) {
-            console.log('⚠️ Whitespace match failed, trying fuzzy punctuation...');
-            matches = findTextInPage(cleanSearch, { mode: 'fuzzy' });
+            console.log('⚠️ Whitespace match failed, trying fuzzy similarity...');
+            const fuzzyMatch = findFuzzyMatch(fullText, cleanSearch);
+            if (fuzzyMatch) {
+                matches = [fuzzyMatch];
+                matchType = 'fuzzy';
+            }
         }
-        
-        // --- STRATEGY 4: First 8 Words (Fallback) ---
-        // If the quote is huge, maybe the end got cut off. Try the start.
-        if (matches.length === 0 && cleanSearch.split(/\s+/).length > 8) {
-            console.log('⚠️ Trying shortened quote...');
-            const shortQuote = cleanSearch.split(/\s+/).slice(0, 8).join(' ');
-            matches = findTextInPage(shortQuote, { mode: 'whitespace' });
-        }
-        
+
+        // --- FAILURE HANDLER ---
         if (matches.length === 0) {
             console.warn('❌ Quote not found on page:', cleanSearch);
+            showToast('Exact quote not found. Please try searching manually.', 'error');
             return false;
         }
+
+        console.log(`✅ Found ${matches.length} match(es) via ${matchType}`);
         
-        console.log(`✅ Found ${matches.length} match(es)`);
+        // Notify user if we had to degrade to fuzzy match
+        if (matchType === 'fuzzy') {
+            showToast('Exact match not found. Showing closest match.', 'warning');
+        }
+
+        // 3. Select the target match and map it back to DOM Nodes
+        const bestMatch = matches[Math.min(index, matches.length - 1)];
+        const rangeData = mapGlobalRangeToNodes(bestMatch.start, bestMatch.end, nodeMap);
         
-        // Select the best match (default to first)
-        const targetMatch = matches[Math.min(index, matches.length - 1)];
+        if (!rangeData) {
+            showToast('❌ Error mapping location.', 'error');
+            return false;
+        }
+
+        // 4. Highlight the range
+        highlightRange(rangeData, type);
         
-        // Highlight and Scroll
-        highlightNode(targetMatch.node, targetMatch.start, targetMatch.end, type);
-        
-        const highlightedElement = document.querySelector('.legit-highlight');
-        if (highlightedElement) {
-            highlightedElement.scrollIntoView({ 
+        // 5. Scroll to the first highlighted element
+        const firstHighlight = document.querySelector('.legit-highlight');
+        if (firstHighlight) {
+            firstHighlight.scrollIntoView({ 
                 behavior: 'smooth', 
                 block: 'center' 
             });
-            // Visual Pulse
-            highlightedElement.style.animation = 'pulse 1s ease-in-out 3';
+            firstHighlight.style.animation = 'pulse 1s ease-in-out 3';
         }
 
-        // --- AUTO-REMOVE DEFAULT HIGHLIGHT AFTER 20 SECONDS ---
-        if (type === 'default') {
-            highlightTimeoutId = setTimeout(() => {
-                console.log('⏱️ Auto-removing default highlight after 10s');
-                clearHighlights();
-                highlightTimeoutId = null;
-            }, 10000); // 10 seconds
-            
-            // Listen for tab visibility changes
-            if (visibilityListener) {
-                document.removeEventListener('visibilitychange', visibilityListener);
-            }
-            
-            visibilityListener = () => {
-                if (document.hidden) {
-                    clearHighlights();
-                    if (highlightTimeoutId) {
-                        clearTimeout(highlightTimeoutId);
-                        highlightTimeoutId = null;
-                    }
-                }
-            };
-            
-            document.addEventListener('visibilitychange', visibilityListener);
-        }
+        // Auto-remove logic
+        handleAutoRemove(type);
         
         return true;
     }
 
-    // --- CORE SEARCH FUNCTION ---
-    function findTextInPage(query, options = { mode: 'exact' }) {
-        const matches = [];
-        let regex;
-
-        // Build the Regex based on mode
-        try {
-            const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex special chars
-
-            if (options.mode === 'exact') {
-                // Simple case-insensitive exact string
-                // We use regex here just to keep the logic consistent
-                regex = new RegExp(escapedQuery, 'gi');
-            } 
-            else if (options.mode === 'whitespace') {
-                // Replace spaces with \s+ (matches space, tab, newline, nbsp)
-                const pattern = escapedQuery.replace(/\s+/g, '\\s+');
-                regex = new RegExp(pattern, 'gi');
-            } 
-            else if (options.mode === 'fuzzy') {
-                // Split by non-word characters and join with "ignore junk" pattern
-                // "It's true" -> "It", "s", "true" -> /It[\W_]*s[\W_]*true/gi
-                const words = query.split(/[\W_]+/); // Split by punctuation/space
-                const pattern = words.filter(w => w.length > 0).join('[\\W_]+');
-                regex = new RegExp(pattern, 'gi');
-            }
-        } catch (e) {
-            console.error("Regex build error", e);
-            return [];
-        }
-
+    // --- HELPER: Gather Text Nodes ---
+    function getAllTextNodes() {
         const walker = document.createTreeWalker(
             document.body,
             NodeFilter.SHOW_TEXT,
             {
                 acceptNode: function(node) {
-                    // Skip hidden/script tags
                     const parent = node.parentElement;
                     if (!parent) return NodeFilter.FILTER_REJECT;
                     
                     const tag = parent.tagName;
-                    if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT' || tag === 'TEXTAREA') {
+                    if (['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT'].includes(tag)) {
                         return NodeFilter.FILTER_REJECT;
                     }
-                    
-                    // Check visibility
-                    if (parent.offsetParent === null) { 
-                        // Simple check for visibility (works for display:none)
-                        return NodeFilter.FILTER_REJECT; 
-                    }
+                    if (parent.offsetParent === null) return NodeFilter.FILTER_REJECT;
                     
                     return NodeFilter.FILTER_ACCEPT;
                 }
             }
         );
+
+        const textNodes = [];
+        const nodeMap = []; 
+        let fullText = "";
+        let currentIndex = 0;
         
         let node;
         while (node = walker.nextNode()) {
-            const text = node.textContent;
-            // Skip empty nodes to save performance
-            if (!text.trim()) continue;
-
-            // Reset regex state for each node
-            regex.lastIndex = 0; 
-
-            let match;
-            // Exec loop to find ALL matches in this node (in case it appears twice)
-            while ((match = regex.exec(text)) !== null) {
-                matches.push({
+            const content = node.textContent;
+            if (content.length > 0) {
+                textNodes.push(node);
+                nodeMap.push({
                     node: node,
-                    start: match.index,
-                    end: match.index + match[0].length
+                    start: currentIndex,
+                    end: currentIndex + content.length
                 });
+                fullText += content;
+                currentIndex += content.length;
             }
         }
         
+        return { textNodes, fullText, nodeMap };
+    }
+
+    // --- HELPER: Standard Search Strategies ---
+    function findGlobalMatches(fullText, query, options) {
+        let regex;
+        const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        try {
+            if (options.mode === 'exact') {
+                regex = new RegExp(escapedQuery, 'gi');
+            } else if (options.mode === 'whitespace') {
+                // Collapse multiple spaces into one regex \s+
+                const pattern = escapedQuery.replace(/\s+/g, '\\s+');
+                regex = new RegExp(pattern, 'gi');
+            }
+        } catch (e) {
+            return [];
+        }
+
+        const matches = [];
+        let match;
+        while ((match = regex.exec(fullText)) !== null) {
+            matches.push({
+                start: match.index,
+                end: match.index + match[0].length
+            });
+        }
         return matches;
     }
 
-    function highlightNode(textNode, start, end, type = 'default') {
-        // Safety check: ensure the indices are valid for this node
-        if (start < 0 || end > textNode.textContent.length || start >= end) return;
+    // --- HELPER: Advanced Fuzzy Matcher ---
+    // Finds the substring in fullText that shares the most unique 4-char sequences (grams) with query
+    function findFuzzyMatch(fullText, query) {
+        // 1. Sanity check: if query is too short, fuzzy matching is dangerous
+        if (query.length < 15) return null;
 
-        // Color definitions
-        const palettes = {
-            supporting: { bg: '#86efac', border: '#16a34a', shadow: 'rgba(22, 163, 74, 0.4)' }, // Green
-            contra:     { bg: '#fca5a5', border: '#dc2626', shadow: 'rgba(220, 38, 38, 0.4)' }, // Red
-            default:    { bg: '#fde047', border: '#ca8a04', shadow: 'rgba(234, 179, 8, 0.4)' }  // Yellow
+        const normalize = (str) => str.toLowerCase().replace(/[^\w]/g, '');
+        const target = normalize(query);
+        
+        // Sliding window parameters
+        const windowSize = query.length + 20; // Allow for some extra words/chars
+        const step = Math.floor(query.length / 4); 
+        
+        let bestScore = 0;
+        let bestLocation = null;
+
+        // Iterate through text in chunks
+        for (let i = 0; i < fullText.length; i += step) {
+            const chunk = fullText.substring(i, i + windowSize);
+            const normChunk = normalize(chunk);
+            
+            // Simple similarity: Overlapping character count
+            // (For production, Levenshtein distance is better but slower)
+            let score = 0;
+            // Check for shared trigrams
+            for(let j=0; j < target.length - 3; j++) {
+                if(normChunk.includes(target.substring(j, j+3))) {
+                    score++;
+                }
+            }
+
+            // Threshold: Needs substantial overlap
+            if (score > bestScore && score > (target.length * 0.4)) { // 40% match minimum
+                bestScore = score;
+                bestLocation = { start: i, end: i + chunk.length };
+            }
+        }
+
+        if (bestLocation) {
+            // Refine the boundaries (simple trim to improve visual)
+            return bestLocation;
+        }
+        return null;
+    }
+
+    // --- HELPER: Map Global Indices to DOM Nodes ---
+    function mapGlobalRangeToNodes(globalStart, globalEnd, nodeMap) {
+        let startNodeInfo = null;
+        let endNodeInfo = null;
+        
+        for (const item of nodeMap) {
+            if (!startNodeInfo && globalStart >= item.start && globalStart < item.end) {
+                startNodeInfo = { 
+                    node: item.node, 
+                    offset: globalStart - item.start 
+                };
+            }
+            if (!endNodeInfo && globalEnd > item.start && globalEnd <= item.end) {
+                endNodeInfo = { 
+                    node: item.node, 
+                    offset: globalEnd - item.start 
+                };
+            }
+            if (startNodeInfo && endNodeInfo) break;
+        }
+        
+        if (!startNodeInfo || !endNodeInfo) return null;
+
+        return {
+            startNode: startNodeInfo.node,
+            startOffset: startNodeInfo.offset,
+            endNode: endNodeInfo.node,
+            endOffset: endNodeInfo.offset,
+            nodeMap: nodeMap,
+            globalStart: globalStart,
+            globalEnd: globalEnd
         };
+    }
 
+    // --- HELPER: Highlight Range ---
+    function highlightRange(rangeData, type) {
+        const { startNode, startOffset, endNode, endOffset, nodeMap, globalStart, globalEnd } = rangeData;
+        
+        const palettes = {
+            supporting: { bg: '#86efac', border: '#16a34a', shadow: 'rgba(22, 163, 74, 0.4)' },
+            contra:     { bg: '#fca5a5', border: '#dc2626', shadow: 'rgba(220, 38, 38, 0.4)' },
+            default:    { bg: '#fde047', border: '#ca8a04', shadow: 'rgba(234, 179, 8, 0.4)' }
+        };
         const theme = palettes[type] || palettes.default;
+
+        const nodesToHighlight = nodeMap.filter(item => 
+            (item.end > globalStart && item.start < globalEnd)
+        );
+
+        nodesToHighlight.forEach(item => {
+            const node = item.node;
+            let localStart = 0;
+            let localEnd = node.textContent.length;
+
+            if (item.start < globalStart) localStart = globalStart - item.start;
+            if (item.end > globalEnd) localEnd = globalEnd - item.start;
+
+            wrapTextNode(node, localStart, localEnd, theme);
+        });
+
+        injectHighlightStyles(theme);
+    }
+
+    function wrapTextNode(textNode, start, end, theme) {
+        if (start < 0 || end > textNode.textContent.length || start >= end) return;
 
         const text = textNode.textContent;
         const before = text.substring(0, start);
         const highlighted = text.substring(start, end);
         const after = text.substring(end);
-        
+
         const span = document.createElement('span');
         span.className = 'legit-highlight';
-        // Inline styles ensure it works even if external CSS fails
+        span.textContent = highlighted;
+        
         span.style.cssText = `
             background-color: ${theme.bg};
             color: #000;
             border: 2px solid ${theme.border};
             border-radius: 2px;
             box-shadow: 0 0 5px ${theme.shadow};
-            transition: all 0.5s ease;
             cursor: pointer;
             display: inline;
         `;
-        span.textContent = highlighted;
+
+        const parent = textNode.parentNode;
+        if(parent) {
+            parent.insertBefore(document.createTextNode(before), textNode);
+            parent.insertBefore(span, textNode);
+            parent.insertBefore(document.createTextNode(after), textNode);
+            parent.removeChild(textNode);
+        }
+    }
+
+    // --- HELPER: Toast Notification ---
+    function showToast(message, type = 'info') {
+        // Remove existing toast
+        const existing = document.getElementById('legit-toast');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.id = 'legit-toast';
+        toast.textContent = message;
         
-        // Inject Styles for Animation
+        const bgColors = {
+            info: '#3b82f6',
+            warning: '#40bb02',
+            error: '#d10f0f'
+        };
+
+        toast.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: ${bgColors[type] || bgColors.info};
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 2147483647;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        `;
+
+        document.body.appendChild(toast);
+
+        // Animate in
+        requestAnimationFrame(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        });
+
+        // Remove after 3s
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-20px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    function injectHighlightStyles(theme) {
         if (!document.getElementById('legit-highlight-styles')) {
             const style = document.createElement('style');
             style.id = 'legit-highlight-styles';
             style.textContent = `
                 @keyframes pulse {
                     0% { background-color: ${theme.bg}; transform: scale(1); }
-                    50% { background-color: ${theme.bg}; transform: scale(1.1); }
+                    50% { background-color: ${theme.bg}; transform: scale(1.05); }
                     100% { background-color: ${theme.bg}; transform: scale(1); }
                 }
             `;
             document.head.appendChild(style);
         }
-        
-        const parent = textNode.parentNode;
-        parent.insertBefore(document.createTextNode(before), textNode);
-        parent.insertBefore(span, textNode);
-        parent.insertBefore(document.createTextNode(after), textNode);
-        parent.removeChild(textNode);
+    }
+
+    function handleAutoRemove(type) {
+        if (type === 'default') {
+            highlightTimeoutId = setTimeout(() => {
+                clearHighlights();
+                highlightTimeoutId = null;
+            }, 10000); 
+            
+            if (visibilityListener) document.removeEventListener('visibilitychange', visibilityListener);
+            
+            visibilityListener = () => {
+                if (document.hidden) {
+                    clearHighlights();
+                    if (highlightTimeoutId) clearTimeout(highlightTimeoutId);
+                }
+            };
+            document.addEventListener('visibilitychange', visibilityListener);
+        }
     }
 
     function clearHighlights() {
@@ -237,11 +386,9 @@ if (!window.legitHighlighterLoaded) {
             const parent = highlight.parentNode;
             if(parent) {
                 parent.replaceChild(document.createTextNode(text), highlight);
-                parent.normalize(); // Merges adjacent text nodes back together
+                parent.normalize(); 
             }
         });
-
-        // Clean up listener
         if (visibilityListener) {
             document.removeEventListener('visibilitychange', visibilityListener);
             visibilityListener = null;
@@ -254,12 +401,8 @@ if (!window.legitHighlighterLoaded) {
             sendResponse({ success });
         } else if (message.type === 'CLEAR_HIGHLIGHTS') {
             clearHighlights();
-            if (highlightTimeoutId) {
-                clearTimeout(highlightTimeoutId);
-                highlightTimeoutId = null;
-            }
             sendResponse({ success: true });
         }
-        return true; // Keep channel open
+        return true; 
     });
 }

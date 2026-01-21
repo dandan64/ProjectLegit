@@ -418,6 +418,7 @@ document.addEventListener("DOMContentLoaded", () => {
             textWrapper.insertAdjacentHTML('beforeend', `<span class="rating-badge rating-error">Error</span>`);
             contentDiv.innerHTML = `<div class="agent-error">⚠️ ${escapeHtml(err.message)}</div>`;
             contentDiv.style.display = "block";
+
             
             agent.result = { rating: "ERROR", explanation: err.message, score: 0 };
             

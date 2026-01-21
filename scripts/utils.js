@@ -18,16 +18,79 @@ function createJumpyCalculatingText(baseText, dotCount) {
     }).join('') + dots;
 }
 
-function saveToCache(url, pageData, agents, score, summaryText) {
+async function saveToCache(url, pageData, agents, score, summaryText) {
     const key = getCacheKey(url);
+
+    // 1. OPTIMIZE: Create a "slim" version of pageData
+    // We DO NOT save 'bodyText' or 'excerpt' as they are huge and fill storage instantly.
+    // We only need title/domain for the header when loading from cache.
+    const slimPageData = {
+        title: pageData.title,
+        domain: pageData.domain,
+        author: pageData.author,
+        url: pageData.url
+    };
+
     const cacheData = {
         timestamp: Date.now(),
-        pageData: pageData, 
-        agents: agents.filter(a => !a.isBackground || !a.id === 'summary'), // Exclude background agents
+        pageData: slimPageData, 
+        agents: agents.filter(a => !a.isBackground && a.id !== 'summary'), // Exclude background agents
         score: score,
-        summaryText : summaryText
+        summaryText: summaryText
     };
-    chrome.storage.local.set({ [key]: cacheData });
+
+    try {
+        // Try saving normally
+        await chrome.storage.local.set({ [key]: cacheData });
+        console.log("✅ Saved to cache:", key);
+    } catch (error) {
+        // 2. CATCH: If quota exceeded, clean up and retry
+        if (error.message && (error.message.includes("quota exceeded") || error.message.includes("QUOTA_BYTES"))) {
+            console.warn("⚠️ Storage full! Cleaning old cache items...");
+            
+            const freedSpace = await handleQuotaExceeded();
+            
+            if (freedSpace) {
+                // Retry save ONE time
+                try {
+                    await chrome.storage.local.set({ [key]: cacheData });
+                    console.log("✅ Saved to cache after cleanup:", key);
+                } catch (retryError) {
+                    console.error("❌ Failed to save even after cleanup:", retryError);
+                }
+            }
+        } else {
+            console.error("Storage error:", error);
+        }
+    }
+}
+
+// Helper: Deletes oldest 30% of cached items to free space
+async function handleQuotaExceeded() {
+    try {
+        const allData = await chrome.storage.local.get(null);
+        const cacheKeys = Object.keys(allData).filter(k => k.startsWith('legit_cache_'));
+
+        if (cacheKeys.length === 0) return false;
+
+        // Sort by timestamp (Oldest first)
+        const sortedItems = cacheKeys.map(key => ({
+            key: key,
+            timestamp: allData[key].timestamp || 0
+        })).sort((a, b) => a.timestamp - b.timestamp);
+
+        // Calculate how many to delete (e.g., remove oldest 30%)
+        const countToDelete = Math.max(1, Math.floor(sortedItems.length * 0.3));
+        const keysToDelete = sortedItems.slice(0, countToDelete).map(item => item.key);
+
+        console.log(`🧹 Deleting ${keysToDelete.length} old cache items to free space.`);
+        
+        await chrome.storage.local.remove(keysToDelete);
+        return true;
+    } catch (e) {
+        console.error("Error during cache cleanup:", e);
+        return false;
+    }
 }
 
 // Removes specific URL from cache

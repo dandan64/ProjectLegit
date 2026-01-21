@@ -205,7 +205,7 @@ function ratingToScore(rating) {
         QUESTIONABLE: 40, MODERATE_BIAS: 40, CLICKBAIT: 50,
 
         // --- 🔴 RED (0-39) ---
-        SOMEWHAT_MISLEADING: 35, SENSATIONALIST: 35, ANONYMOUS: 35,
+        SENSATIONALIST: 35, ANONYMOUS: 35,
         POORLY_SOURCED: 30, POOR_QUALITY: 30, RECYCLED: 30, CONTAINS_ERRORS: 20,
         STRONG_BIAS: 20, UNSOURCED: 15, UNRELIABLE: 10,
         MISLEADING: 10, SUSPICIOUS: 10, DECEPTIVE: 5, HIGHLY_MANIPULATIVE: 5,
@@ -806,7 +806,7 @@ async function generateFinalSummary(agents, finalScore) {
             // Cleanup: Remove common prefixes like "Summary:" or "Verdict:"
             summaryBox.innerHTML = `
                 <div class="summary-body">
-                    <h3 class="summary-title">📝Analysis Summary</h3>
+                    <h3 class="summary-title">Analysis Summary</h3>
                     <div class="summary-content" id="summaryText">
                         <span>${finalSummary}</span>
                     </div>

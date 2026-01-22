@@ -438,9 +438,9 @@ document.addEventListener("DOMContentLoaded", () => {
         scoreBox.classList.remove('expanded');
         
         const btn = document.getElementById('reanalyzeBtn');
-
+        console.log("!!!! ", parseAgentResponse("אוקיי, הנה הערכת האמינות של הארגון שמאחורי הדומיין www.c14.co.il **RATING:** QUESTIONABLE **EXPLANATION:** ערוץ 14 (לשעבר ערוץ 20) הוא ערוץ טלוויזיה מסחרי ישראלי המזוהה עם הימין הפוליטי והשמרני. הוא נמצא בבעלות יצחק מירילשוילי, באמצעות תאגיד הרשום באיי הבתולה הבריטיים, מה שמקשה על שקיפות מלאה של מבנה הבעלות. ויקיפדיה מציינת שהערוץ ספג ביקורת על הטיה פוליטית, הדרת זרמים דתיים ופרסום תיאוריות קונספירציה. לא מצאתי מידע מפורש ב-Media Bias/Fact Check לגבי ערוץ 14, אך בהתחשב במידע הקיים על הבעלות, ההטיה הפוליטית המוצהרת והביקורת הציבורית, אני מעריך את אמינותו כמוטלת בספק."))
         btn.disabled = true;
-        btn.innerHTML = 'Re-analyzing...';
+        btn.innerHTML = TRANSLATIONS[currentLang].reanalyzing;
 
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });

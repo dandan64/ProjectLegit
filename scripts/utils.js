@@ -221,7 +221,8 @@ function parseAgentResponse(text) {
     console.log('📋 Parsing response:', text.substring(0, 200) + '...');
     
     // Look for the rating - more flexible regex
-    const ratingMatch = text.match(/RATING:\s*\*?\*?([A-Z_]+)\*?\*?/i);
+    // const ratingMatch = text.match(/RATING:\s*\*?\*?([A-Z_]+)\*?\*?/i);
+    const ratingMatch = text.match(/RATING:[\s\*]*([A-Z_]+)/i);
     
     // Look for the explanation
     const explanationMatch = text.match(/EXPLANATION:\s*([\s\S]*)/i);
@@ -327,28 +328,28 @@ function displayOverallScore(agents) {
         color = "#10b981"; 
         // Vibrant Emerald Gradient
         gradient = "linear-gradient(135deg, #34d399 0%, #047857 100%)";
-        labelKey = "HIGHLY CREDIBLE"; 
+        labelKey = TRANSLATIONS[currentLang].HIGHLY_CREDIBLE.toUpperCase(); 
         emoji = "✓"; 
     } 
     else if (overallScore >= 60) { 
         color = "#d9bc00"; 
         // Rich Gold Gradient
         gradient = "linear-gradient(135deg, #fdfd02 0%, #d8b400 100%)";
-        labelKey = "CREDIBLE"; 
+        labelKey = TRANSLATIONS[currentLang].CREDIBLE.toUpperCase(); 
         emoji = "⭐"; 
     } 
     else if (overallScore >= 40) { 
         color = "#f97316"; 
         // Burnt Orange Gradient
         gradient = "linear-gradient(135deg, #fb923c 0%, #9a3412 100%)";
-        labelKey = "QUESTIONABLE"; 
+        labelKey = TRANSLATIONS[currentLang].QUESTIONABLE.toUpperCase(); 
         emoji = "⚠"; 
     } 
     else { 
         color = "#ef4444"; 
         // Deep Red Gradient
         gradient = "linear-gradient(135deg, #f87171 0%, #991b1b 100%)";
-        labelKey = "UNRELIABLE"; 
+        labelKey = TRANSLATIONS[currentLang].UNRELIABLE.toUpperCase(); 
         emoji = "☠"; 
     }
 
@@ -878,7 +879,7 @@ async function generateFinalSummary(agents, finalScore) {
             // Cleanup: Remove common prefixes like "Summary:" or "Verdict:"
             summaryBox.innerHTML = `
                 <div class="summary-body">
-                    <h3 class="summary-title">Analysis Summary</h3>
+                    <h3 class="summary-title">${TRANSLATIONS[currentLang].summaryTitle}</h3>
                     <div class="summary-content" id="summaryText">
                         <span>${finalSummary}</span>
                     </div>

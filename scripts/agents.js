@@ -16,9 +16,10 @@ function getAnalysisAgents(pageData) {
             priority: "high",
             weight: 0.20,
             useSearch: true,
-            prompt: currentLang === 'en' ? `Act as an Information Scientist specializing in Media Ecology, Source Verification, and Institutional Bias. Your goal is to evaluate the credibility of the *organization* behind the domain "${pageData.domain}" using SIFT and Lateral Reading methods.
+            prompt: `Act as an Information Scientist specializing in Media Ecology, Source Verification, and Institutional Bias. Your goal is to evaluate the credibility of the *organization* behind the domain "${pageData.domain}" using SIFT and Lateral Reading methods.
             
 Current Date: ${today}
+you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
 
 Your Methodology: SIFT (Lateral Reading Focus)
 1. Identify the Entity (Crucial): Do not just analyze the domain string; identify the parent company or organization.
@@ -47,34 +48,7 @@ Determine three distinct factors:
 Rate as: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, or UNRELIABLE
 Format:
 RATING: [your rating]
-EXPLANATION: [Provide a forensic analysis (3-4 sentences). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus. Use neutral, professional language.]` :
-
-`פעל כמדען מידע המתמחה באקולוגיית מדיה, אימות מקורות והטיה מוסדית. המטרה שלך היא להעריך את האמינות של הארגון שמאחורי הדומיין "${pageData.domain}" באמצעות שיטות SIFT וקריאה רוחבית.
-תאריך נוכחי: ${today}
-שיטת העבודה שלך: SIFT (מיקוד בקריאה רוחבית)
-1. זיהוי הישות (קריטי): אל תנתח רק את מחרוזת הדומיין; זהה את החברה או הארגון האם.
-2. התייעצות עם קונצנזוס כללי: בדוק תחילה בוויקיפדיה עבור סעיפי "בעלות," "הטיה פוליטית," או "מחלוקות."
-3. שומרי ראש מתמחים: השווה עם "Media Bias/Fact Check" (MBFC), "Ad Fontes Media," "AllSides," או "The Seventh Eye" (למדיה ישראלית).
-4. עקוב אחרי הכסף: חפש במפורש את מבנה הבעלות—האם זו קונגלומרט, יישות בבעלות המדינה, ארגון ללא מטרות רווח עם תורמים ספציפיים, או נכס של הון פרטי?
- חיפושים לביצוע:
-- "${pageData.domain} ויקיפדיה"
-- "${pageData.domain} media bias fact check funding"
-- "מי הבעלים של ${pageData.domain} media group"
-- "${pageData.domain} תורמים עיקריים בעלי מניות"
-- "${pageData.domain} הטיה פוליטית מחלוקת"
-לוגיקת החלטה:
-- שקיפות מימון: אם הבעלות מוסתרת או מסתמכת על "כסף אפל" (תורמים לא מדווחים), הורד את דירוג האמינות.
-- מדינה מול ציבור: הבחין בין *שדרנים ציבוריים* (לעיתים קרובות עצמאיים, למשל, BBC) ו*מדיה בשליטת המדינה* (זרוע תעמולה).
-- הסקה: אם הדומיין הספציפי אינו מופיע בשומרי הראש, נתח את חברת האם (למשל, אם "N12", נתח את "קשת מדיה גרופ").
-המשימה שלך:
-קבע שלושה גורמים מובחנים:
-1. אמינות עובדתית: היסטוריה של תיקונים, הסרות או בדיקות עובדות שנכשלו.
-2. הטיה פוליטית/עיתונאית: הנטייה האידיאולוגית הספציפית (למשל, "שמרני כלכלי," "שמאל פרוגרסיבי," "תומך ממשלתי").
-3. הקשר פיננסי: מי משלם את החשבונות? (למשל, "מונע פרסומות תאגידיות," "ממומן על ידי המדינה," "נתמך על ידי תורמים").
-דרג כ: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, או UNRELIABLE
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק ניתוח פורנזי (3-4 משפטים). התרכז במוניטין חיצוני בלבד. ציין במפורש מה *מקורות אחרים* אומרים על ההיסטוריה של הדומיין הזה, שקיפות המימון, והציות לקונצנזוס העובדתי. השתמש בשפה ניטרלית ומקצועית.]`
+EXPLANATION: [Provide a forensic analysis (3-4 sentences). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus. Use neutral, professional language.]` 
         },
         {
             id: "author",
@@ -83,11 +57,13 @@ EXPLANATION: [ספק ניתוח פורנזי (3-4 משפטים). התרכז במ
             priority: "medium",
             weight: 0.10,
             useSearch: true,
-            prompt: currentLang === 'en' ? `Act as an Investigative Journalist. Use Google Search to investigate the author of this text.
+            prompt: `Act as an Investigative Journalist. Use Google Search to investigate the author of this text.
 ### INPUT DATA          
+you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
 Detected Author Name: "${pageData.author}"
 Domain: "${pageData.domain}"
 Content Snippet: "${shortExcerpt}"
+
 
 ### INVESTIGATIVE PROTOCOL (Internal Reasoning)
 1. **Extraction**: If Author is "Unknown", scan the Excerpt for "By [Name]" or "Written by". 
@@ -104,20 +80,7 @@ Content Snippet: "${shortExcerpt}"
 
 ### FINAL FORMAT
 RATING: [INSERT RATING]
-EXPLANATION: [Identify the author's primary role. Mention one specific platform where they are verified (e.g., Muck Rack, LinkedIn, or official staff page). Conclude with a statement on their overall accountability.]` : 
-
-`פעל כעיתונאי חוקר. חפש בגוגל על מנת לחקור את מחבר הטקסט הזה.
-שם המחבר שזוהה: "${pageData.author}"
-דומיין: "${pageData.domain}"
-קטע תוכן: "${shortExcerpt}"
-המשימה שלך:
-1. אם "שם המחבר שזוהה" למעלה הוא "Unknown", נסה למצוא אותו בקטע התוכן.
-2. אם נמצא, חפש את שמו + הדומיין.
-3. קבע אם הוא אדם אמיתי עם רקורד עיתונאי או פרסונה מזויפת/מנהל.
-דרג כ: EXPERT, JOURNALIST, CITIZEN_JOURNALIST, ANONYMOUS, או SUSPICIOUS
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין אם המחבר הוא מומחה שניתן לאמת או ציין את חוסר האחריות.]`
+EXPLANATION: [Identify the author's primary role. Mention one specific platform where they are verified (e.g., Muck Rack, LinkedIn, or official staff page). Conclude with a statement on their overall accountability.]` 
         },
     {
         id: "consensus-verify",
@@ -127,11 +90,13 @@ EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4
         weight: 0,  // Background agent - no weight in final score
         useSearch: true,
         isBackgroundAgent: true,  // Flag for background processing
-        prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story presented by ${pageData.siteName}, and provide a detailed analysis with source citations.
+        prompt:  `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story presented by ${pageData.siteName}, and provide a detailed analysis with source citations.
 
+you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
 TITLE: "${pageData.title}"
 CONTENT: "${longExcerpt}"
 Current Date: ${today}
+
 
 If the date is the same as today, treat this as "Breaking News".
 
@@ -152,7 +117,10 @@ If the date is the same as today, treat this as "Breaking News".
 
 4. TEMPORAL CONTEXT (Breaking News Check):
 - Check the timestamps. If the story is less than 24 hours old (eg. , "Breaking News"), a lack of consensus is normal. Do not penalize heavily.
-- If the story is old but has NO corroboration, flag it as suspicious.
+- If the story is old but has NO corroboration, flag it as suspicious.4
+
+5. SOURCE INDEPENDENCE:
+- Note that this data is from "${pageData.siteName}". Do not use the source itself to verify its own claims.
 
 OUTPUT REQUIREMENT:
 You must output a JSON-like list of sources you found, followed by your analysis.
@@ -177,7 +145,7 @@ SOURCES_LIST:
 
 ANALYSIS:
 [Write your 3-4 sentence analysis here. Do not worry about linking sources here, just summarize the consensus.]
-` : `...Hebrew version...`
+`
     },
         {
             id: "consensus-format",
@@ -190,6 +158,7 @@ ANALYSIS:
             prompt: `You are a Citation Formatter.
 I will give you a list of sources and an analysis text.
 Your task is to append the sources to the text using a specific format.
+you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
 
 INPUT DATA:
 {INPUT_FROM_CONSENSUS_VERIFY}
@@ -218,12 +187,14 @@ EXPLANATION: [The text with the formatted citations inserted]`
             priority: "high",
             weight: 0.10,
             useSearch: false,
-            prompt: currentLang === 'en' ? `Act as a Skeptical Media Auditor specializing in linguistic manipulation. Your goal is to find the "Truth Gap" between a headline and its source text. You value precision over professional courtesy.
-            
+            prompt: `Act as a Skeptical Media Auditor specializing in linguistic manipulation. Your goal is to find the "Truth Gap" between a headline and its source text. You value precision over professional courtesy.
+
+you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is   
 ###CONTEXT:
 Headline: "${pageData.title}"
 Content Snippet: "${longExcerpt}"
 Current Date: ${today}
+
 
 ### THE AUDIT LOGIC
 1. **The Shorthand Test**: A headline is only "Accurate Shorthand" if it captures the *primary consequence* of the story. If it skips the main event to focus on a side-detail, it is SOMEWHAT_MISLEADING.
@@ -239,20 +210,7 @@ Current Date: ${today}
 
 ### OUTPUT FORMAT
 RATING: [RATING]
-EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Sentence 2: Identify the specific linguistic tactic or framing error. Sentence 3: A direct warning or confirmation for the user.]` : 
-
-`פעל כעורך בכיר. נתח אם הכותרת הוגנת או מניפולטיבית.
-כותרת: "${pageData.title}"
-קטע תוכן: "${shortExcerpt}"
-תאריך נוכחי: ${today}
-המשימה שלך:
-1. האם הכותרת מגזימה בתוכן?
-2. האם היא משתמשת בטקטיקות "קליקבייט" (למשל, "לא תאמינו...", אותיות גדולות)?
-3. האם היא משקפת במדויק את הסיפור?
-דרג כ: ACCURATE, MOSTLY_ACCURATE, SOMEWHAT_MISLEADING, CLICKBAIT, או DECEPTIVE
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק הסבר ברור ומבוסס היגיון בעברית (3-4 משפטים) המבקר את דיוק הכותרת והמסגור שלה.]`
+EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Sentence 2: Identify the specific linguistic tactic or framing error. Sentence 3: A direct warning or confirmation for the user.]`
         },
         {
             id: "bias",
@@ -261,11 +219,10 @@ EXPLANATION: [ספק הסבר ברור ומבוסס היגיון בעברית (3
             priority: "high",
             weight: 0.25,
             useSearch: true,
-            prompt: currentLang === 'en' ? 
+            prompt: 
             `You are a Media Bias Analyst. Analyze the following article for bias.
-        
+        you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
         Current Date: ${today}
-        
         Text: "${longExcerpt}"
         
         YOUR TASK:
@@ -297,39 +254,7 @@ EXPLANATION: [ספק הסבר ברור ומבוסס היגיון בעברית (3
         FORMAT:
         RATING: [your rating]
         EXPLANATION: Your analysis (3-5 sentences). When citing evidence, use [[QUOTE::exact text::QUOTE]] format. Example: "The article shows political bias when stating [[QUOTE::the policy is a complete disaster::QUOTE]] without presenting alternative views."` 
-         :  
-
-`פעל כאנליסט מוביל לפורנזיקה של מדיה המנהל פאנל של 11 מומחים מתמחים.
-המטרה שלך היא לבצע "בדיקת הטיה רב-צירית" על הטקסט למטה (מבלי להסתכל על הפרסומות).
-תאריך נוכחי: ${today}
-תחילת הטקסט: "${longExcerpt}"
-סוף הטקסט: "${excerptEnd}"
---- הפאנל של המומחים ---
-[קטגוריות סטנדרטיות]
-1. אנליסט פוליטי: בודק הטיה מפלגתית/העדפת מדיניות.
-2. מומחה למגדר: בודק סטריאוטיפים או התמקדות במראה מול כישרון.
-3. מבקר תאגידי (ישות): בודק שבח/ביקורת לא הוגנים על חברות.
-4. סוציולוג (גזעי/אתני): בודק סטריאוטיפים או הכללות שליליות.
-5. תאולוג (דתי): בודק ייצוג לא הוגן של אמונות.
-6. אנליסט גיאופוליטי (אזורי): בודק הטיה גיאוגרפית/שנאת זרים.
-7. מבקר מדיה (סנסציונליזם): בודק מניפולציה רגשית/קליקבייט.
-[מדדים חישוביים מתקדמים]
-8. אנליסט מבני: השווה את ההתחלה מול הסוף. האם המאמר מתחיל נייטרלי כדי לזכות באמון, ואז עובר לדעה חזקה במסקנה? (תבנית "סוס טרויאני").
-9. זיהוי תבניות: בודק אם רצף המשפטים בונה קשת נרטיבית מניפולטיבית.
-10. בלשן לקסיקלי: סורק קטגוריות מילים ספציפיות:
-- צפיפות גבוהה של מילים "כעס/השפעה" (למשל, "בושה", "פחד") -> מצביע על הטיה פוליטית.
-- צפיפות גבוהה של מילים "מיקוד בהווה" (למשל, "להודות", "להכחיש") -> מצביע על מסגור לא הוגן.
-11. שומר סף: השתמש בחיפוש בגוגל כדי לבדוק מה חסר. האם בעלי עניין או פרספקטיבות מרכזיות מוזכרות בדיווחים אחרים אך מושמטות כאן?
---- המשימה שלך ---
-1. התייעץ עם כל 11 הסוכנים פנימית.
-2. קבע אם קיימת הטיה משמעותית כלשהי.
-3. סנתז את הממצאים לפסק דין סופי אחד מבלי להזכיר אף אחד מהסוכנים הבודדים.
-4. אם נמצאו הטיות מרובות, הדירוג חייב לשקף את החומרה.
-דרג כ: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, או STRONG_BIAS
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק סיכום ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין במפורש את ההטיה החזקה ביותר שנמצאה (למשל, "זוהתה הטיה מבנית," "נמצאה הטיית שימור סף") וספק את הראיות/ההיגיון הספציפיים.]`
-        },
+         },
         {
             id: "style",
             name: TRANSLATIONS[currentLang].style,
@@ -337,9 +262,9 @@ EXPLANATION: [ספק סיכום ברור ומבוסס ראיות בעברית (3
             priority: "low",
             weight: 0.10,
             useSearch: false,
-            prompt: currentLang === 'en' ? `Act as a Senior News Editor and Quality Analyst. 
+            prompt: `Act as a Senior News Editor and Quality Analyst. 
 Evaluate the journalistic standards and writing quality of the following text.
-
+ you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
 Current Date: ${today}
 Text to Analyze: "${longExcerpt}"
 
@@ -362,7 +287,7 @@ Then, write a concise EXPLANATION (max 3 sentences) citing specific examples fro
 Format:
 RATING: [Rating]
 EXPLANATION: [Your analysis] When citing evidence, use [[QUOTE::exact text::QUOTE]] format.
-` : 'hebrew version...'
+` 
          },
          {
             id: "summary",
@@ -373,7 +298,7 @@ EXPLANATION: [Your analysis] When citing evidence, use [[QUOTE::exact text::QUOT
             useSearch: false,
             dependsOn: "all",  // Special flag: runs after ALL other agents complete
              prompt: `You are the Chief Legitimacy Analyst. Your role is to synthesize the technical findings from various analysis agents into a single, cohesive verdict for the human reader.
-
+ you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
 INPUT DATA (Agent | Rating | findings):
 {INPUT_FROM_ALL_AGENTS}
 

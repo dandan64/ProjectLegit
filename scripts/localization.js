@@ -15,7 +15,9 @@ let currentLang = 'en'; // Default
             overallScoreTitle: "Overall Legitimacy Score",
             newScanBtn: "✨ New Analysis",
             exportBtn: "📥 Export Results",
-            
+            reanalyzeBtn: "🔄 Re-Analyze Page",
+            reanalyzing: "🔄 Re-analyzing...",
+
             // Status & Errors
             calculating: "Calculating...",
             readyMsg: "New tab detected. Ready to analyze.",
@@ -36,6 +38,7 @@ let currentLang = 'en'; // Default
             bias: "Bias Detection",
             style: "Writing Quality",
             freshness: "Content Freshness",
+            summaryTitle: "📝Analysis Summary", 
 
             // --- RATINGS (GRADES) ---
             // General / Source
@@ -84,6 +87,8 @@ let currentLang = 'en'; // Default
             overallScoreTitle: "ציון אמינות כללי",
             newScanBtn: "✨ ניתוח חדש",
             exportBtn: "📥 ייצוא תוצאות",
+            reanalyzeBtn: "🔄 ניתוח מחדש",
+            reanalyzing: "🔄 מנתח מחדש...",
             
             // Status & Errors
             calculating: "מחשב...",
@@ -105,12 +110,13 @@ let currentLang = 'en'; // Default
             bias: "זיהוי הטיה",
             style: "איכות כתיבה",
             freshness: "רעננות התוכן",
+            summaryTitle: "📝 סיכום הניתוח",
 
             // --- RATINGS (GRADES) ---
             // General / Source
             HIGHLY_CREDIBLE: "אמין מאוד", CREDIBLE: "אמין", NEUTRAL: "ניטרלי", 
             QUESTIONABLE: "מוטל בספק", UNRELIABLE: "לא אמין",
-            
+
             // Author
             EXPERT: "מומחה", JOURNALIST: "עיתונאי", CITIZEN_JOURNALIST: "עיתונאי אזרחי", 
             ANONYMOUS: "אנונימי", SUSPICIOUS: "חשוד",

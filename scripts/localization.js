@@ -26,6 +26,7 @@ let currentLang = 'en'; // Default
             apiKeySaved: "✅ API key saved successfully!",
             noTextError: "No text found on this page to analyze.",
             errorPrefix: "Error: ",
+            cacheBadge: "♻️ Result from previous scan",
             
             // Agent Names
             source: "Source Credibility",
@@ -38,7 +39,7 @@ let currentLang = 'en'; // Default
             bias: "Bias Detection",
             style: "Writing Quality",
             freshness: "Content Freshness",
-            summaryTitle: "📝Analysis Summary", 
+            summaryTitle: "Analysis Summary", 
 
             // --- RATINGS (GRADES) ---
             // General / Source
@@ -98,6 +99,7 @@ let currentLang = 'en'; // Default
             apiKeySaved: "✅ המפתח נשמר בהצלחה!",
             noTextError: "לא נמצא טקסט לניתוח בעמוד זה.",
             errorPrefix: "שגיאה: ",
+            cacheBadge: "♻️ תוצאה מסריקה קודמת",
 
             // Agent Names
             source: "אמינות המקור",
@@ -105,12 +107,9 @@ let currentLang = 'en'; // Default
             summary: "סיכום ניהולי",
             consensus: "הצלבת מקורות",
             headline: "ניתוח כותרת",
-            sources: "בדיקת ציטוטים",
-            accuracy: "דיוק עובדתי",
             bias: "זיהוי הטיה",
             style: "איכות כתיבה",
-            freshness: "רעננות התוכן",
-            summaryTitle: "📝 סיכום הניתוח",
+            summaryTitle: "סיכום הניתוח",
 
             // --- RATINGS (GRADES) ---
             // General / Source

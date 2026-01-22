@@ -129,7 +129,7 @@ function loadFromCache(cacheData, currentTabId) {
 
     const header = document.getElementById("pageHeader");
     if (!document.getElementById("cacheBadge")) {
-        header.insertAdjacentHTML('beforeend', `<div id="cacheBadge" style="font-size:11px; color:#0d9488; margin-top:5px; font-weight:600;">♻️Result from previous scan</div>`);
+        header.insertAdjacentHTML('beforeend', `<div id="cacheBadge" style="font-size:11px; color:#0d9488; margin-top:5px; font-weight:600;">${TRANSLATIONS[currentLang].cacheBadge}</div>`);
     }
 
     const agentGrid = document.getElementById("agentGrid");
@@ -178,7 +178,7 @@ function loadFromCache(cacheData, currentTabId) {
             summaryDiv.style.display = "block";
             summaryDiv.innerHTML = `
                 <div class="summary-body">
-                    <h3 class="summary-title">📝Analysis Summary</h3>
+                    <h3 class="summary-title">${TRANSLATIONS[currentLang].summaryTitle}</h3>
                     <div class="summary-content" id="summaryText">
                         <span>${cacheData.summaryText}</span>
                     </div>
@@ -215,6 +215,29 @@ function sortGridDynamic() {
 
     // Re-append in new order
     cards.forEach(card => agentGrid.appendChild(card));
+}
+
+function extractTextWithNewlines(html) {
+    // Create a temporary DOM element to manipulate the HTML
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = html;
+
+    // A. Remove elements you clearly don't want (Metadata/Images)
+    // Remove images, figures, and bylines if Readability missed them
+    tempDiv.querySelectorAll("img, figure, video, .byline, time").forEach(el => el.remove());
+
+    // B. Insert Newlines before breaking the structure
+    // We look for block elements and append a double newline to them
+    const blockElements = tempDiv.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li");
+    blockElements.forEach(el => {
+        el.after("\n\n"); 
+    });
+
+    // C. Get the text
+    let text = tempDiv.innerText;
+
+    // D. Final Cleanup (Trim extra whitespace)
+    return text.trim();
 }
 
 function parseAgentResponse(text) {

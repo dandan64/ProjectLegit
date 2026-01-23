@@ -16,11 +16,10 @@ function getAnalysisAgents(pageData) {
             priority: "high",
             weight: 0.20,
             useSearch: true,
-            tokenBudget: 512,
+            tokenBudget: 0,
             prompt: `Act as an Information Scientist specializing in Media Ecology, Source Verification, and Institutional Bias. Your goal is to evaluate the credibility of the *organization* behind the domain "${pageData.domain}" using SIFT and Lateral Reading methods.
             
 Current Date: ${today}
-you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
 
 Your Methodology: SIFT (Lateral Reading Focus)
 1. Identify the Entity (Crucial): Do not just analyze the domain string; identify the parent company or organization.
@@ -91,11 +90,10 @@ EXPLANATION: [Identify the author's primary role. Mention one specific platform 
         priority: "high",
         weight: 0,  // Background agent - no weight in final score
         useSearch: true,
-        tokenBudget: 1024,
+        tokenBudget: 2048,
         isBackgroundAgent: true,  // Flag for background processing
         prompt:  `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story presented by ${pageData.siteName}, and provide a detailed analysis with source citations.
 
-you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
 TITLE: "${pageData.title}"
 CONTENT: "${longExcerpt}"
 Current Date: ${today}
@@ -120,15 +118,14 @@ If the date is the same as today, treat this as "Breaking News".
 
 4. TEMPORAL CONTEXT (Breaking News Check):
 - Check the timestamps. If the story is less than 24 hours old (eg. , "Breaking News"), a lack of consensus is normal. Do not penalize heavily.
-- If the story is old but has NO corroboration, flag it as suspicious.4
+- If the story is old but has NO corroboration, flag it as suspicious.
 
 5. SOURCE INDEPENDENCE:
-- Note that this data is from "${pageData.siteName}". Do not use the source itself to verify its own claims.
+- Note that this data is from "${pageData.siteName}". DO NOT use the source itself to verify its own claims.
 
 OUTPUT REQUIREMENT:
 1. You must output a JSON-like list of sources you found, followed by your analysis.
 2. Do NOT use citation numbers like [1]. Use the full URL.
-3. **IMPORTANT** - When citing sources, provide the direct, public URL (e.g., https://cnn.com/...) at the URL section.
 
 --- SCORING CRITERIA ---
 - CORROBORATED: Multiple independent Tier-1 outlets report the same Atomic Facts.
@@ -144,7 +141,7 @@ RATING: [your rating]
 SOURCES_LIST:
 - STATUS: [SUPPORTING/CONTRADICTING]
 - SOURCE_NAME: [e.g. BBC]
-- URL: [The direct, public URL - NOT THE URL YOU SEARCHED] 
+- URL: [The URL used to verify the claim] 
 Do NOT rely on internal citation tools.
 - RELEVANT_QUOTE: [Quote an exact short sentence (approx. 10-15 words) from the source that proves the point. Do not use quotation marks.]
 
@@ -159,12 +156,11 @@ ANALYSIS:
             priority: "high",
             weight: 0.25,  // This one counts toward final score
             useSearch: false,
-            tokenBudget: 1024,
+            tokenBudget: 0,
             dependsOn: "consensus-verify",  // Receives input from first agent
             prompt: `You are a Citation Formatter.
 I will give you a list of sources and an analysis text.
 Your task is to append the sources to the text using a specific format.
-you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
 
 INPUT DATA:
 {INPUT_FROM_CONSENSUS_VERIFY}
@@ -177,7 +173,6 @@ INSTRUCTIONS:
 5. Add at MAX 2 citation per point, and DO NOT use the same source twice for the same point. 
 6. If possible, DO NOT use the same source twice in the entire analysis.
 7. DO NOT use sources in SOURCES_LIST with a similar name to the original source name (e.g., "ynet.co.il" is similar to "ynetnews.com"). Original source name: ${pageData.domain}.
-8. USE THE DIRECT, PUBLIC URL FROM THE "URL" FIELD.
 
 REQUIRED CITATION INSERTION FORMAT:
 For supporting: [[SOURCE::Name::URL::Quote::SOURCE]]
@@ -196,8 +191,7 @@ EXPLANATION: [The text with the formatted citations inserted]`
             useSearch: false,
             tokenBudget: 0,
             prompt: `Act as a Skeptical Media Auditor specializing in linguistic manipulation. Your goal is to find the "Truth Gap" between a headline and its source text. You value precision over professional courtesy.
-
-you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is   
+   
 ###CONTEXT:
 Headline: "${pageData.title}"
 Content Snippet: "${longExcerpt}"
@@ -227,10 +221,9 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
             priority: "high",
             weight: 0.25,
             useSearch: true,
-            tokenBudget: 512,
+            tokenBudget: 0,
             prompt: 
             `You are a Media Bias Analyst. Analyze the following article for bias.
-        you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
         Current Date: ${today}
         Text: "${longExcerpt}"
         
@@ -271,10 +264,9 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
             priority: "low",
             weight: 0.10,
             useSearch: false,
-            tokenBudget: 512,
+            tokenBudget: 0,
             prompt: `Act as a Senior News Editor and Quality Analyst. 
 Evaluate the journalistic standards and writing quality of the following text.
- you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
 Current Date: ${today}
 Text to Analyze: "${longExcerpt}"
 
@@ -309,7 +301,6 @@ EXPLANATION: [Your analysis] When citing evidence, use [[QUOTE::exact text::QUOT
             tokenBudget: 512,
             dependsOn: "all",  // Special flag: runs after ALL other agents complete
              prompt: `You are the Chief Legitimacy Analyst. Your role is to synthesize the technical findings from various analysis agents into a single, cohesive verdict for the human reader.
- you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
 INPUT DATA (Agent | Rating | findings):
 {INPUT_FROM_ALL_AGENTS}
 

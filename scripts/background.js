@@ -112,7 +112,7 @@ function extractTextFromResponse(candidate) {
  * Calls the Gemini API with a given prompt text and returns the trimmed response text
  */
 async function callGemini(promptText, options = {}) {
-    const { skipCache = false, retries = 2, useSearch = false } = options;
+    const { skipCache = false, retries = 2, useSearch = false, tokensBudget = 1024 } = options;
     
     // Check cache first (unless skipped)
     if (!skipCache) {
@@ -144,9 +144,12 @@ async function callGemini(promptText, options = {}) {
                 ],
                 generationConfig: {
                     temperature: 0.2,
-                    maxOutputTokens: 15000,
+                    maxOutputTokens: 30000,
                     topK: 40,
-                    topP: 0.95
+                    topP: 0.95,
+                    thinking_config: {
+                        thinking_budget: tokensBudget
+                    }
                 },
                 safetySettings: [
                     { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
@@ -160,7 +163,7 @@ async function callGemini(promptText, options = {}) {
                 ];
             }
             const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -243,7 +246,7 @@ async function callGemini(promptText, options = {}) {
  */
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === "CALL_GEMINI") {
-        callGemini(msg.prompt, {useSearch: msg.useSearch})
+        callGemini(msg.prompt, {useSearch: msg.useSearch, tokensBudget: msg.tokensBudget})
             .then(result => {
                 sendResponse({ result });
             })

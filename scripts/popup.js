@@ -306,7 +306,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     const response = await chrome.runtime.sendMessage({
                         type: "CALL_GEMINI",
                         prompt: agent.prompt,
-                        useSearch: agent.useSearch
+                        useSearch: agent.useSearch,
+                        tokensBudget: agent.tokenBudget
                     });
                     
                     if (response.error) throw new Error(response.error);
@@ -367,7 +368,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await chrome.runtime.sendMessage({
                 type: "CALL_GEMINI",
                 prompt: agent.prompt,
-                useSearch: agent.useSearch
+                useSearch: agent.useSearch,
+                tokensBudget: agent.tokenBudget
             });
 
             loaderDiv.style.display = "none";

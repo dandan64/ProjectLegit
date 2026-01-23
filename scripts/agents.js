@@ -16,6 +16,7 @@ function getAnalysisAgents(pageData) {
             priority: "high",
             weight: 0.20,
             useSearch: true,
+            tokenBudget: 512,
             prompt: `Act as an Information Scientist specializing in Media Ecology, Source Verification, and Institutional Bias. Your goal is to evaluate the credibility of the *organization* behind the domain "${pageData.domain}" using SIFT and Lateral Reading methods.
             
 Current Date: ${today}
@@ -57,6 +58,7 @@ EXPLANATION: [Provide a forensic analysis (3-4 sentences). Focus entirely on ext
             priority: "medium",
             weight: 0.10,
             useSearch: true,
+            tokenBudget: 0,
             prompt: `Act as an Investigative Journalist. Use Google Search to investigate the author of this text.
 ### INPUT DATA          
 you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
@@ -89,6 +91,7 @@ EXPLANATION: [Identify the author's primary role. Mention one specific platform 
         priority: "high",
         weight: 0,  // Background agent - no weight in final score
         useSearch: true,
+        tokenBudget: 1024,
         isBackgroundAgent: true,  // Flag for background processing
         prompt:  `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story presented by ${pageData.siteName}, and provide a detailed analysis with source citations.
 
@@ -123,8 +126,9 @@ If the date is the same as today, treat this as "Breaking News".
 - Note that this data is from "${pageData.siteName}". Do not use the source itself to verify its own claims.
 
 OUTPUT REQUIREMENT:
-You must output a JSON-like list of sources you found, followed by your analysis.
-Do NOT use citation numbers like [1]. Use the full URL.
+1. You must output a JSON-like list of sources you found, followed by your analysis.
+2. Do NOT use citation numbers like [1]. Use the full URL.
+3. **IMPORTANT** - When citing sources, provide the direct, public URL (e.g., https://cnn.com/...) at the URL section.
 
 --- SCORING CRITERIA ---
 - CORROBORATED: Multiple independent Tier-1 outlets report the same Atomic Facts.
@@ -140,7 +144,8 @@ RATING: [your rating]
 SOURCES_LIST:
 - STATUS: [SUPPORTING/CONTRADICTING]
 - SOURCE_NAME: [e.g. BBC]
-- URL: [The actual link found in search] 
+- URL: [The direct, public URL - NOT THE URL YOU SEARCHED] 
+Do NOT rely on internal citation tools.
 - RELEVANT_QUOTE: [Quote an exact short sentence (approx. 10-15 words) from the source that proves the point. Do not use quotation marks.]
 
 ANALYSIS:
@@ -154,6 +159,7 @@ ANALYSIS:
             priority: "high",
             weight: 0.25,  // This one counts toward final score
             useSearch: false,
+            tokenBudget: 1024,
             dependsOn: "consensus-verify",  // Receives input from first agent
             prompt: `You are a Citation Formatter.
 I will give you a list of sources and an analysis text.
@@ -171,6 +177,7 @@ INSTRUCTIONS:
 5. Add at MAX 2 citation per point, and DO NOT use the same source twice for the same point. 
 6. If possible, DO NOT use the same source twice in the entire analysis.
 7. DO NOT use sources in SOURCES_LIST with a similar name to the original source name (e.g., "ynet.co.il" is similar to "ynetnews.com"). Original source name: ${pageData.domain}.
+8. USE THE DIRECT, PUBLIC URL FROM THE "URL" FIELD.
 
 REQUIRED CITATION INSERTION FORMAT:
 For supporting: [[SOURCE::Name::URL::Quote::SOURCE]]
@@ -187,6 +194,7 @@ EXPLANATION: [The text with the formatted citations inserted]`
             priority: "high",
             weight: 0.10,
             useSearch: false,
+            tokenBudget: 0,
             prompt: `Act as a Skeptical Media Auditor specializing in linguistic manipulation. Your goal is to find the "Truth Gap" between a headline and its source text. You value precision over professional courtesy.
 
 you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is   
@@ -219,6 +227,7 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
             priority: "high",
             weight: 0.25,
             useSearch: true,
+            tokenBudget: 512,
             prompt: 
             `You are a Media Bias Analyst. Analyze the following article for bias.
         you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
@@ -262,6 +271,7 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
             priority: "low",
             weight: 0.10,
             useSearch: false,
+            tokenBudget: 512,
             prompt: `Act as a Senior News Editor and Quality Analyst. 
 Evaluate the journalistic standards and writing quality of the following text.
  you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
@@ -296,6 +306,7 @@ EXPLANATION: [Your analysis] When citing evidence, use [[QUOTE::exact text::QUOT
             priority: "high",
             weight: 0.00,
             useSearch: false,
+            tokenBudget: 512,
             dependsOn: "all",  // Special flag: runs after ALL other agents complete
              prompt: `You are the Chief Legitimacy Analyst. Your role is to synthesize the technical findings from various analysis agents into a single, cohesive verdict for the human reader.
  you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is

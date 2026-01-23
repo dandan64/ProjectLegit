@@ -217,6 +217,8 @@ function sortGridDynamic() {
     cards.forEach(card => agentGrid.appendChild(card));
 }
 
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!WIP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function extractTextWithNewlines(html) {
     // Create a temporary DOM element to manipulate the HTML
     const tempDiv = document.createElement("div");
@@ -239,6 +241,8 @@ function extractTextWithNewlines(html) {
     // D. Final Cleanup (Trim extra whitespace)
     return text.trim();
 }
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!WIP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 function parseAgentResponse(text) {
     console.log('📋 Parsing response:', text.substring(0, 200) + '...');
@@ -637,26 +641,6 @@ function attachQuoteLinkListeners() {
                 } else {
                     link.style.backgroundColor = '#fecaca';
                     console.warn('❌ Quote not found on page');
-                    
-                    // Show user-friendly error
-                    // const errorMsg = document.createElement('div');
-                    // errorMsg.textContent = 'Quote not found on current page';
-                    // errorMsg.style.cssText = `
-                    //     position: fixed;
-                    //     top: 20px;
-                    //     right: 20px;
-                    //     background: #fee2e2;
-                    //     color: #991b1b;
-                    //     padding: 12px 16px;
-                    //     border-radius: 8px;
-                    //     border: 1px solid #f87171;
-                    //     z-index: 10000;
-                    //     font-size: 13px;
-                    //     font-weight: 600;
-                    //     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                    // `;
-                    // document.body.appendChild(errorMsg);
-                    // setTimeout(() => errorMsg.remove(), 3000);
                 }
             } catch (error) {
                 console.error('Error highlighting quote:', error);
@@ -673,27 +657,16 @@ function attachQuoteLinkListeners() {
     });
 }
 
-function extractRealUrl(rawUrl) {
-    if (!rawUrl) return "";
-    let url = rawUrl.trim();
-
-    if (url.includes("/url?q=")) {
-        try {
-            // 1. Get everything after 'q='
-            const queryString = url.split("/url?q=")[1];
-            
-            // 2. Stop at the next '&' (which usually starts Google's tracking params)
-            const encodedUrl = queryString.split("&")[0];
-            
-            // 3. Decode the result (converts 'https%3A%2F%2F' back to 'https://')
-            return decodeURIComponent(encodedUrl);
-        } catch (e) {
-            console.warn("Failed to clean URL:", url);
-            return url; // Fallback to original if parsing fails
-        }
-    }
-
-    return url;
+function createDirectLink(domain, title) {
+    // 1. Construct a precise query
+    // "site:foxbusiness.com Trump Iran protests Davos 2026"
+    const query = `site:${domain} ${title}`;
+    
+    // 2. Add the !ducky bang (Trigger "I'm Feeling Lucky")
+    // This tells DuckDuckGo: "Don't show me results, just take me to the first one."
+    const luckyUrl = `https://duckduckgo.com/?q=!ducky+${encodeURIComponent(query)}`;
+    
+    return luckyUrl;
 }
 
 function parseAndLinkifySources(rawExplanation) {
@@ -703,27 +676,25 @@ function parseAndLinkifySources(rawExplanation) {
 
     // Link Parsing (Supporting)
     const sourceRegex = /\[\[SOURCE::(.*?)::(.*?)::(.*?)::SOURCE\]\]/g;
-    safeText = safeText.replace(sourceRegex, (match, title, url, quote) => {
-        const finalUrl = extractRealUrl(url);
+    safeText = safeText.replace(sourceRegex, (match, domainName, title, quote) => {
 
-        console.log('Creating supporting source FINAL URL:', finalUrl);
-        const cleanTitle = title.trim();
+        const cleanDomain = domainName.trim();
         const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 
-        return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
-                <span class="source-icon">✓</span> ${escapeHtml(cleanTitle)}
+        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanDomain)}">
+                <span class="source-icon">✓</span> ${escapeHtml(cleanDomain)}
             </a>`;
     });
 
     // Link Parsing (Contradicting)
     const contraRegex = /\[\[CONTRA::(.*?)::(.*?)::(.*?)::CONTRA\]\]/g;
-    safeText = safeText.replace(contraRegex, (match, title, url, quote) => {
-        const finalUrl = extractRealUrl(url);
-        const cleanTitle = title.trim();
+    safeText = safeText.replace(contraRegex, (match, domainName, title, quote) => {
+
+        const cleanDomain = domainName.trim();
         const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 
-        return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
-                <span class="source-icon">✗</span> ${escapeHtml(cleanTitle)}
+        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanDomain)}">
+                <span class="source-icon">✗</span> ${escapeHtml(cleanDomain)}
             </a>`;
     });
 
@@ -731,6 +702,18 @@ function parseAndLinkifySources(rawExplanation) {
     safeText = safeText.replace(/\n/g, '<br>');
 
     return safeText;
+}
+
+function waitForTabLoad(tabId) {
+    return new Promise((resolve) => {
+        const listener = (updatedTabId, changeInfo, tab) => {
+            if (!tab.url.includes("duckduckgo.com") && !tab.url.includes("google.com")) {
+                    chrome.tabs.onUpdated.removeListener(listener);
+                    resolve(tab);
+                }
+        };
+        chrome.tabs.onUpdated.addListener(listener);
+    });
 }
 
 function attachSourceLinkListeners() {
@@ -757,7 +740,12 @@ function attachSourceLinkListeners() {
                     active: true 
                 });
                 
-                console.log('📂 New tab opened:', newTab.id);
+                console.log('⏳ Waiting for redirect to finish...');
+
+                // 2. WAIT HERE for the redirect to finish and page to load
+                await waitForTabLoad(newTab.id);
+
+                console.log('✅ Page loaded. Injecting highlighter...');
                 
                 if (!quote || quote.length < 2) {
                     console.log('No quote to highlight');

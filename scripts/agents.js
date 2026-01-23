@@ -140,8 +140,8 @@ Format:
 RATING: [your rating]
 SOURCES_LIST:
 - STATUS: [SUPPORTING/CONTRADICTING]
-- SOURCE_NAME: [e.g. BBC]
-- URL: [The URL used to verify the claim] 
+- SOURCE_DOMAIN_NAME: [e.g. "foxbusiness.com"]
+- ARTICLE_TITLE: [Distinct Title of the exact source] 
 Do NOT rely on internal citation tools.
 - RELEVANT_QUOTE: [Quote an exact short sentence (approx. 10-15 words) from the source that proves the point. Do not use quotation marks.]
 
@@ -156,7 +156,7 @@ ANALYSIS:
             priority: "high",
             weight: 0.25,  // This one counts toward final score
             useSearch: false,
-            tokenBudget: 0,
+            tokenBudget: 1024,
             dependsOn: "consensus-verify",  // Receives input from first agent
             prompt: `You are a Citation Formatter.
 I will give you a list of sources and an analysis text.
@@ -172,11 +172,11 @@ INSTRUCTIONS:
 4. Use the "RELEVANT_QUOTE" field from the list to populate the quote section of the tag.
 5. Add at MAX 2 citation per point, and DO NOT use the same source twice for the same point. 
 6. If possible, DO NOT use the same source twice in the entire analysis.
-7. DO NOT use sources in SOURCES_LIST with a similar name to the original source name (e.g., "ynet.co.il" is similar to "ynetnews.com"). Original source name: ${pageData.domain}.
+7. DO NOT USE SOURCES with an EXACT OR SIMILAR domain name to the original source name (e.g., "ynet.co.il" is similar to "ynetnews.com"). Original source name: ${pageData.domain}.
 
 REQUIRED CITATION INSERTION FORMAT:
-For supporting: [[SOURCE::Name::URL::Quote::SOURCE]]
-For contradicting: [[CONTRA::Name::URL::Quote::CONTRA]]
+For supporting: [[SOURCE::DOMAIN_NAME::Article_Title::Quote::SOURCE]]
+For contradicting: [[CONTRA::DOMAIN_NAME::Article_Title::Quote::CONTRA]]
 
 Final Output Structure:
 RATING: [Keep the original rating]
@@ -221,7 +221,7 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
             priority: "high",
             weight: 0.25,
             useSearch: true,
-            tokenBudget: 0,
+            tokenBudget: 512,
             prompt: 
             `You are a Media Bias Analyst. Analyze the following article for bias.
         Current Date: ${today}

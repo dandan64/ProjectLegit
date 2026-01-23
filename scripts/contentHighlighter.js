@@ -279,7 +279,7 @@ if (!window.legitHighlighterLoaded) {
         // 5. Final Threshold Check
         // We allow about 30-40% difference. 
         // Note: Levenshtein distance includes insertions/deletions, so a score of 0 is perfect.
-        const threshold = target.length * 0.5; 
+        const threshold = target.length * 0.4; 
 
         if (bestLocation && bestDistance <= threshold) {
             console.log(`🎯 Fuzzy Match Found! Score: ${bestDistance} (Threshold: ${threshold})`);

@@ -660,7 +660,7 @@ function attachQuoteLinkListeners() {
 function createDirectLink(domain, title) {
     // 1. Construct a precise query
     // "site:foxbusiness.com Trump Iran protests Davos 2026"
-    const query = `site:${domain} ${title}`;
+    const query = `${domain} ${title}`;
     
     // 2. Add the !ducky bang (Trigger "I'm Feeling Lucky")
     // This tells DuckDuckGo: "Don't show me results, just take me to the first one."
@@ -681,8 +681,8 @@ function parseAndLinkifySources(rawExplanation) {
         const cleanDomain = domainName.trim();
         const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 
-        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanDomain)}">
-                <span class="source-icon">✓</span> ${escapeHtml(cleanDomain)}
+        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-supporting" title="Click to open: ${escapeHtml(title)}">
+                <span class="source-icon">✓</span> ${escapeHtml(title)}
             </a>`;
     });
 
@@ -734,7 +734,7 @@ function attachSourceLinkListeners() {
             console.log('📝 Quote to highlight:', quote);
             
             try {
-                // Open the new tab FIRST
+                // 1. Open the new tab
                 const newTab = await chrome.tabs.create({ 
                     url: href,
                     active: true 
@@ -742,36 +742,52 @@ function attachSourceLinkListeners() {
                 
                 console.log('⏳ Waiting for redirect to finish...');
 
-                // 2. WAIT HERE for the redirect to finish and page to load
+                // 2. Wait for tab to load (using the fixed function from previous step)
                 await waitForTabLoad(newTab.id);
+                
+                // 3. Small buffer for JS rendering
+                await new Promise(r => setTimeout(r, 500));
 
-                console.log('✅ Page loaded. Injecting highlighter...');
+                console.log('✅ Page loaded. waiting for text...');
                 
                 if (!quote || quote.length < 2) {
                     console.log('No quote to highlight');
                     return;
                 }
                 
+                // 4. ROBUST WAIT: Wait for text with a TIMEOUT [FIX IS HERE]
                 try {
                     await chrome.scripting.executeScript({
                         target: { tabId: newTab.id },
                         args: [quote],
                         func: (textToFind) => {
                             return new Promise((resolve) => {
-                                // A. Helper to check if text exists yet
-                                const hasText = () => document.body && document.body.innerText.includes(textToFind);
+                                // A. Set a hard timeout (e.g., 1 seconds)
+                                const timeoutId = setTimeout(() => {
+                                    resolve(false); // Resolve even if not found so script continues
+                                }, 1000);
 
-                                if (hasText()) return resolve();
+                                // B. Helper to check text
+                                const hasText = () => {
+                                    // Simple check. We don't need to be perfect here, 
+                                    // contentHighlighter.js is the expert.
+                                    return document.body && document.body.innerText.includes(textToFind);
+                                };
 
-                                // B. If not, watch for changes
+                                if (hasText()) {
+                                    clearTimeout(timeoutId);
+                                    return resolve(true);
+                                }
+
+                                // C. Watch for changes
                                 const observer = new MutationObserver(() => {
                                     if (hasText()) {
                                         observer.disconnect();
-                                        resolve();
+                                        clearTimeout(timeoutId);
+                                        resolve(true);
                                     }
                                 });
 
-                                // C. Start watching the document root
                                 observer.observe(document.documentElement, {
                                     childList: true,
                                     subtree: true,
@@ -781,33 +797,32 @@ function attachSourceLinkListeners() {
                         }
                     });
                 } catch (err) {
-                    console.error('Error waiting for text:', err);
+                    console.error('⚠️ Wait for text warning (non-fatal):', err);
+                    // We continue anyway! 
                 }
                 
-                // Inject content script on new tab
-                try {
-                    await chrome.scripting.executeScript({
-                        target: { tabId: newTab.id },
-                        files: ['scripts/contentHighlighter.js']
-                    });
-                    console.log('✅ Content script injected');
-                } catch (err) {
-                    console.error('Failed to inject script:', err);
-                    return;
-                }
+                console.log('💉 Injecting highlighter script...');
+
+                // 5. Inject content script
+                await chrome.scripting.executeScript({
+                    target: { tabId: newTab.id },
+                    files: ['scripts/contentHighlighter.js']
+                });
                 
-                // Send highlight message to NEW tab
+                // 6. Trigger the Highlight
+                // We do this REGARDLESS of whether step 4 found the text strictly.
+                // The highlighter has Levenshtein/Fuzzy matching which might succeed where strict includes() failed.
                 chrome.tabs.sendMessage(newTab.id, {
                     type: 'HIGHLIGHT_QUOTE',
                     quote: quote,
                     highlightType: sourceType
                 }, (response) => {
                     if (chrome.runtime.lastError) {
-                        console.warn('Highlight failed:', chrome.runtime.lastError.message);
+                        console.warn('Highlight failed (Runtime Error):', chrome.runtime.lastError.message);
                     } else if (response?.success) {
-                        console.log('✅ Quote highlighted on source page');
+                        console.log('✅ Quote highlighted successfully');
                     } else {
-                        console.warn('⚠️ Quote not found on source page');
+                        console.warn('⚠️ Quote not found by fuzzy matcher');
                     }
                 });
                 

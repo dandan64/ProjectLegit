@@ -140,7 +140,7 @@ Format:
 RATING: [your rating]
 SOURCES_LIST:
 - STATUS: [SUPPORTING/CONTRADICTING]
-- SOURCE_DOMAIN_NAME: [e.g. "foxbusiness.com"]
+- SOURCE_NAME: [e.g. "bbc"]
 - ARTICLE_TITLE: [Distinct Title of the exact source] 
 Do NOT rely on internal citation tools.
 - RELEVANT_QUOTE: [Quote an exact short sentence (approx. 10-15 words) from the source that proves the point. Do not use quotation marks.]

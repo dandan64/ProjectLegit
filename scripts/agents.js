@@ -17,15 +17,20 @@ function getAnalysisAgents(pageData) {
             weight: 0.20,
             useSearch: true,
             tokenBudget: 0,
-            prompt: `Act as an Information Scientist specializing in Media Ecology, Source Verification, and Institutional Bias. Your goal is to evaluate the credibility of the *organization* behind the domain "${pageData.domain}" using SIFT and Lateral Reading methods.
-            
-Current Date: ${today}
+            systemInstruction: `Act as an Information Scientist specializing in Media Ecology, Source Verification, and Institutional Bias. Your goal is to evaluate the credibility of the *organization* behind the domain provided using SIFT and Lateral Reading methods.
 
-Your Methodology: SIFT (Lateral Reading Focus)
+            Your Methodology: SIFT (Lateral Reading Focus)
 1. Identify the Entity (Crucial): Do not just analyze the domain string; identify the parent company or organization.
 2. Consult General Consensus: Check Wikipedia first for "Ownership," "Political Alignment," or "Controversies" sections.
 3. Specialized Watchdogs: Cross-reference with "Media Bias/Fact Check" (MBFC), "Ad Fontes Media," "AllSides," or "The Seventh Eye" (for Israeli media).
 4. Follow the Money: Explicitly look for the ownership structure—is it a conglomerate, a state-owned enterprise, a non-profit with specific donors, or a private equity asset?
+            
+            Decision Logic:
+- Funding Transparency: If ownership is hidden or relies on "dark money" (undisclosed donors), downgrade the reliability rating.
+- State vs. Public: Distinguish between *Public Broadcasters* (often independent, e.g., BBC) and *State-Controlled Media* (propaganda arm).
+- Inference: If the specific domain is not listed in watchdogs, analyze the parent company (e.g., if "N12", analyze "Keshet Media Group").`,
+            prompt: ` Current Date: ${today}
+            Page Domain: "${pageData.domain}".
 
 Search Queries to Perform:
 - "${pageData.domain} Wikipedia"
@@ -33,11 +38,6 @@ Search Queries to Perform:
 - "who owns ${pageData.domain} media group"
 - "${pageData.domain} major donors shareholders"
 - "${pageData.domain} political alignment controversy"
-
-Decision Logic:
-- Funding Transparency: If ownership is hidden or relies on "dark money" (undisclosed donors), downgrade the reliability rating.
-- State vs. Public: Distinguish between *Public Broadcasters* (often independent, e.g., BBC) and *State-Controlled Media* (propaganda arm).
-- Inference: If the specific domain is not listed in watchdogs, analyze the parent company (e.g., if "N12", analyze "Keshet Media Group").
 
 Your Task:
 Determine three distinct factors:
@@ -48,7 +48,7 @@ Determine three distinct factors:
 Rate as: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, or UNRELIABLE
 Format:
 RATING: [your rating]
-EXPLANATION: [Provide a forensic analysis (3-4 sentences). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus. Use neutral, professional language.]` 
+EXPLANATION: [Provide a forensic analysis (3-4 sentences MAX). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus. Use neutral,professional language.]` 
         },
         {
             id: "author",
@@ -60,7 +60,6 @@ EXPLANATION: [Provide a forensic analysis (3-4 sentences). Focus entirely on ext
             tokenBudget: 0,
             prompt: `Act as an Investigative Journalist. Use Google Search to investigate the author of this text.
 ### INPUT DATA          
-you need to answer in "${currentLang === 'en' ? 'English' : 'Hebrew'}" but keep the format as is
 Detected Author Name: "${pageData.author}"
 Domain: "${pageData.domain}"
 Content Snippet: "${shortExcerpt}"
@@ -90,14 +89,13 @@ EXPLANATION: [Identify the author's primary role. Mention one specific platform 
         priority: "high",
         weight: 0,  // Background agent - no weight in final score
         useSearch: true,
-        tokenBudget: 2048,
+        tokenBudget: 0,
         isBackgroundAgent: true,  // Flag for background processing
         prompt:  `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story presented by ${pageData.siteName}, and provide a detailed analysis with source citations.
 
 TITLE: "${pageData.title}"
 CONTENT: "${longExcerpt}"
 Current Date: ${today}
-
 
 If the date is the same as today, treat this as "Breaking News".
 
@@ -156,7 +154,7 @@ ANALYSIS:
             priority: "high",
             weight: 0.25,  // This one counts toward final score
             useSearch: false,
-            tokenBudget: 1024,
+            tokenBudget: 0,
             dependsOn: "consensus-verify",  // Receives input from first agent
             prompt: `You are a Citation Formatter.
 I will give you a list of sources and an analysis text.
@@ -172,7 +170,7 @@ INSTRUCTIONS:
 4. Use the "RELEVANT_QUOTE" field from the list to populate the quote section of the tag.
 5. Add at MAX 2 citation per point, and DO NOT use the same source twice for the same point. 
 6. If possible, DO NOT use the same source twice in the entire analysis.
-7. DO NOT USE SOURCES with an EXACT OR SIMILAR domain name to the original source name (e.g., "ynet.co.il" is similar to "ynetnews.com"). Original source name: ${pageData.domain}.
+7. Original source name: "${pageData.siteName}". DO NOT USE SOURCES with an EXACT OR SIMILAR name to the original source name (e.g., "ynet.co.il" is similar to "ynetnews.com").
 
 REQUIRED CITATION INSERTION FORMAT:
 For supporting: [[SOURCE::DOMAIN_NAME::Article_Title::Quote::SOURCE]]
@@ -221,13 +219,9 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
             priority: "high",
             weight: 0.25,
             useSearch: true,
-            tokenBudget: 512,
-            prompt: 
-            `You are a Media Bias Analyst. Analyze the following article for bias.
-        Current Date: ${today}
-        Text: "${longExcerpt}"
-        
-        YOUR TASK:
+            tokenBudget: 0,
+            systemInstruction: `You are a Media Bias Analyst. Analyze articles for bias.
+            YOUR TASK:
         1. Check for these bias types:
            - Political bias (partisan language, one-sided arguments)
            - Gender bias (stereotyping, focus on appearance over merit)
@@ -242,7 +236,10 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
            - Are key stakeholders or perspectives missing?
            - Is there high density of emotional/loaded words?
         
-        3. use google search to check if important perspectives are omitted.
+        3. use google search to check if important perspectives are omitted.`,
+            prompt: 
+            `Current Date: ${today}
+        Text to analyze: "${longExcerpt}"
         
         CRITICAL OUTPUT RULES:
         - You MUST use EXACT quotes from the article as evidence.
@@ -255,7 +252,7 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
         
         FORMAT:
         RATING: [your rating]
-        EXPLANATION: Your analysis (3-5 sentences). When citing evidence, use [[QUOTE::exact text::QUOTE]] format. Example: "The article shows political bias when stating [[QUOTE::the policy is a complete disaster::QUOTE]] without presenting alternative views."` 
+        EXPLANATION: [Your analysis (3-5 sentences AT MAX)]. When citing evidence, use [[QUOTE::exact text::QUOTE]] format. Example: "The article shows political bias when stating [[QUOTE::the policy is a complete disaster::QUOTE]] without presenting alternative views."` 
          },
         {
             id: "style",
@@ -277,10 +274,10 @@ YOUR ANALYSIS CRITERIA:
 4. **Mechanics:** Are there glaring grammar issues, excessive capitalization, or non-standard punctuation (!!!)?
 
 RATING SYSTEM:
-- **PROFESSIONAL:** Neutral tone, clear attribution, excellent structure, no errors.
-- **ADEQUATE:** Readable, mostly neutral, minor structural flaws.
-- **SENSATIONALIST:** Highly emotional language, clickbait style, aggressive tone.
-- **POOR_QUALITY:** Riddled with errors, incoherent, or clearly AI-generated spam.
+- PROFESSIONAL: Neutral tone, clear attribution, excellent structure, no errors.
+- ADEQUATE: Readable, mostly neutral, minor structural flaws.
+- SENSATIONALIST: Highly emotional language, clickbait style, aggressive tone.
+- POOR_QUALITY: Riddled with errors, incoherent, or clearly AI-generated spam.
 
 Your Task:
 Assign a RATING from the list above.
@@ -298,7 +295,7 @@ EXPLANATION: [Your analysis] When citing evidence, use [[QUOTE::exact text::QUOT
             priority: "high",
             weight: 0.00,
             useSearch: false,
-            tokenBudget: 512,
+            tokenBudget: 0,
             dependsOn: "all",  // Special flag: runs after ALL other agents complete
              prompt: `You are the Chief Legitimacy Analyst. Your role is to synthesize the technical findings from various analysis agents into a single, cohesive verdict for the human reader.
 INPUT DATA (Agent | Rating | findings):

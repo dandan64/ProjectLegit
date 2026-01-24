@@ -112,7 +112,7 @@ function extractTextFromResponse(candidate) {
  * Calls the Gemini API with a given prompt text and returns the trimmed response text
  */
 async function callGemini(promptText, options = {}) {
-    const { skipCache = false, retries = 2, useSearch = false, tokensBudget = 1024 } = options;
+    const { skipCache = false, retries = 2, useSearch = false, tokensBudget = 0, systemInstruction = null } = options;
     
     // Check cache first (unless skipped)
     if (!skipCache) {
@@ -136,6 +136,9 @@ async function callGemini(promptText, options = {}) {
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
             const requestBody = {
+                system_instruction: systemInstruction ? {
+                    parts: [{ text: systemInstruction }]
+                } : undefined,
                 contents: [
                     {
                         role: "user",
@@ -143,17 +146,19 @@ async function callGemini(promptText, options = {}) {
                     }
                 ],
                 generationConfig: {
-                    temperature: 0.2,
-                    maxOutputTokens: 25000,
-                    topK: 40,
-                    topP: 0.95,
+                    temperature: 0.1,
+                    maxOutputTokens: 10000,
+                    topK: 10,
+                    topP: 0.2,
                     thinking_config: {
                         thinking_budget: tokensBudget
                     }
                 },
                 safetySettings: [
                     { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" }
+                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
                 ]
             };
 
@@ -162,6 +167,7 @@ async function callGemini(promptText, options = {}) {
                     { google_search: {} } 
                 ];
             }
+
             const response = await fetch(
                 `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
                 {

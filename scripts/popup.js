@@ -305,6 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 try {
                     const response = await chrome.runtime.sendMessage({
                         type: "CALL_GEMINI",
+                        systemInstruction: agent.systemInstruction,
                         prompt: agent.prompt,
                         useSearch: agent.useSearch,
                         tokensBudget: agent.tokenBudget
@@ -367,6 +368,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await chrome.runtime.sendMessage({
                 type: "CALL_GEMINI",
+                systemInstruction: agent.systemInstruction,
                 prompt: agent.prompt,
                 useSearch: agent.useSearch,
                 tokensBudget: agent.tokenBudget

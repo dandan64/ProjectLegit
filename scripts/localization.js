@@ -176,10 +176,23 @@ let currentLang = 'en'; // Default
         });
 
         // Update dynamic text if visible (like status message)
-        if (statusMsg.style.opacity === "1") {
-             // Re-set default ready message if it's the default state
-             if (statusMsg.textContent.includes("New tab") || statusMsg.textContent.includes("זוהה טאב")) {
+        // We use getElementById here to ensure we grab the element even if it's not in global scope
+        const statusMsg = document.getElementById("statusMsg");
+        
+        if (statusMsg && statusMsg.style.opacity === "1") {
+             const text = statusMsg.textContent;
+
+             // 1. Handle "Ready" Message
+             if (text.includes("New tab") || text.includes("זוהה טאב")) {
                  statusMsg.textContent = TRANSLATIONS[lang].readyMsg;
+             }
+             // 2. Handle "API Key Saved" Message (THIS WAS MISSING)
+             else if (text.includes("API key") || text.includes("המפתח")) {
+                 statusMsg.textContent = TRANSLATIONS[lang].apiKeySaved;
+             }
+             // 3. Handle "No Key" Message
+             else if (text.includes("Don't have") || text.includes("אין לך")) {
+                 statusMsg.textContent = TRANSLATIONS[lang].noKey;
              }
         }
 

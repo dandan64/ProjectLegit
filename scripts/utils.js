@@ -659,7 +659,7 @@ function attachQuoteLinkListeners() {
 
 function createDirectLink(domain, title) {
     // 1. Construct a precise query
-    // "site:foxbusiness.com Trump Iran protests Davos 2026"
+    // "foxbusiness.com Trump Iran protests Davos 2026"
     const query = `${domain} ${title}`;
     
     // 2. Add the !ducky bang (Trigger "I'm Feeling Lucky")

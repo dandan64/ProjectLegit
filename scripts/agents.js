@@ -29,7 +29,7 @@ function getAnalysisAgents(pageData) {
 - Funding Transparency: If ownership is hidden or relies on "dark money" (undisclosed donors), downgrade the reliability rating.
 - State vs. Public: Distinguish between *Public Broadcasters* (often independent, e.g., BBC) and *State-Controlled Media* (propaganda arm).
 - Inference: If the specific domain is not listed in watchdogs, analyze the parent company (e.g., if "N12", analyze "Keshet Media Group").`,
-            prompt: ` Current Date: ${today}
+            prompt: currentLang === 'en' ? ` Current Date: ${today}
             Page Domain: "${pageData.domain}".
 
 Search Queries to Perform:
@@ -40,7 +40,7 @@ Search Queries to Perform:
 - "${pageData.domain} political alignment controversy"
 
 Your Task:
-Determine three distinct factors:
+Determine and synthesize three distinct factors:
 1. Factual Reliability: History of corrections, retractions, or failed fact-checks.
 2. Political/Editorial Bias: The specific ideological lean (e.g., "Fiscal Conservative," "Progressive Left," "Pro-Government").
 3. Financial Context: Who pays the bills? (e.g., "Ad-driven corporate," "State-funded," "Donor-supported").
@@ -48,7 +48,28 @@ Determine three distinct factors:
 Rate as: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, or UNRELIABLE
 Format:
 RATING: [your rating]
-EXPLANATION: [Provide a forensic analysis (3-4 sentences MAX). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus. Use neutral,professional language.]` 
+EXPLANATION: [Provide a forensic analysis (3-4 sentences MAX). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus. Use neutral,professional language. DO NOT make your explation in bullet points.]` : 
+
+`תאריך נוכחי: ${today}
+דומיין האתר: "${pageData.domain}".
+שאילתות חיפוש לביצוע:
+- "${pageData.domain} ויקיפדיה"
+- "${pageData.domain} בדיקת עובדות הטיה תקצוב"
+- "מי הבעלים של קבוצת המדיה ${pageData.domain}"
+- "${pageData.domain} תורמים עיקריים בעלי מניות"
+- "${pageData.domain} נטייה פוליטית מחלוקת"
+
+המשימה שלך:
+קבע וסנתז שלושה גורמים מובחנים:
+1. אמינות עובדתית: היסטוריה של תיקונים, הסרות או בדיקות עובדות שנכשלו.
+2. הטיה פוליטית/ עיתונאית: הנטייה האידיאולוגית הספציפית (למשל, "שמרנות פיסקלית", "שמאל פרוגרסיבי", "תומך ממשלתי").
+3. הקשר פיננסי: מי משלם את החשבונות? (למשל, "מונע פרסומות תאגידיות", "ממומן על ידי המדינה", "נתמך על ידי תורמים").
+
+דרג כ: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, or UNRELIABLE
+
+פורמט:
+RATING: [הדירוג שלך]
+EXPLANATION: [ספק ניתוח פורנזי (מקסימום 3-4 משפטים). התמקד במוניטין חיצוני בלבד. הצהר במפורש מה מקורות אחרים אומרים על ההיסטוריה של דומיין זה, שקיפות מימון, והיצמדות לקונצנזוס העובדתי. השתמש בשפה ניטרלית ומקצועית.]`
         },
         {
             id: "author",
@@ -58,7 +79,7 @@ EXPLANATION: [Provide a forensic analysis (3-4 sentences MAX). Focus entirely on
             weight: 0.10,
             useSearch: true,
             tokenBudget: 0,
-            prompt: `Act as an Investigative Journalist. Use Google Search to investigate the author of this text.
+            prompt: currentLang === 'en' ? `Act as an Investigative Journalist. Use Google Search to investigate the author of this text.
 ### INPUT DATA          
 Detected Author Name: "${pageData.author}"
 Domain: "${pageData.domain}"
@@ -80,7 +101,29 @@ Content Snippet: "${shortExcerpt}"
 
 ### FINAL FORMAT
 RATING: [INSERT RATING]
-EXPLANATION: [Identify the author's primary role. Mention one specific platform where they are verified (e.g., Muck Rack, LinkedIn, or official staff page). Conclude with a statement on their overall accountability.]` 
+EXPLANATION: [Identify the author's primary role. Mention one specific platform where they are verified (e.g., Muck Rack, LinkedIn, or official staff page). Conclude with a statement on their overall accountability.]` : 
+
+`פעל כעיתונאי חוקר. השתמש בחיפוש גוגל כדי לחקור את מחבר הטקסט הזה.
+### נתוני קלט          
+שם המחבר שזוהה: "${pageData.author}"
+דומיין: "${pageData.domain}"
+קטע תוכן: "${shortExcerpt}"
+### פרוטוקול חקירה (היגיון פנימי)
+1. **חילוץ**: אם המחבר הוא "לא ידוע", סרוק את הקטע עבור "מאת [שם]" או "נכתב על ידי". 
+2. **אימות**: חפש את השם המדויק + דומיין המארח. בדוק אם יש דף פרופיל מחבר ייעודי.
+3. **טביעת רגל חיצונית**: השווה את השם עם Muck Rack, LinkedIn, או Twitter כדי לאמת שהם אדם אמיתי ולא דמות שנוצרה על ידי AI.
+4. **מגבלה**: אל תנחש. אם אין מידע שקיים מחוץ לדומיין הנוכחי, דרג כ-ANONYMOUS או SUSPICIOUS בהתבסס על המוניטין של האתר.
+
+### סולם דירוג
+- EXPERT: סמכות/מומחה מוכר עם אישורים מתקדמים.
+- JOURNALIST: כותב עובד או פרילנסר שניתן לאמת עבור כלי תקשורת מבוססים.
+- CITIZEN_JOURNALIST: תורם עצמאי או בלוגר עם היסטוריה שניתן לעקוב אחריה.
+- ANONYMOUS: לא נמצא מחבר ספציפי; התוכן מיוחס ל"צוות" או "מנהל".
+- SUSPICIOUS: אימות נכשל, אין טביעת רגל דיגיטלית, או ידוע כמפיץ מידע שגוי
+
+### פורמט סופי
+RATING: [INSERT RATING]
+EXPLANATION: [זהה את התפקיד הראשי של המחבר. ציין פלטפורמה ספציפית אחת שבה הם מאומתים (למשל, Muck Rack, LinkedIn, או דף צוות רשמי). סכם עם הצהרה על האחריות הכוללת שלהם.]`
         },
     {
         id: "consensus-verify",
@@ -91,7 +134,7 @@ EXPLANATION: [Identify the author's primary role. Mention one specific platform 
         useSearch: true,
         tokenBudget: 0,
         isBackgroundAgent: true,  // Flag for background processing
-        prompt:  `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story presented by ${pageData.siteName}, and provide a detailed analysis with source citations.
+        prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story presented by ${pageData.siteName}, and provide a detailed analysis with source citations.
 
 TITLE: "${pageData.title}"
 CONTENT: "${longExcerpt}"
@@ -144,8 +187,58 @@ Do NOT rely on internal citation tools.
 - RELEVANT_QUOTE: [Quote an exact short sentence (approx. 10-15 words) from the source that proves the point. Do not use quotation marks.]
 
 ANALYSIS:
-[Write your 3-4 sentence analysis here. Do not worry about linking sources here, just summarize the consensus.]
-`
+[Write your 3-4 sentence analysis here. Do not worry about linking sources here, just summarize the consensus.]` : 
+
+`פעל כחוקר בדיקת עובדות. בצע אימות צולב קפדני של הסיפור הבא המוצג על ידי ${pageData.siteName}, וספק ניתוח מפורט עם ציטוטי מקורות.
+
+כותרת: "${pageData.title}"
+תוכן: "${longExcerpt}"
+תאריך נוכחי: ${today}
+
+אם התאריך זהה להיום, התייחס לזה כ"חדשות מתפרצות".
+
+--- פרוטוקול ביצוע ---
+1. פירוק טענות:
+- אל תחפש את הכותרת כולה כמחרוזת אחת.
+- חלק את הסיפור ל"עובדות אטומיות" (למשל, "אדם X עשה פעולה Y", "אירוע Z התרחש בזמן T").
+- חפש את הרכיבים האטומיים הספציפיים הללו באופן עצמאי.
+
+2. התאמה סמנטית:
+- אל תסתמך על התאמות מילות מפתח מדויקות (חפיפה לקסיקלית).
+- חפש "דמיון הטמעה" (התאמת משמעות). לדוגמה, אם מקור אומר "החוק עלה 50 מיליון דולר" ואחר אומר "תג המחיר של החקיקה היה 50 מיליון דולר", התייחס לזה כמאומת.
+
+3. גנאלוגיית מקורות (בדיקת דיווח מעגלי):
+- בדוק אם תוצאות החיפוש הן באמת עצמאיות או שכולן מצטטות מקור שורש יחיד (למשל, "לפי AP...").
+- אם 10 מאמרים מצטטים את אותו דוח "בסיסי", ספר זאת כמקור אחד, לא עשרה.
+
+4. הקשר זמני (בדיקת חדשות מתפרצות):
+- בדוק את חותמות הזמן. אם הסיפור הוא פחות מ-24 שעות (למשל, "חדשות מתפרצות"), חוסר קונצנזוס הוא נורמלי. אל תעניש בחומרה.
+- אם הסיפור ישן אך אין לו שום אימות, סמן אותו כחשוד.
+
+5. עצמאות מקור:
+- שים לב שהנתונים הם מ-"${pageData.siteName}". אל תשתמש במקור עצמו כדי לאמת את הטענות שלו.
+
+דרישת פלט:
+1. עליך להוציא רשימה דמוית JSON של מקורות שמצאת, ואחריה הניתוח שלך.
+2. אל תשתמש במספרי ציטוט כמו [1]. השתמש ב-URL המלא.
+
+--- קריטריוני דירוג ---
+- CORROBORATED: מספר כלי תקשורת עצמאיים מהשורה הראשונה מדווחים על אותן עובדות אטומיות.
+- PLAUSIBLE: מדווח על ידי מקורות משניים, אך לא נמצא "דיווח מעגלי".
+- UNIQUE_REPORTING: "חדשות מתפרצות" אמיתיות (חותמת זמן טרייה) או חקירה בלעדית.
+- CONTRADICTS_CONSENSUS: כלי תקשורת מרכזיים מפריכים במפורש את הטענה הספציפית הזו.
+- UNVERIFIABLE: לא נמצאו התאמות עצמאיות לאחר 24+ שעות.
+
+דרג כ: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
+
+פורמט:
+RATING: [הדירוג שלך]
+SOURCES_LIST:
+- STATUS: [SUPPORTING/CONTRADICTING]
+- SOURCE_NAME: [למשל "bbc"]
+- ARTICLE_TITLE: [כותרת מובחנת של המקור המדויק] 
+אל תסתמך על כלי ציטוט פנימיים.
+- RELEVANT_QUOTE: [ציטוט משפט קצר מדויק (כ-10-15 מילים) מהמקור שמוכיח את הנקודה. אל תשתמש במרכאות.]`
     },
         {
             id: "consensus-format",
@@ -156,7 +249,7 @@ ANALYSIS:
             useSearch: false,
             tokenBudget: 0,
             dependsOn: "consensus-verify",  // Receives input from first agent
-            prompt: `You are a Citation Formatter.
+            prompt: currentLang === 'en' ? `You are a Citation Formatter.
 I will give you a list of sources and an analysis text.
 Your task is to append the sources to the text using a specific format.
 
@@ -172,13 +265,37 @@ INSTRUCTIONS:
 6. If possible, DO NOT use the same source twice in the entire analysis.
 7. Original source name: "${pageData.siteName}". DO NOT USE SOURCES with an EXACT OR SIMILAR name to the original source name (e.g., "ynet.co.il" is similar to "ynetnews.com").
 
-REQUIRED CITATION INSERTION FORMAT:
+**REQUIRED CITATION INSERTION FORMAT**:
 For supporting: [[SOURCE::DOMAIN_NAME::Article_Title::Quote::SOURCE]]
 For contradicting: [[CONTRA::DOMAIN_NAME::Article_Title::Quote::CONTRA]]
 
 Final Output Structure:
 RATING: [Keep the original rating]
-EXPLANATION: [The text with the formatted citations inserted]`
+EXPLANATION: [The text with the formatted citations inserted]` : 
+
+`אתה מעצב ציטוטים.
+אני אתן לך רשימת מקורות וטקסט ניתוח.
+המשימה שלך היא לצרף את המקורות לטקסט באמצעות פורמט ספציפי.
+
+נתוני קלט:
+{INPUT_FROM_CONSENSUS_VERIFY}
+
+הוראות:
+1. קרא את טקסט ה"ANALYSIS".
+2. קרא את ה"SOURCES_LIST".
+3. כתוב מחדש את הניתוח. בכל פעם שמוצגת נקודה ספציפית הנתמכת על ידי מקור ברשימה, הכנס את הציטוט התומך מיד לאחריה.
+4. השתמש בשדה "RELEVANT_QUOTE" מהרשימה כדי למלא את חלק הציטוט בתג.
+5. הוסף מקסימום 2 ציטוטים לכל נקודה, ואל תשתמש באותו מקור פעמיים לאותה נקודה.
+6. אם אפשרי, אל תשתמש באותו מקור פעמיים בכל הניתוח.
+7. שם מקור מקורי: "${pageData.siteName}". אל תשתמש במקורות עם שם זהה או דומה לשם המקור המקורי (למשל, "ynet.co.il" דומה ל-"ynetnews.com").
+
+**פורמט הכנסה נדרש לציטוט**:
+עבור תמיכה: [[SOURCE::DOMAIN_NAME::Article_Title::Quote::SOURCE]]
+עבור הפרכה: [[CONTRA::DOMAIN_NAME::Article_Title::Quote::CONTRA]]
+
+מבנה פלט סופי:
+RATING: [שמור על הדירוג המקורי]
+EXPLANATION: [הטקסט עם הציטוטים המפורמטים שהוכנסו]`
         },
         {
             id: "headline",
@@ -188,7 +305,7 @@ EXPLANATION: [The text with the formatted citations inserted]`
             weight: 0.10,
             useSearch: false,
             tokenBudget: 0,
-            prompt: `Act as a Skeptical Media Auditor specializing in linguistic manipulation. Your goal is to find the "Truth Gap" between a headline and its source text. You value precision over professional courtesy.
+            prompt: currentLang === 'en' ?`Act as a Skeptical Media Auditor specializing in linguistic manipulation. Your goal is to find the "Truth Gap" between a headline and its source text. You value precision over professional courtesy.
    
 ###CONTEXT:
 Headline: "${pageData.title}"
@@ -210,7 +327,30 @@ Current Date: ${today}
 
 ### OUTPUT FORMAT
 RATING: [RATING]
-EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Sentence 2: Identify the specific linguistic tactic or framing error. Sentence 3: A direct warning or confirmation for the user.]`
+EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Sentence 2: Identify the specific linguistic tactic or framing error. Sentence 3: A direct warning or confirmation for the user.]` : 
+
+`פעל כמבקר מדיה ספקן המתמחה במניפולציה לשונית. המטרה שלך היא למצוא את "פער האמת" בין כותרת לטקסט המקור שלה. אתה מעריך דיוק על פני נימוס מקצועי.
+   
+### הקשר:
+כותרת: "${pageData.title}"
+קטע תוכן: "${longExcerpt}"
+תאריך נוכחי: ${today}
+
+### לוגיקת הביקורת
+1. **מבחן הקיצור**: כותרת היא רק "קיצור מדויק" אם היא לוכדת את התוצאה העיקרית של הסיפור. אם היא מדלגת על האירוע המרכזי כדי להתמקד בפרט משני, היא מעט מטעה.
+2. **מבחן ההשמטה**: האם הכותרת מסתירה את ה"מי" או ה"מה" כדי לאלץ לחיצה? (למשל, "זה קרה...") אם כן, היא כותרת פיתיון.
+3. **מבחן העיוות**: האם הכותרת משתמשת במילים רגשיות בעלות ערך גבוה (טרור, כאוס, נס) שאינן מוצדקות על ידי הנתונים? אם כן, היא סנסציונית.
+
+### סולם דירוג
+- ACCURATE: סיכום נייטרלי ועובדתי של האירוע המרכזי.
+- SENSATIONAL: עובדתי, אך משתמש בשפה "רועשת" או רגשית כדי לעורר את הקורא.
+- SOMEWHAT_MISLEADING: נכון טכנית אך מעוצב כדי להציע מסקנה שגויה או להתמקד בנקודה שולית.
+- CLICKBAIT: משתמש בפער סקרנות או מסגור "מסתורי" כדי לאסוף לחיצות.
+- DECEPTIVE: סותר או ממציא טענות שאינן נמצאות בקטע.
+
+### פורמט פלט
+RATING: [RATING]
+EXPLANATION: [משפט 1: הקשר הקר והקשה בין הכותרת לטקסט. משפט 2: זיהוי הטקטיקה הלשונית הספציפית או שגיאת המסגור. משפט 3: אזהרה ישירה או אישור למשתמש.]`
         },
         {
             id: "bias",
@@ -237,9 +377,8 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
            - Is there high density of emotional/loaded words?
         
         3. use google search to check if important perspectives are omitted.`,
-            prompt: 
-            `Current Date: ${today}
-        Text to analyze: "${longExcerpt}"
+            prompt: currentLang === 'en' ? `Current Date: ${today}
+            Text to analyze: "${longExcerpt}"
         
         CRITICAL OUTPUT RULES:
         - You MUST use EXACT quotes from the article as evidence.
@@ -252,7 +391,22 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
         
         FORMAT:
         RATING: [your rating]
-        EXPLANATION: [Your analysis (3-5 sentences AT MAX)]. When citing evidence, use [[QUOTE::exact text::QUOTE]] format. Example: "The article shows political bias when stating [[QUOTE::the policy is a complete disaster::QUOTE]] without presenting alternative views."` 
+        EXPLANATION: [Your analysis (3-5 sentences AT MAX)]. When citing evidence, use [[QUOTE::exact text::QUOTE]] format. Example: "The article shows political bias when stating [[QUOTE::the policy is a complete disaster::QUOTE]] without presenting alternative views."` : 
+
+`תאריך נוכחי: ${today}
+טקסט לניתוח: "${longExcerpt}"
+
+כללי פלט קריטיים:
+- עליך להשתמש בציטוטים מדויקים מהמאמר כהוכחה.
+- עיצוב ציטוטים כ: [[QUOTE::text from article::QUOTE]]
+- שמור על ציטוטים מתחת ל-15 מילים.
+- אל תתרגם את הציטוטים - השאר אותם בשפת המקור של המאמר.
+- השתמש ב-1-5 ציטוטים ספציפיים שהם בעלי ההטיה המשמעותית ביותר.
+
+דרג כ: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, or STRONG_BIAS
+פורמט:
+RATING: [הדירוג שלך]
+EXPLANATION: [הניתוח שלך (מקסימום 3-5 משפטים)]. כאשר מצטטים ראיות, השתמש בפורמט [[QUOTE::exact text::QUOTE]]. דוגמה: "המאמר מראה הטיה פוליטית כאשר מציין [[QUOTE::the policy is a complete disaster::QUOTE]] מבלי להציג נקודות מבט חלופיות."`
          },
         {
             id: "style",
@@ -262,7 +416,7 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
             weight: 0.10,
             useSearch: false,
             tokenBudget: 0,
-            prompt: `Act as a Senior News Editor and Quality Analyst. 
+            prompt: currentLang === 'en' ? `Act as a Senior News Editor and Quality Analyst. 
 Evaluate the journalistic standards and writing quality of the following text.
 Current Date: ${today}
 Text to Analyze: "${longExcerpt}"
@@ -285,8 +439,32 @@ Then, write a concise EXPLANATION (max 3 sentences) citing specific examples fro
 
 Format:
 RATING: [Rating]
-EXPLANATION: [Your analysis] When citing evidence, use [[QUOTE::exact text::QUOTE]] format.
-` 
+EXPLANATION: [Your analysis] When citing evidence, use [[QUOTE::exact text::QUOTE]] format.` : 
+
+`פעל כעורך חדשות בכיר ואנליסט איכות.
+הערך את הסטנדרטים העיתונאיים ואיכות הכתיבה של הטקסט הבא.
+תאריך נוכחי: ${today}
+טקסט לניתוח: "${longExcerpt}"
+
+קריטריוני הניתוח שלך:
+1. **טעינה רגשית:** האם הטקסט משתמש בשפה נייטרלית, או שהוא מסתמך על תארים טעונים רגשית (למשל, "מזעזע," "נורא," "נס") כדי למניפולציה על הקורא?
+2. **ייחוס:** האם הטענות מיוחסות למקורות ספציפיים, או שהוא משתמש ב"מילים מתפתלות" (למשל, "רבים אומרים," "יש שמועות")?
+3. **מבנה:** האם הוא עוקב אחר "פירמידת הפוכה" העיתונאית הסטנדרטית (עובדות עיקריות תחילה), או שהוא לא מובנה/מתפזר?
+4. **מכניקה:** האם יש בעיות דקדוק בולטות, ריבוי אותיות גדולות, או פיסוק לא סטנדרטי (!!!)?
+
+מערכת דירוג:
+- PROFESSIONAL: טון נייטרלי, ייחוס ברור, מבנה מצוין, ללא שגיאות.
+- ADEQUATE: קריא, ברובו נייטרלי, פגמים מבניים קלים.
+- SENSATIONALIST: שפה רגשית מאוד, סגנון פיתיון לחיצות, טון תוקפני.
+- POOR_QUALITY: מלא בשגיאות, לא ברור, או ספאם שנוצר בבירור על ידי AI.
+
+המשימה שלך:
+הקצה דירוג מהרשימה למעלה.
+לאחר מכן, כתוב הסבר תמציתי (מקסימום 3 משפטים) המצטט דוגמאות ספציפיות מהטקסט (למשל, "משתמש במילים טעונות כמו 'אסוני' ללא ראיות" או "חסר ייחוס ספציפי לטענות מרכזיות").
+
+פורמט:
+RATING: [דירוג]
+EXPLANATION: [הניתוח שלך] כאשר מצטטים ראיות, השתמש בפורמט [[QUOTE::exact text::QUOTE]].`
          },
          {
             id: "summary",
@@ -297,7 +475,7 @@ EXPLANATION: [Your analysis] When citing evidence, use [[QUOTE::exact text::QUOT
             useSearch: false,
             tokenBudget: 0,
             dependsOn: "all",  // Special flag: runs after ALL other agents complete
-             prompt: `You are the Chief Legitimacy Analyst. Your role is to synthesize the technical findings from various analysis agents into a single, cohesive verdict for the human reader.
+             prompt: currentLang === 'en' ? `You are the Chief Legitimacy Analyst. Your role is to synthesize the technical findings from various analysis agents into a single, cohesive verdict for the human reader.
 INPUT DATA (Agent | Rating | findings):
 {INPUT_FROM_ALL_AGENTS}
 
@@ -313,7 +491,25 @@ OUTPUT RULES:
 - **Conflict Resolution:** If agents disagree (e.g., Safe Source vs. Biased Text), acknowledge the nuance (e.g., "While the publisher is reputable, this specific article uses highly charged language...").
 
 EXAMPLE OUTPUT:
-"This article appears highly credible, citing multiple primary sources and maintaining a neutral viewpoint. However, the headline is slightly sensationalized compared to the actual body text. Readers can trust the core facts presented here."`
+"This article appears highly credible, citing multiple primary sources and maintaining a neutral viewpoint. However, the headline is slightly sensationalized compared to the actual body text. Readers can trust the core facts presented here."` : 
+
+`אתה אנליסט הלגיטימיות הראשי. התפקיד שלך הוא לסנתז את הממצאים הטכניים מסוכני ניתוח שונים לפסק דין אחד, מגובש עבור הקורא האנושי.
+נתוני קלט (סוכן | דירוג | ממצאים):
+{INPUT_FROM_ALL_AGENTS}
+
+הנחיות ניתוח:
+1. **התמקד בתוכן, לא בסוכנים:** אל תשתמש בביטויים כמו "סוכן המקור אומר..." או "סוכן ההטיה מצא...". במקום זאת, הצהר על המציאות ישירות: "המאמר מסתמך על מקורות אמינים..." או "השפה מוטה מאוד...".
+2. **תעדף ראיות:** "אמינות מקור" ו"דייקנות עובדתית" חשובים יותר מ"טון". כותרת פיתיון לחיצות על סיפור מדויק עובדתית היא בעיה קטנה; סיפור מזויף עם טון נייטרלי הוא בעיה גדולה.
+3. **גלה דפוסים:** אם מספר סוכנים מסמנים "הפחדה" ו"חוסר מקורות", שלב אותם לתובנה אחת על "מניפולציה רגשית לא מאומתת."
+
+כללי פלט:
+- **פורמט:** פסקה אחת חלקה (2-4 משפטים).
+- **מבנה:** התחל עם "השורה התחתונה" (האם זה אמין?). המשך עם הסיבה *העיקרית* לכך. סיים עם כל ניואנס או אזהרות נחוצות.
+- **טון:** מקצועי, אובייקטיבי, ומוחלט.
+- **פתרון קונפליקטים:** אם הסוכנים אינם מסכימים (למשל, מקור בטוח לעומת טקסט מוטה), הכיר בניואנס (למשל, "בעוד שהמוציא לאור הוא בעל מוניטין טוב, מאמר ספציפי זה משתמש בשפה טעונה מאוד...").
+
+דוגמת פלט:
+"המאמר הזה נראה אמין מאוד, מצטט מקורות ראשוניים מרובים ושומר על נקודת מבט נייטרלית. עם זאת, הכותרת מעט סנסציונית בהשוואה לטקסט הגופני בפועל. הקוראים יכולים לסמוך על העובדות המרכזיות המוצגות כאן."`
         }
     ];
 }

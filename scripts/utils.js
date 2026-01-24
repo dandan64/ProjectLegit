@@ -682,7 +682,7 @@ function parseAndLinkifySources(rawExplanation) {
         const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 
         return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-supporting" title="Click to open: ${escapeHtml(title)}">
-                <span class="source-icon">✓</span> ${escapeHtml(title)}
+                <span class="source-icon">✓</span> ${escapeHtml(cleanDomain)}
             </a>`;
     });
 
@@ -693,7 +693,7 @@ function parseAndLinkifySources(rawExplanation) {
         const cleanDomain = domainName.trim();
         const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 
-        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanDomain)}">
+        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-contra" title="Click to open: ${escapeHtml(title)}">
                 <span class="source-icon">✗</span> ${escapeHtml(cleanDomain)}
             </a>`;
     });

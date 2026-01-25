@@ -27,6 +27,9 @@ let currentLang = 'en'; // Default
             noTextError: "No text found on this page to analyze.",
             errorPrefix: "Error: ",
             cacheBadge: "♻️ Result from previous scan",
+            Summarizing: "✨ Summarizing...",
+            quoteMatchWarning: "Exact quote match not found. Showing closest match.",
+            quoteMatchError: "Quote not found. Please try searching manually.",
             
             // Agent Names
             source: "Source Credibility",
@@ -100,6 +103,9 @@ let currentLang = 'en'; // Default
             noTextError: "לא נמצא טקסט לניתוח בעמוד זה.",
             errorPrefix: "שגיאה: ",
             cacheBadge: "♻️ תוצאה מסריקה קודמת",
+            summarizing: "✨ מסכם...",
+            quoteMatchWarning: "לא נמצא ציטוט מדויק. מוצג הציטוט הקרוב ביותר.",
+            quoteMatchError: "לא נמצא ציטוט. אנא נסה לחפש ידנית.",
 
             // Agent Names
             source: "אמינות המקור",

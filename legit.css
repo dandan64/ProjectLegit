@@ -369,7 +369,7 @@ button:disabled {
 }
 
 .score-header h2 { 
-    font-size: 18px; 
+    font-size: 20px; 
     text-transform: uppercase; 
     letter-spacing: 2px;
     color: #0f766e;
@@ -1051,20 +1051,20 @@ body.rtl .summary-container {
 
 body.rtl .summary-container.safe {
     border-right-color: #10b981;
-    background: linear-gradient(to right, rgba(236, 253, 245, 0.8), rgba(255, 255, 255, 0.9));
+    background: linear-gradient(to left, rgba(236, 253, 245, 0.8), rgba(255, 255, 255, 0.9));
 }
 
 body.rtl .summary-container.caution {
     border-right-color: #eff613;
-    background: linear-gradient(to right, rgba(255, 255, 235, 0.8), rgba(255, 255, 255, 0.9));
+    background: linear-gradient(to left, rgba(255, 255, 235, 0.8), rgba(255, 255, 255, 0.9));
 }
 
 body.rtl .summary-container.warning {
     border-right-color: #f59e0b;
-    background: linear-gradient(to right, rgba(255, 251, 235, 0.8), rgba(255, 255, 255, 0.9));
+    background: linear-gradient(to left, rgba(255, 251, 235, 0.8), rgba(255, 255, 255, 0.9));
 }
 
 body.rtl .summary-container.critical {
     border-right-color: #ef4444;
-    background: linear-gradient(to right, rgba(254, 242, 242, 0.8), rgba(255, 255, 255, 0.9));
+    background: linear-gradient(to left, rgba(254, 242, 242, 0.8), rgba(255, 255, 255, 0.9));
 }

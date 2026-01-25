@@ -291,7 +291,7 @@ EXPLANATION: [The final summary with the formatted citations inserted]` :
 7. שם מקור מקורי: "${pageData.siteName}". אל תשתמש במקורות עם שם זהה או דומה לשם המקור המקורי (למשל, "ynet.co.il" דומה ל-"ynetnews.com").
 8. אל תוסיף קישורים אם אין מקורות תומכים/מפריכים.
 
-**פורמט הכנסה נדרש לציטוט**:
+**פורמט הכנסה נדרש לציטוט- חשוב שיהיה *מדוייק* **:
 עבור תמיכה: [[SOURCE::DOMAIN_NAME::Article_Title::Quote::SOURCE]]
 עבור הפרכה: [[CONTRA::DOMAIN_NAME::Article_Title::Quote::CONTRA]]
 

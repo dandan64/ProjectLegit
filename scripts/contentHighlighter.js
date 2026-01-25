@@ -5,7 +5,7 @@
 if (!window.legitHighlighterLoaded) {
     window.legitHighlighterLoaded = true;
     
-    // 1. GLOBAL PALETTES (Defined at top so both functions can see them)
+    // 1. GLOBAL PALETTES
     const PALETTES = {
         supporting: { bg: '#86efac', border: '#16a34a', shadow: 'rgba(22, 163, 74, 0.8)' },
         contra:     { bg: '#fca5a5', border: '#dc2626', shadow: 'rgba(220, 38, 38, 0.8)' },
@@ -52,14 +52,14 @@ if (!window.legitHighlighterLoaded) {
 
         // --- FAILURE HANDLER ---
         if (matches.length === 0) {
-            showToast('Quote not found. Please try searching manually.', 'error');
+            showToast(TRANSLATIONS[currentLang].quoteMatchError, 'error');
             return false;
         }
 
         console.log(`✅ Found ${matches.length} match(es) via ${matchType}`);
         
         if (matchType === 'fuzzy') {
-            showToast('Exact match not found. Showing closest match.', 'warning');
+            showToast(TRANSLATIONS[currentLang].quoteMatchWarning, 'warning');
         }
 
         // 3. Select the target match and map it back to DOM Nodes
@@ -74,38 +74,42 @@ if (!window.legitHighlighterLoaded) {
         // 4. Highlight the range
         highlightRange(rangeData, type);
         
-        // 5. Scroll to view & Animate (FIXED)
-        const firstHighlight = document.querySelector('.legit-highlight');
-        if (firstHighlight) {
-            firstHighlight.scrollIntoView({ 
+        // 5. Scroll to view & Animate ALL fragments (FIXED)
+        const allHighlights = document.querySelectorAll('.legit-highlight');
+        
+        if (allHighlights.length > 0) {
+            // Scroll to the very first fragment so the user sees the start
+            allHighlights[0].scrollIntoView({ 
                 behavior: 'smooth', 
                 block: 'center' 
             });
 
-            // Get the color theme for the current type
+            // Get the theme color
             const theme = PALETTES[type] || PALETTES.default;
 
-            // Animate Background and Shadow (Works on inline elements!)
-            firstHighlight.animate([
-                { 
-                    backgroundColor: theme.bg, 
-                    boxShadow: `0 0 0 0 ${theme.shadow}`,
-                    offset: 0
-                },
-                { 
-                    backgroundColor: '#ffffff', // Flash white
-                    boxShadow: `0 0 0 8px ${theme.shadow}`, // Big glow
-                    offset: 0.5 
-                },
-                { 
-                    backgroundColor: theme.bg, 
-                    boxShadow: `0 0 0 0 ${theme.shadow}`,
-                    offset: 1 
-                }
-            ], {
-                duration: 800,   // Fast flash
-                iterations: 3,   // Blink 3 times
-                easing: 'ease-in-out'
+            // Iterate over ALL highlighted fragments and animate them
+            allHighlights.forEach(highlight => {
+                highlight.animate([
+                    { 
+                        backgroundColor: theme.bg, 
+                        boxShadow: `0 0 0 0 ${theme.shadow}`,
+                        offset: 0
+                    },
+                    { 
+                        backgroundColor: '#ffffff', // Flash white
+                        boxShadow: `0 0 0 8px ${theme.shadow}`, // Big glow
+                        offset: 0.5 
+                    },
+                    { 
+                        backgroundColor: theme.bg, 
+                        boxShadow: `0 0 0 0 ${theme.shadow}`,
+                        offset: 1 
+                    }
+                ], {
+                    duration: 800,
+                    iterations: 3,
+                    easing: 'ease-in-out'
+                });
             });
         }
 
@@ -328,8 +332,6 @@ if (!window.legitHighlighterLoaded) {
     // --- HELPER: Highlight Range ---
     function highlightRange(rangeData, type) {
         const { nodeMap, globalStart, globalEnd } = rangeData;
-        
-        // USE GLOBAL PALETTE HERE
         const theme = PALETTES[type] || PALETTES.default;
 
         const nodesToHighlight = nodeMap.filter(item => 
@@ -346,8 +348,6 @@ if (!window.legitHighlighterLoaded) {
 
             wrapTextNode(node, localStart, localEnd, theme);
         });
-        
-        // Removed injectHighlightStyles since we use animate() API now
     }
 
     function wrapTextNode(textNode, start, end, theme) {
@@ -369,7 +369,7 @@ if (!window.legitHighlighterLoaded) {
             border-radius: 2px;
             box-shadow: 0 0 5px ${theme.shadow};
             display: inline;
-            transition: background-color 0.2s; /* Smooth transition */
+            transition: background-color 0.2s;
         `;
 
         const parent = textNode.parentNode;
@@ -392,7 +392,7 @@ if (!window.legitHighlighterLoaded) {
         
         const bgColors = {
             info: '#3b82f6',
-            warning: '#f59e0b',
+            warning: '#0ad063',
             error: '#ef4444'
         };
 
@@ -462,14 +462,32 @@ if (!window.legitHighlighterLoaded) {
         }
     }
 
+    // --- MESSAGE LISTENER (Fixed) ---
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-        if (message.type === 'HIGHLIGHT_QUOTE') {
-            const success = highlightAndScroll(message.quote, message.index || 0, message.highlightType || 'default');
-            sendResponse({ success });
-        } else if (message.type === 'CLEAR_HIGHLIGHTS') {
-            clearHighlights();
-            sendResponse({ success: true });
+        try {
+            if (message.type === 'HIGHLIGHT_QUOTE') {
+                // Run the highlighter
+                currentLang = message.lang || 'en';
+                const success = highlightAndScroll(
+                    message.quote, 
+                    message.index || 0, 
+                    message.highlightType || 'default'
+                );
+                // Send response immediately
+                sendResponse({ success });
+                
+            } else if (message.type === 'CLEAR_HIGHLIGHTS') {
+                clearHighlights();
+                sendResponse({ success: true });
+            }
+        } catch (error) {
+            console.error("Critical Highlight Error:", error);
+            // Ensure we still send a response so the port doesn't close unexpectedly
+            sendResponse({ success: false, error: error.message });
         }
-        return true; 
+        
+        // IMPORTANT: Return false (or nothing) to indicate we are responding SYNCHRONOUSLY.
+        // We only use 'return true' if we are doing something async like a fetch() inside here.
+        return false; 
     });
 }

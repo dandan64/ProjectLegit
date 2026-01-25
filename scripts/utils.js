@@ -419,6 +419,8 @@ function styleScoreLabel(scoreLabelElement, scoreValueElement, scoreBarElement, 
 
     // 2. Apply Dynamic Gradient
     scoreLabelElement.style.backgroundImage = gradient;
+
+    scoreLabelElement.style.whiteSpace = "nowrap";
     
     // 3. Add a colored glow using drop-shadow filter
     // (We use the main color variable for the shadow color)
@@ -660,7 +662,7 @@ function attachQuoteLinkListeners() {
 function createDirectLink(domain, title) {
     // 1. Construct a precise query
     // "foxbusiness.com Trump Iran protests Davos 2026"
-    const query = `${domain} ${title}`;
+    const query = `${domain}: ${title}`;
     
     // 2. Add the !ducky bang (Trigger "I'm Feeling Lucky")
     // This tells DuckDuckGo: "Don't show me results, just take me to the first one."
@@ -806,7 +808,7 @@ function attachSourceLinkListeners() {
                 // 5. Inject content script
                 await chrome.scripting.executeScript({
                     target: { tabId: newTab.id },
-                    files: ['scripts/contentHighlighter.js']
+                    files: ['scripts/localization.js', 'scripts/contentHighlighter.js']
                 });
                 
                 // 6. Trigger the Highlight
@@ -815,6 +817,7 @@ function attachSourceLinkListeners() {
                 chrome.tabs.sendMessage(newTab.id, {
                     type: 'HIGHLIGHT_QUOTE',
                     quote: quote,
+                    lang: currentLang,
                     highlightType: sourceType
                 }, (response) => {
                     if (chrome.runtime.lastError) {
@@ -838,7 +841,7 @@ async function generateFinalSummary(agents, finalScore) {
     const summaryBox = document.getElementById('scoreSummary');
 
     // Reset classes
-    summaryBox.className = 'summary-container'; 
+    summaryBox.className = 'summary-container';
 
     // Add dynamic class
     if (finalScore >= 80) summaryBox.classList.add('safe');
@@ -849,7 +852,7 @@ async function generateFinalSummary(agents, finalScore) {
     // 1. Show loading state in the UI
     if(summaryBox) {
         summaryBox.style.display = "block";
-        summaryBox.innerHTML = `<span style="color:#9ca3af; font-style:italic;">✨ Summarizing...</span>`;
+        summaryBox.innerHTML = `<span style="color:#9ca3af; font-style:italic;">${TRANSLATIONS[currentLang].summarizing}</span>`;
     }
 
     // 2. Find the Summary Agent Config (Safe Mode)

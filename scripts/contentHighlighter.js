@@ -92,21 +92,25 @@ if (!window.legitHighlighterLoaded) {
                 highlight.animate([
                     { 
                         backgroundColor: theme.bg, 
-                        boxShadow: `0 0 0 0 ${theme.shadow}`,
+                        boxShadow: `0 0 0 0px ${theme.shadow}`,
+                        transform: 'scale(1)',
                         offset: 0
                     },
                     { 
-                        backgroundColor: '#ffffff', // Flash white
-                        boxShadow: `0 0 0 8px ${theme.shadow}`, // Big glow
+                        backgroundColor: theme.bg, // Keep your original color
+                        // Multiple shadows create a "neon" or "glow" effect
+                        boxShadow: `0 0 5px 2px ${theme.shadow}, 0 0 10px 4px ${theme.shadow}`, 
+                        transform: 'scale(1.05)', // Adds "pop"
                         offset: 0.5 
                     },
                     { 
                         backgroundColor: theme.bg, 
-                        boxShadow: `0 0 0 0 ${theme.shadow}`,
+                        boxShadow: `0 0 0 0px ${theme.shadow}`,
+                        transform: 'scale(1)',
                         offset: 1 
                     }
                 ], {
-                    duration: 800,
+                    duration: 700,
                     iterations: 3,
                     easing: 'ease-in-out'
                 });

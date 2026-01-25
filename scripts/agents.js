@@ -134,7 +134,7 @@ EXPLANATION: [זהה את התפקיד הראשי של המחבר. ציין פל
         useSearch: true,
         tokenBudget: 0,
         isBackgroundAgent: true,  // Flag for background processing
-        prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story presented by ${pageData.siteName}, and provide a detailed analysis with source citations.
+        prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story presented by ${pageData.siteName}, and provide a detailed, smooth, professional, and cohesive nanalysis with source citations.
 
 TITLE: "${pageData.title}"
 CONTENT: "${longExcerpt}"
@@ -161,7 +161,7 @@ If the date is the same as today, treat this as "Breaking News".
 - Check the timestamps. If the story is less than 24 hours old (eg. , "Breaking News"), a lack of consensus is normal. Do not penalize heavily.
 - If the story is old but has NO corroboration, flag it as suspicious.
 
-5. SOURCE INDEPENDENCE:
+5. **CRITICAL** SOURCE INDEPENDENCE:
 - Note that this data is from "${pageData.siteName}". DO NOT use the source itself to verify its own claims.
 
 OUTPUT REQUIREMENT:
@@ -189,7 +189,7 @@ Do NOT rely on internal citation tools.
 ANALYSIS:
 [Write your 3-4 sentence analysis here. Do not worry about linking sources here, just summarize the consensus.]` : 
 
-`פעל כחוקר בדיקת עובדות. בצע אימות צולב קפדני של הסיפור הבא המוצג על ידי ${pageData.siteName}, וספק ניתוח מפורט עם ציטוטי מקורות.
+`פעל כחוקר בדיקת עובדות. בצע אימות צולב קפדני של הסיפור הבא המוצג על ידי ${pageData.siteName}, וספק ניתוח מפורט, חלק, מקצועי וקוהרנטי עם ציטוטי מקורות.
 
 כותרת: "${pageData.title}"
 תוכן: "${longExcerpt}"
@@ -215,8 +215,8 @@ ANALYSIS:
 - בדוק את חותמות הזמן. אם הסיפור הוא פחות מ-24 שעות (למשל, "חדשות מתפרצות"), חוסר קונצנזוס הוא נורמלי. אל תעניש בחומרה.
 - אם הסיפור ישן אך אין לו שום אימות, סמן אותו כחשוד.
 
-5. עצמאות מקור:
-- שים לב שהנתונים הם מ-"${pageData.siteName}". אל תשתמש במקור עצמו כדי לאמת את הטענות שלו.
+5. עצמאות מקור **קריטי**:
+- שים לב שהנתונים הם מ-"${pageData.siteName}". אל תשתמש במקור עצמו כדי לאמת את הטענו;ת שלו.
 
 דרישת פלט:
 1. עליך להוציא רשימה דמוית JSON של מקורות שמצאת, ואחריה הניתוח שלך.
@@ -249,9 +249,9 @@ SOURCES_LIST:
             useSearch: false,
             tokenBudget: 0,
             dependsOn: "consensus-verify",  // Receives input from first agent
-            prompt: currentLang === 'en' ? `You are a Citation Formatter and text synthesizer.
+            prompt: currentLang === 'en' ? `You are a Citation Formatter.
 I will give you a list of sources and an analysis text.
-Your task is to append the sources to the text using a specific format and to synthesize a final summary of 5-10 sentences.
+Your task is to append the sources to the text using a specific format.
 
 INPUT DATA:
 {INPUT_FROM_CONSENSUS_VERIFY}
@@ -276,7 +276,7 @@ EXPLANATION: [The final summary with the formatted citations inserted]` :
 
 `אתה מעצב ציטוטים.
 אני אתן לך רשימת מקורות וטקסט ניתוח.
-המשימה שלך היא לסנתז את הטענות עיקריות לפסקה סופית של 5-10 משפטים ולצרף את המקורות לטקסט באמצעות פורמט ספציפי.
+המשימה שלך היא לסנתז את הטענות העיקריות ולצרף את המקורות לטקסט באמצעות פורמט ספציפי.
 
 נתוני קלט:
 {INPUT_FROM_CONSENSUS_VERIFY}

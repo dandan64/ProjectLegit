@@ -91,7 +91,7 @@ let currentLang = 'en'; // Default
             overallScoreTitle: "ציון אמינות כללי",
             newScanBtn: "✨ ניתוח חדש",
             exportBtn: "📥 ייצוא תוצאות",
-            reanalyzeBtn: "🔄 ניתוח מחדש",
+            reanalyzeBtn: "🔄 נתח שוב",
             reanalyzing: "🔄 מנתח מחדש...",
             
             // Status & Errors

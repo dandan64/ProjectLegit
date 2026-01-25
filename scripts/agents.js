@@ -249,9 +249,9 @@ SOURCES_LIST:
             useSearch: false,
             tokenBudget: 0,
             dependsOn: "consensus-verify",  // Receives input from first agent
-            prompt: currentLang === 'en' ? `You are a Citation Formatter.
+            prompt: currentLang === 'en' ? `You are a Citation Formatter and text synthesizer.
 I will give you a list of sources and an analysis text.
-Your task is to append the sources to the text using a specific format.
+Your task is to append the sources to the text using a specific format and to synthesize a final summary of 5-10 sentences.
 
 INPUT DATA:
 {INPUT_FROM_CONSENSUS_VERIFY}
@@ -264,6 +264,7 @@ INSTRUCTIONS:
 5. Add at MAX 2 citation per point, and DO NOT use the same source twice for the same point. 
 6. If possible, DO NOT use the same source twice in the entire analysis.
 7. Original source name: "${pageData.siteName}". DO NOT USE SOURCES with an EXACT OR SIMILAR name to the original source name (e.g., "ynet.co.il" is similar to "ynetnews.com").
+8. DO NOT add links if there are no supporting/contradicting sources.
 
 **REQUIRED CITATION INSERTION FORMAT**:
 For supporting: [[SOURCE::DOMAIN_NAME::Article_Title::Quote::SOURCE]]
@@ -271,11 +272,11 @@ For contradicting: [[CONTRA::DOMAIN_NAME::Article_Title::Quote::CONTRA]]
 
 Final Output Structure:
 RATING: [Keep the original rating]
-EXPLANATION: [The text with the formatted citations inserted]` : 
+EXPLANATION: [The final summary with the formatted citations inserted]` : 
 
 `אתה מעצב ציטוטים.
 אני אתן לך רשימת מקורות וטקסט ניתוח.
-המשימה שלך היא לצרף את המקורות לטקסט באמצעות פורמט ספציפי.
+המשימה שלך היא לסנתז את הטענות עיקריות לפסקה סופית של 5-10 משפטים ולצרף את המקורות לטקסט באמצעות פורמט ספציפי.
 
 נתוני קלט:
 {INPUT_FROM_CONSENSUS_VERIFY}
@@ -288,6 +289,7 @@ EXPLANATION: [The text with the formatted citations inserted]` :
 5. הוסף מקסימום 2 ציטוטים לכל נקודה, ואל תשתמש באותו מקור פעמיים לאותה נקודה.
 6. אם אפשרי, אל תשתמש באותו מקור פעמיים בכל הניתוח.
 7. שם מקור מקורי: "${pageData.siteName}". אל תשתמש במקורות עם שם זהה או דומה לשם המקור המקורי (למשל, "ynet.co.il" דומה ל-"ynetnews.com").
+8. אל תוסיף קישורים אם אין מקורות תומכים/מפריכים.
 
 **פורמט הכנסה נדרש לציטוט**:
 עבור תמיכה: [[SOURCE::DOMAIN_NAME::Article_Title::Quote::SOURCE]]
@@ -295,7 +297,7 @@ EXPLANATION: [The text with the formatted citations inserted]` :
 
 מבנה פלט סופי:
 RATING: [שמור על הדירוג המקורי]
-EXPLANATION: [הטקסט עם הציטוטים המפורמטים שהוכנסו]`
+EXPLANATION: [הסיכום הסופי עם הציטוטים המפורמטים שהוכנסו]`
         },
         {
             id: "headline",

@@ -1,6 +1,6 @@
 {
-    "name": "Legit Extension",
-    "description": "Solving the problem of fake news on the internet",
+    "name": "Legit - AI Powered Fake News Detector",
+    "description": "Instantly verify news credibility using multi-agent AI analysis.",
     "version": "2.5",
     "manifest_version": 3,
     "content_scripts": [

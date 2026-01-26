@@ -1,7 +1,7 @@
 {
     "name": "Legit Extension",
     "description": "Solving the problem of fake news on the internet",
-    "version": "2.0",
+    "version": "2.5",
     "manifest_version": 3,
     "content_scripts": [
     {

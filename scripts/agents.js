@@ -47,7 +47,7 @@ Determine and synthesize three distinct factors:
 2. Political/Editorial Bias: The specific ideological lean (e.g., "Fiscal Conservative," "Progressive Left," "Pro-Government").
 3. Financial Context: Who pays the bills? (e.g., "Ad-driven corporate," "State-funded," "Donor-supported").
 
-**IMPORTANT**: Write the explanation in ${lang}.
+**IMPORTANT**: Write the EXPLANATION part in ${lang}.
 
 Rate as: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, or UNRELIABLE
 Format:

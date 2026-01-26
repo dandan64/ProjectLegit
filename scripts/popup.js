@@ -14,16 +14,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const langEnBtn = document.getElementById("langEn");
     const langHeBtn = document.getElementById("langHe");
 
-    // // Reset view when switching tabs
-    // chrome.tabs.onActivated.addListener(async (activeInfo) => {
-    //     setupView.style.display = "flex";
-    //     resultsView.style.display = "none";
-    //     statusMsg.textContent = TRANSLATIONS[currentLang].readyMsg;
-    //     statusMsg.className = "status info";
-    //     statusMsg.style.opacity = "1";
-    //     activateBtn.disabled = false;
-    // });
-
     const overallScoreBox = document.getElementById('overallScore');
     const scoreHeader = overallScoreBox.querySelector('.score-header');
 
@@ -34,6 +24,24 @@ document.addEventListener("DOMContentLoaded", () => {
     scoreHeader.addEventListener('click', function() {
         overallScoreBox.classList.toggle('expanded');
         overallScoreBox.classList.toggle('collapsed');
+
+        if (overallScore.classList.contains('expanded')) {
+                setTimeout(() => {
+                    agentGrid.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }, 100); // Wait for expansion animation to start
+            }
+        
+        if (overallScore.classList.contains('collapsed')) {
+                setTimeout(() => {
+                    resultsView.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }, 100); // Wait for expansion animation to start
+            }
     });
 
     // global variable for export
@@ -64,8 +72,17 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    langEnBtn.addEventListener("click", () => setLanguage('en'));
-    langHeBtn.addEventListener("click", () => setLanguage('he'));
+    langEnBtn.addEventListener("click", async () => {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab && tab.url) removeFromCache(tab.url);
+        setLanguage('en');
+    });
+
+    langHeBtn.addEventListener("click", async () => {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab && tab.url) removeFromCache(tab.url);
+        setLanguage('he');
+    });
 
     // Load saved language on start
     chrome.storage.local.get(["legitLang"], (res) => {
@@ -88,10 +105,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- MAIN LOGIC ---
 
     async function startAnalysis() {
-        showStatus(TRANSLATIONS[currentLang].analysis, "info");
-        loader.style.display = "block";
-        activateBtn.disabled = true;
-
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             if (!tab) throw new Error("No active tab found");
@@ -109,6 +122,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             // 2. FRESH ANALYSIS
+            showStatus(TRANSLATIONS[currentLang].analysis, "info");
+            loader.style.display = "block";
+            activateBtn.disabled = true;
+
             const pageData = await extractPageData(tab);
             
             // Check if page extraction actually got text
@@ -129,6 +146,11 @@ document.addEventListener("DOMContentLoaded", () => {
             
             const scoreLabel = document.getElementById("scoreLabel");
             scoreLabel.style.color = "#94a3b8";
+
+            // RESET: Remove the final style so "Calculating..." looks normal
+            scoreLabel.classList.remove('score-final'); 
+            scoreLabel.style.backgroundImage = '';     
+            scoreLabel.style.filter = '';
 
             stopAnimation = startCalculatingAnimation(scoreLabel, TRANSLATIONS[currentLang].calculating);
 
@@ -159,8 +181,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const summaryText = await generateFinalSummary(agents, finalScore);
             
             analysisResults.summaryText = summaryText;
-
-            displayOverallScore(agents);
 
             // 3. SAVE TO CACHE
             saveToCache(tab.url, pageData, agents, finalScore, summaryText);
@@ -228,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             console.log("Extracted page text:", bodyText);
             // Slice for tokens
-            const excerptStart = bodyText.slice(0, 2500);
+            const excerptStart = bodyText;
             const excerptEnd = bodyText.length > 1500 ? bodyText.slice(-1500) : "";
 
             return {
@@ -285,8 +305,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 try {
                     const response = await chrome.runtime.sendMessage({
                         type: "CALL_GEMINI",
+                        systemInstruction: agent.systemInstruction,
                         prompt: agent.prompt,
-                        useSearch: agent.useSearch
+                        useSearch: agent.useSearch,
+                        tokensBudget: agent.tokenBudget
                     });
                     
                     if (response.error) throw new Error(response.error);
@@ -346,8 +368,10 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const response = await chrome.runtime.sendMessage({
                 type: "CALL_GEMINI",
+                systemInstruction: agent.systemInstruction,
                 prompt: agent.prompt,
-                useSearch: agent.useSearch
+                useSearch: agent.useSearch,
+                tokensBudget: agent.tokenBudget
             });
 
             loaderDiv.style.display = "none";
@@ -387,6 +411,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 linkedExplanation = parseAndLinkifySources(linkedExplanation);
             } 
 
+            if(agent.id === 'style') {
+                linkedExplanation = parseAndLinkifyQuotes(result.explanation, tab.id);
+            }
+
             contentDiv.innerHTML = `<div class="agent-explanation">${linkedExplanation}</div>`;
 
             setTimeout(() => attachQuoteLinkListeners(), 100);
@@ -403,6 +431,7 @@ document.addEventListener("DOMContentLoaded", () => {
             textWrapper.insertAdjacentHTML('beforeend', `<span class="rating-badge rating-error">Error</span>`);
             contentDiv.innerHTML = `<div class="agent-error">⚠️ ${escapeHtml(err.message)}</div>`;
             contentDiv.style.display = "block";
+
             
             agent.result = { rating: "ERROR", explanation: err.message, score: 0 };
             
@@ -416,18 +445,41 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    document.getElementById("exportBtn")?.addEventListener("click", () => exportResultsToMarkdown(analysisResults));
+    document.getElementById('reanalyzeBtn')?.addEventListener('click', async () => {
+        // re-set UI
+        const scoreBox = document.getElementById('overallScore');
+        scoreBox.classList.remove('expanded');
+        
+        const btn = document.getElementById('reanalyzeBtn');
+
+        btn.disabled = true;
+        btn.innerHTML = TRANSLATIONS[currentLang].reanalyzing;
+
+        try {
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            
+            if (tab && tab.url) {
+                await removeFromCache(tab.url);
+                await startAnalysis();
+            }
+        } catch (error) {
+            console.error("Re-analysis failed:", error);
+        } finally {
+            btn.disabled = false;
+            // Translate back or hardcode text
+            const originalText = TRANSLATIONS && TRANSLATIONS[currentLang] 
+                ? TRANSLATIONS[currentLang].reanalyzeBtn 
+                : "🔄Re-Analyze Page";
+            btn.innerHTML = originalText || "🔄 Re-Analyze Page";
+        }
+    });
 
     // Updated Reset Functionality with Cache Clearing
     document.getElementById("newAnalysisBtn")?.addEventListener("click", () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             if(tabs[0]) {
                 const url = tabs[0].url;
-                
-                // 1. Clear Cache for this URL
-                removeFromCache(url);
-                
-                // 2. Clear UI Logic
+            
                 setupView.style.display = "flex";
                 resultsView.style.display = "none";
                 statusMsg.style.opacity = "0";

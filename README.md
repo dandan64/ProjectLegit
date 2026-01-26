@@ -1,247 +1,103 @@
-# Legit - AI-Powered Fake News Detection Extension
+# Legit: AI-Powered Media Forensics
 
-A Chrome extension that uses Google's Gemini AI to analyze news articles and detect potential misinformation through multi-agent analysis.
-
-## 🌟 Features
-
-### Enhanced Analysis System
-- **10 Specialized AI Agents** analyzing different aspects:
-  - 🏛️ Source Credibility
-  - 📰 Headline Analysis
-  - 📎 Source Attribution
-  - ✓ Factual Accuracy
-  - 🎭 Emotional Tone
-  - ⚖️ Bias Detection
-  - ✍️ Writing Quality
-  - 📅 Content Freshness
-  - (Plus 2 more from original implementation)
-
-### User Experience Improvements
-- **Progressive Loading**: See results as each agent completes analysis
-- **Overall Legitimacy Score**: Weighted scoring system (0-100)
-- **Visual Rating System**: Color-coded badges for quick scanning
-- **Priority-Based Display**: High-priority agents shown first
-- **Smooth Animations**: Modern, polished UI transitions
-
-### Technical Enhancements
-- **Response Caching**: Reduces API calls for similar analyses
-- **Rate Limiting**: Prevents API quota exhaustion
-- **Error Recovery**: Automatic retries with exponential backoff
-- **Better Error Messages**: Clear, actionable error descriptions
-
-### Modern UI/UX
-- **Glassmorphic Design**: Beautiful gradient backgrounds with blur effects
-- **Responsive Layout**: Adapts to different content lengths
-- **Keyboard Shortcut**: Ctrl+B (Cmd+B on Mac) to open
-- **Export Functionality**: Save analysis results (coming soon)
-
-## 📦 Installation
-
-### 1. Get Your Gemini API Key
-1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
-2. Sign in with your Google account
-3. Click "Create API Key"
-4. Copy the generated key
-
-### 2. Install the Extension
-
-#### Option A: Load Unpacked (Development)
-1. Download/clone this repository
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" (toggle in top-right)
-4. Click "Load unpacked"
-5. Select the extension folder
-6. The Legit icon should appear in your toolbar
-
-#### Option B: Package as .crx
-1. Go to `chrome://extensions/`
-2. Enable Developer mode
-3. Click "Pack extension"
-4. Select the extension directory
-5. Install the generated .crx file
-
-### 3. Configure API Key
-1. Click the Legit icon in your toolbar
-2. Enter your Gemini API key
-3. Click "Save API Key"
-4. You're ready to analyze!
-
-## 🚀 Usage
-
-### Analyzing a Page
-1. Navigate to any news article
-2. Click the Legit icon (or press Ctrl+B / Cmd+B)
-3. Click "Analyze This Page"
-4. Wait for the multi-agent analysis to complete
-5. Review the overall score and individual agent assessments
-
-### Understanding Results
-
-#### Overall Score
-- **80-100**: Highly Credible ✅
-- **60-79**: Moderately Credible ⚠️
-- **40-59**: Questionable ❌
-- **0-39**: Highly Questionable 🚨
-
-#### Priority Levels
-- **Red Border**: High priority - most important for credibility
-- **Orange Border**: Medium priority - contextual factors
-- **Blue Border**: Low priority - supplementary information
-
-#### Rating Badges
-Each agent provides a specific rating with explanation:
-- **Green badges**: Positive indicators
-- **Yellow badges**: Neutral/uncertain
-- **Orange badges**: Warning signs
-- **Red badges**: Serious concerns
-
-## 📁 File Structure
-
-```
-legit-extension/
-├── manifest.json           # Extension configuration
-├── Legit.html             # Popup interface
-├── scripts/
-│   ├── popup.js           # UI logic & analysis orchestration
-│   └── background.js      # API calls & caching
-├── Images/
-│   ├── Legit_logo_16.png
-│   ├── Legit_logo_32.png
-│   ├── Legit_logo_48.png
-│   └── Legit_logo_128.png
-└── README.md              # This file
-```
-
-## 🛠️ Development
-
-### Prerequisites
-- Google Chrome (or Chromium-based browser)
-- Gemini API key
-- Basic knowledge of JavaScript
-
-### Local Development
-1. Make changes to the code
-2. Go to `chrome://extensions/`
-3. Click the refresh icon on the Legit extension card
-4. Test your changes
-
-### Debugging
-- **Popup Console**: Right-click the extension icon → "Inspect popup"
-- **Background Service Worker**: Click "service worker" link on extensions page
-- **Content Scripts**: Use regular Chrome DevTools on the page
-
-### Key Configuration Points
-
-#### Adjusting Agent Weights
-In `popup.js`, modify the `weight` property in the `getAnalysisAgents()` function:
-```javascript
-{
-    id: "source",
-    name: "Source Credibility",
-    weight: 0.2,  // 20% of overall score
-    // ...
-}
-```
-
-#### Modifying Cache Duration
-In `background.js`:
-```javascript
-const CACHE_DURATION = 1000 * 60 * 30; // 30 minutes
-```
-
-#### Adjusting Rate Limits
-In `background.js`:
-```javascript
-const MAX_REQUESTS_PER_MINUTE = 30;
-```
-
-## 🎨 Customization
-
-### Changing Color Scheme
-Edit the CSS in `Legit.html`:
-```css
-body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-```
-
-### Modifying Agent Prompts
-In `popup.js`, edit the `prompt` field in `getAnalysisAgents()`:
-```javascript
-{
-    id: "source",
-    prompt: `Your custom prompt here...`
-}
-```
-
-### Adding New Agents
-1. Add new agent definition in `getAnalysisAgents()`
-2. Set appropriate `id`, `name`, `icon`, `priority`, and `weight`
-3. Create a specific prompt for the agent's task
-4. The UI will automatically display the new agent
-
-## ⚠️ Limitations & Considerations
-
-### API Costs
-- Gemini API has free tier limits
-- Each page analysis uses 8-10 API calls
-- Monitor your usage at [Google AI Studio](https://aistudio.google.com/)
-
-### Accuracy
-- AI analysis is not perfect
-- Results should inform, not replace, critical thinking
-- Cross-reference important claims with multiple sources
-
-### Privacy
-- API key stored locally in browser
-- Page content sent to Google's Gemini API for analysis
-- No data collected or stored by this extension
-
-### Performance
-- Analysis takes 10-30 seconds depending on content length
-- Caching reduces repeated analyses
-- Rate limiting prevents API quota exhaustion
-
-## 🔮 Future Enhancements
-
-### Planned Features
-- [ ] PDF export of analysis results
-- [ ] Historical analysis storage
-- [ ] Comparison mode (analyze multiple sources)
-- [ ] Browser notification for highly questionable sites
-- [ ] Crowd-sourced credibility ratings
-- [ ] Integration with fact-checking databases
-- [ ] Real-time monitoring mode
-- [ ] Custom agent creation interface
-- [ ] Team collaboration features
-
-### Community Contributions
-Want to contribute? Areas we'd love help with:
-- Additional analysis agents
-- UI/UX improvements
-- Performance optimizations
-- Internationalization
-- Test coverage
-- Documentation
-
-
-## 📄 License
-
-MIT License - feel free to use, modify, and distribute
-
-## 🤝 Support
-
-For issues, questions, or suggestions:
-1. Check existing issues on GitHub
-2. Create a new issue with detailed description
-3. Include browser version and error messages
-
-## 🙏 Acknowledgments
-
-- Google Gemini AI for powering the analysis
-- Chrome Extensions API documentation
-- Open-source community for inspiration
+<div align="center">
+  <img src="Images/Legit_logo_128.png" alt="Legit Logo" width="128" height="128">
+  <br>
+  <br>
+  
+  [![Manifest V3](https://img.shields.io/badge/Manifest-V3-blue?style=flat-square)](https://developer.chrome.com/docs/extensions/mv3/intro/)
+  [![Powered By Gemini](https://img.shields.io/badge/AI-Gemini%202.0%20Flash-8E75B2?style=flat-square&logo=google)](https://deepmind.google/technologies/gemini/)
+  [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)]()
+  
+  **Real-time analysis of news credibility, bias, and cross-verification using Multi-Agent AI orchestration.**
+</div>
 
 ---
 
-**Disclaimer**: This tool provides AI-generated analysis to assist with critical evaluation of news content. It should not be considered a definitive source of truth. Always exercise your own judgment and consult multiple sources for important information.
+## 📖 Overview
+
+**Legit** is a Chromium-based browser extension designed to combat misinformation through forensic media analysis. Unlike simple "true/false" checkers, Legit employs a **Multi-Agent System (MAS)** architecture where distinct AI agents specialize in specific tasks—source verification, author profiling, bias detection, and cross-reference consensus.
+
+Built on the **Chrome Side Panel API** and powered by **Google's Gemini 2.0 Flash**, Legit provides users with a granular "Legitimacy Score" and context-aware citations, allowing for lateral reading without leaving the tab.
+
+## ✨ Key Features
+
+### 🕵️‍♂️ Multi-Agent Analysis Engine
+Legit breaks down every article using specialized AI agents:
+* **Source Agent:** Evaluates domain reputation using SIFT (Stop, Investigate, Find, Trace) methodology and financial transparency checks.
+* **Author Agent:** Investigates bylines to distinguish between expert journalists, opinion writers, and AI-generated personas.
+* **Consensus Agent:** Performs real-time cross-verification against Tier-1 news outlets to flag breaking news vs. unsubstantiated claims.
+* **Bias Agent:** Runs a "virtual panel" of 11 expert personas (political, gender, corporate) to detect structural and lexical bias.
+* **Headline Agent:** Audits "Truth Gaps" between sensationalist headlines and the actual body text (clickbait detection).
+
+### ⚡ Technical Highlights
+* **Smart Citation Highlighting:** Uses a custom **Levenshtein Distance algorithm** to fuzzy-match AI-generated quotes back to the DOM, handling differences in whitespace and formatting robustly.
+* **Smart Caching Strategy:** Implements an LRU-style caching mechanism with storage quota management to minimize API costs and latency.
+* **Localization:** Native support for **English** and **Hebrew** (RTL), including UI flipping and prompt adaptation.
+* **Readability Integration:** Utilizes a modified Mozilla Readability engine to extract clean article content, removing ads and boilerplate before analysis.
+
+## 🛠️ Tech Stack
+
+* **Frontend:** HTML5, CSS3 (Glassmorphism UI), Vanilla JavaScript (ES6+).
+* **Extension Framework:** Chrome Manifest V3, Side Panel API, Scripting API.
+* **AI Backend:** Google Gemini API (`gemini-2.0-flash-exp`) via REST.
+* **Data Processing:** DOM TreeWalker for text node mapping, fuzzy string matching.
+
+## 🚀 Installation & Setup
+
+### Prerequisites
+1.  A Chromium-based browser (Chrome, Edge, Brave).
+2.  A [Google Gemini API Key](https://aistudio.google.com/app/apikey) (Free tier available).
+
+### Local Development
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/yourusername/legit-extension.git](https://github.com/yourusername/legit-extension.git)
+    cd legit-extension
+    ```
+2.  **Load into Chrome:**
+    * Open Chrome and navigate to `chrome://extensions/`.
+    * Toggle **Developer mode** in the top right corner.
+    * Click **Load unpacked**.
+    * Select the `legit-extension` directory.
+3.  **Pin the Extension:**
+    * Click the puzzle piece icon in your browser toolbar and pin **Legit**.
+
+### Configuration
+1.  Open the Legit extension side panel.
+2.  Paste your **Gemini API Key** into the settings field.
+3.  Click **Save API Key**.
+
+## 🧠 How It Works (Architecture)
+
+1.  **Extraction:** When the user clicks "Analyze", the `contentScript` injects a parser to sanitize the DOM and extract the core article text/metadata.
+2.  **Orchestration:** `popup.js` initializes the Agent Grid. Independent agents (Source, Style, Headline) run in parallel via `Promise.all`.
+3.  **Dependency Chaining:** The **Consensus Agent** runs a preliminary search, and its output is fed into the **Citation Formatter**, ensuring quotes are verified before display.
+4.  **Synthesis:** The **Summary Agent** waits for all threads to resolve, then synthesizes a human-readable executive summary based on the weighted scores of all sub-agents.
+5.  **UI Rendering:** Results are streamed to the Side Panel. If a user clicks a citation, `contentHighlighter.js` calculates the text offset and scrolls the viewport to the evidence in the article.
+
+## 🔒 Privacy & Security
+
+* **Data Minimization:** No browsing history is tracked. Analysis is only triggered explicitly by the user on a per-tab basis.
+* **Direct API Calls:** API calls are made directly from the user's client to Google servers. No intermediate servers or analytics are used.
+* **Local Storage:** API keys and cached results are stored locally on the device using `chrome.storage.local`.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please follow these steps:
+
+1.  Fork the project.
+2.  Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4.  Push to the branch (`git push origin feature/AmazingFeature`).
+5.  Open a Pull Request.
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+<div align="center">
+  <sub>Built with 💻 and ☕ by Daniel and Mosh</sub>
+</div>

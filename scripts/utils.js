@@ -18,16 +18,79 @@ function createJumpyCalculatingText(baseText, dotCount) {
     }).join('') + dots;
 }
 
-function saveToCache(url, pageData, agents, score, summaryText) {
+async function saveToCache(url, pageData, agents, score, summaryText) {
     const key = getCacheKey(url);
+
+    // 1. OPTIMIZE: Create a "slim" version of pageData
+    // We DO NOT save 'bodyText' or 'excerpt' as they are huge and fill storage instantly.
+    // We only need title/domain for the header when loading from cache.
+    const slimPageData = {
+        title: pageData.title,
+        domain: pageData.domain,
+        author: pageData.author,
+        url: pageData.url
+    };
+
     const cacheData = {
         timestamp: Date.now(),
-        pageData: pageData, 
-        agents: agents.filter(a => !a.isBackground || !a.id === 'summary'), // Exclude background agents
+        pageData: slimPageData, 
+        agents: agents.filter(a => !a.isBackground && a.id !== 'summary'), // Exclude background agents
         score: score,
-        summaryText : summaryText
+        summaryText: summaryText
     };
-    chrome.storage.local.set({ [key]: cacheData });
+
+    try {
+        // Try saving normally
+        await chrome.storage.local.set({ [key]: cacheData });
+        console.log("✅ Saved to cache:", key);
+    } catch (error) {
+        // 2. CATCH: If quota exceeded, clean up and retry
+        if (error.message && (error.message.includes("quota exceeded") || error.message.includes("QUOTA_BYTES"))) {
+            console.warn("⚠️ Storage full! Cleaning old cache items...");
+            
+            const freedSpace = await handleQuotaExceeded();
+            
+            if (freedSpace) {
+                // Retry save ONE time
+                try {
+                    await chrome.storage.local.set({ [key]: cacheData });
+                    console.log("✅ Saved to cache after cleanup:", key);
+                } catch (retryError) {
+                    console.error("❌ Failed to save even after cleanup:", retryError);
+                }
+            }
+        } else {
+            console.error("Storage error:", error);
+        }
+    }
+}
+
+// Helper: Deletes oldest 30% of cached items to free space
+async function handleQuotaExceeded() {
+    try {
+        const allData = await chrome.storage.local.get(null);
+        const cacheKeys = Object.keys(allData).filter(k => k.startsWith('legit_cache_'));
+
+        if (cacheKeys.length === 0) return false;
+
+        // Sort by timestamp (Oldest first)
+        const sortedItems = cacheKeys.map(key => ({
+            key: key,
+            timestamp: allData[key].timestamp || 0
+        })).sort((a, b) => a.timestamp - b.timestamp);
+
+        // Calculate how many to delete (e.g., remove oldest 30%)
+        const countToDelete = Math.max(1, Math.floor(sortedItems.length * 0.3));
+        const keysToDelete = sortedItems.slice(0, countToDelete).map(item => item.key);
+
+        console.log(`🧹 Deleting ${keysToDelete.length} old cache items to free space.`);
+        
+        await chrome.storage.local.remove(keysToDelete);
+        return true;
+    } catch (e) {
+        console.error("Error during cache cleanup:", e);
+        return false;
+    }
 }
 
 // Removes specific URL from cache
@@ -66,7 +129,7 @@ function loadFromCache(cacheData, currentTabId) {
 
     const header = document.getElementById("pageHeader");
     if (!document.getElementById("cacheBadge")) {
-        header.insertAdjacentHTML('beforeend', `<div id="cacheBadge" style="font-size:11px; color:#0d9488; margin-top:5px; font-weight:600;">♻️Result from previous scan</div>`);
+        header.insertAdjacentHTML('beforeend', `<div id="cacheBadge" style="font-size:11px; color:#0d9488; margin-top:5px; font-weight:600;">${TRANSLATIONS[currentLang].cacheBadge}</div>`);
     }
 
     const agentGrid = document.getElementById("agentGrid");
@@ -115,7 +178,7 @@ function loadFromCache(cacheData, currentTabId) {
             summaryDiv.style.display = "block";
             summaryDiv.innerHTML = `
                 <div class="summary-body">
-                    <h3 class="summary-title">📝Analysis Summary</h3>
+                    <h3 class="summary-title">${TRANSLATIONS[currentLang].summaryTitle}</h3>
                     <div class="summary-content" id="summaryText">
                         <span>${cacheData.summaryText}</span>
                     </div>
@@ -154,11 +217,39 @@ function sortGridDynamic() {
     cards.forEach(card => agentGrid.appendChild(card));
 }
 
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!WIP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function extractTextWithNewlines(html) {
+    // Create a temporary DOM element to manipulate the HTML
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = html;
+
+    // A. Remove elements you clearly don't want (Metadata/Images)
+    // Remove images, figures, and bylines if Readability missed them
+    tempDiv.querySelectorAll("img, figure, video, .byline, time").forEach(el => el.remove());
+
+    // B. Insert Newlines before breaking the structure
+    // We look for block elements and append a double newline to them
+    const blockElements = tempDiv.querySelectorAll("p, h1, h2, h3, h4, h5, h6, li");
+    blockElements.forEach(el => {
+        el.after("\n\n"); 
+    });
+
+    // C. Get the text
+    let text = tempDiv.innerText;
+
+    // D. Final Cleanup (Trim extra whitespace)
+    return text.trim();
+}
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!WIP!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 function parseAgentResponse(text) {
     console.log('📋 Parsing response:', text.substring(0, 200) + '...');
     
     // Look for the rating - more flexible regex
-    const ratingMatch = text.match(/RATING:\s*\*?\*?([A-Z_]+)\*?\*?/i);
+    // const ratingMatch = text.match(/RATING:\s*\*?\*?([A-Z_]+)\*?\*?/i);
+    const ratingMatch = text.match(/RATING:[\s\*]*([A-Z_]+)/i);
     
     // Look for the explanation
     const explanationMatch = text.match(/EXPLANATION:\s*([\s\S]*)/i);
@@ -198,15 +289,16 @@ function ratingToScore(rating) {
         // --- 🟡 YELLOW (60-79) ---
         ADEQUATE: 70, CITIZEN_JOURNALIST: 70, 
         SLIGHT_BIAS: 70, PARTIALLY_SOURCED: 60, UNIQUE_REPORTING: 60, DATED: 60,
+        SENSATIONAL: 75, SOMEWHAT_MISLEADING:70,
 
         // --- 🟠 ORANGE (40-59) ---
         UNVERIFIED: 50, UNVERIFIABLE: 50, UNKNOWN: 50, ERROR: 50,
-        QUESTIONABLE: 40, MODERATE_BIAS: 40,
+        QUESTIONABLE: 40, MODERATE_BIAS: 40, CLICKBAIT: 50,
 
         // --- 🔴 RED (0-39) ---
-        SOMEWHAT_MISLEADING: 35, SENSATIONALIST: 35, ANONYMOUS: 35,
+        SENSATIONALIST: 35, ANONYMOUS: 35,
         POORLY_SOURCED: 30, POOR_QUALITY: 30, RECYCLED: 30, CONTAINS_ERRORS: 20,
-        STRONG_BIAS: 20, UNSOURCED: 15, CLICKBAIT: 15, UNRELIABLE: 10,
+        STRONG_BIAS: 20, UNSOURCED: 15, UNRELIABLE: 10,
         MISLEADING: 10, SUSPICIOUS: 10, DECEPTIVE: 5, HIGHLY_MANIPULATIVE: 5,
         CONTRADICTS_CONSENSUS: 5
     };
@@ -247,35 +339,93 @@ function displayOverallScore(agents) {
     scoreSpinner.style.display = "none";
     scoreValue.style.display = "block";
 
-    // Stop the animation
+    // Stop Animation
     if (scoreLabel.dataset.animationInterval) {
+        if (scoreLabel.dataset.stopAnimation === 'false') {
+             scoreLabel.dataset.stopAnimation = 'true';
+        }
         clearInterval(parseInt(scoreLabel.dataset.animationInterval));
         delete scoreLabel.dataset.animationInterval;
     }
 
-    let color, labelKey, emoji;
-    if (overallScore >= 80) { color = "#10b981"; labelKey = "HIGHLY_CREDIBLE"; emoji = "✅"; } 
-    else if (overallScore >= 60) { color = "#e0d212ff"; labelKey = "CREDIBLE"; emoji = "⭐"; } 
-    else if (overallScore >= 40) { color = "#f59e0b"; labelKey = "QUESTIONABLE"; emoji = "⚠️"; } 
-    else { color = "#ef4444"; labelKey = "UNRELIABLE"; emoji = "🚨"; }
+    // --- DESIGN LOGIC ---
+    let color, gradient, labelKey, emoji;
 
-    scoreValue.textContent = overallScore;
-    scoreValue.style.color = color;
-    
-    setTimeout(() => {
-        scoreBar.style.width = `${overallScore}%`;
-        scoreBar.style.backgroundColor = color;
-        scoreBar.style.boxShadow = `0 0 10px ${color}40`;
-    }, 100);
+    if (overallScore >= 80) { 
+        color = "#10b981"; 
+        // Vibrant Emerald Gradient
+        gradient = "linear-gradient(135deg, #34d399 0%, #047857 100%)";
+        labelKey = TRANSLATIONS[currentLang].HIGHLY_CREDIBLE.toUpperCase(); 
+        emoji = "✓"; 
+    } 
+    else if (overallScore >= 60) { 
+        color = "#d9bc00"; 
+        // Rich Gold Gradient
+        gradient = "linear-gradient(135deg, #fdfd02 0%, #d8b400 100%)";
+        labelKey = TRANSLATIONS[currentLang].CREDIBLE.toUpperCase(); 
+        emoji = "⭐"; 
+    } 
+    else if (overallScore >= 40) { 
+        color = "#f97316"; 
+        // Burnt Orange Gradient
+        gradient = "linear-gradient(135deg, #fb923c 0%, #9a3412 100%)";
+        labelKey = TRANSLATIONS[currentLang].QUESTIONABLE.toUpperCase(); 
+        emoji = "⚠"; 
+    } 
+    else { 
+        color = "#ef4444"; 
+        // Deep Red Gradient
+        gradient = "linear-gradient(135deg, #f87171 0%, #991b1b 100%)";
+        labelKey = TRANSLATIONS[currentLang].UNRELIABLE.toUpperCase(); 
+        emoji = "☠"; 
+    }
 
-    // TRANSLATED LABEL
-    const translatedLabel = TRANSLATIONS[currentLang][labelKey] || labelKey;
-    scoreLabel.textContent = `${emoji} ${translatedLabel}`;
-    
-    scoreLabel.style.color = color;
+    styleScoreLabel(scoreLabel, scoreValue, scoreBar, overallScore, color, gradient, labelKey, emoji);
+
     scoreDisplay.style.display = "block";
 
     return overallScore;
+}
+
+function styleScoreLabel(scoreLabelElement, scoreValueElement, scoreBarElement, overallScore, color, gradient, emoji, labelKey) {
+    // Apply styles to score value
+    scoreValueElement.textContent = overallScore;
+    scoreValueElement.style.color = color;
+    scoreValueElement.className = '';
+    scoreValueElement.classList.add('score-value-final');
+    scoreValueElement.style.backgroundImage = gradient;
+    scoreValueElement.style.filter = `drop-shadow(0 4px 6px ${color}33)`; // 33 = 20% opacity
+    scoreValueElement.style.filter = `drop-shadow(0 4px 6px ${color}33) drop-shadow(0 0 20px ${color}66)`;
+    scoreValueElement.style.display = "block";
+
+    // Apply styles to score bar
+    setTimeout(() => {
+        scoreBarElement.style.width = `${overallScore}%`;
+        scoreBarElement.style.backgroundImage = gradient; // Apply the gradient background
+        scoreBarElement.style.boxShadow = `0 0 10px ${color}40`;
+        scoreBarElement.style.filter = `drop-shadow(0 2px 4px ${color}33)`;
+
+        // Ensure it is visible
+        scoreBarElement.style.display = "block";
+    }, 100);
+
+    // Apply styles to score label
+    const translatedLabel = TRANSLATIONS[currentLang][labelKey] || labelKey;
+    
+    // 1. Reset Content & Apply Class
+    scoreLabelElement.textContent = `${emoji} ${translatedLabel}`;
+    scoreLabelElement.className = ''; // Clear "jumping-letter" classes
+    scoreLabelElement.classList.add('score-final'); // Add our new design class
+
+    // 2. Apply Dynamic Gradient
+    scoreLabelElement.style.backgroundImage = gradient;
+
+    scoreLabelElement.style.whiteSpace = "nowrap";
+    
+    // 3. Add a colored glow using drop-shadow filter
+    // (We use the main color variable for the shadow color)
+    scoreLabelElement.style.filter = `drop-shadow(0 4px 6px ${color}33) drop-shadow(0 0 20px ${color}66)`; // 33 = 20% opacity
+
 }
 
 // Utility function to escape HTML and clean Markdown
@@ -289,51 +439,6 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = cleanText;
     return div.innerHTML;
-}
-
-function exportResultsToMarkdown(analysisResults) {
-    if (!analysisResults) {
-        alert("No results to export yet!");
-        return;
-    }
-
-    let md = `# Legit Analysis Report\n`;
-    md += `**Target URL:** ${analysisResults.page.url}\n`;
-    md += `**Analyzed on:** ${analysisResults.timestamp}\n`;
-    md += `**Overall Credibility Score:** ${analysisResults.score}/100\n\n`;
-
-    if(analysisResults.summaryText) {
-        md += `## Summary\n\n`;
-        md += `${analysisResults.summaryText}\n\n`;
-    }
-
-    md += `--- \n\n`;
-
-    analysisResults.agents.forEach(agent => {
-        const res = agent.result;
-        if (res) {
-            md += `### ${agent.icon} ${agent.name}\n`;
-            md += `**Rating:** ${res.rating.replace(/_/g, ' ')}\n`;
-            md += `**Score Impact:** ${res.score}/100\n`;
-            md += `> ${res.explanation}\n\n`;
-        }
-    });
-
-    md += `\n*Generated by Legit Chrome Extension*`;
-
-    const blob = new Blob([md], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    
-    const domainName = analysisResults.page.domain.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    a.href = url;
-    a.download = `Legit_Report_${domainName}_${Date.now()}.md`;
-    
-    document.body.appendChild(a);
-    a.click();
-    
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
 }
 
 function displayPageHeader(pageData) {
@@ -383,6 +488,15 @@ function createCompletedAgentCard(agent, tabId) {
         if (!e.target.closest('a') && !e.target.closest('.quote-link')) {
             card.classList.toggle("expanded");
         }
+
+        if (card.classList.contains('expanded')) {
+                setTimeout(() => {
+                    card.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block:'start'
+                    });
+                }, 100); // Wait for expansion animation to start
+            }
     });
     
     return card;
@@ -393,6 +507,9 @@ function getRelevantCachedResult(agent, tabId) {
     if(agent.id === 'bias') {
         return parseAndLinkifyQuotes(result.explanation, tabId);
     } 
+    else if(agent.id === 'style') {
+        return parseAndLinkifyQuotes(result.explanation, tabId);
+    }
     else if(agent.id === 'consensus-format') {
         return parseAndLinkifySources(escapeHtml(result.explanation));
     } else {
@@ -526,26 +643,6 @@ function attachQuoteLinkListeners() {
                 } else {
                     link.style.backgroundColor = '#fecaca';
                     console.warn('❌ Quote not found on page');
-                    
-                    // Show user-friendly error
-                    const errorMsg = document.createElement('div');
-                    errorMsg.textContent = 'Quote not found on current page';
-                    errorMsg.style.cssText = `
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        background: #fee2e2;
-                        color: #991b1b;
-                        padding: 12px 16px;
-                        border-radius: 8px;
-                        border: 1px solid #f87171;
-                        z-index: 10000;
-                        font-size: 13px;
-                        font-weight: 600;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                    `;
-                    document.body.appendChild(errorMsg);
-                    setTimeout(() => errorMsg.remove(), 3000);
                 }
             } catch (error) {
                 console.error('Error highlighting quote:', error);
@@ -562,127 +659,44 @@ function attachQuoteLinkListeners() {
     });
 }
 
-// function parseAndLinkifySources(rawExplanation){
-//     if (!rawExplanation) return "";
-
-//     // Step A: Security First (Escape ALL raw text)
-//     let safeText = escapeHtml(rawExplanation);
-//     // Step B: Link Parsing (Supporting)
-
-//     // Helper to generate Text Fragment URL
-//     const createFragmentUrl = (url, quote) => {
-//         let cleanUrl = url.trim();
-//         // Remove Google redirects if present
-//         if (cleanUrl.includes("/url?q=")) {
-//             cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
-//         }
-        
-//         // If we have a quote, append the text fragment
-//         if (quote && quote.trim().length > 5) {
-//             const cleanQuote = quote.trim();
-//             // We use encodeURIComponent to ensure special chars don't break the URL
-//             return `${cleanUrl}#:~:text=${encodeURIComponent(cleanQuote)}`;
-//         }
-//         return cleanUrl;
-//     };
-//     // Regex allows for optional spaces around the separators (::)
-//     const sourceRegex = /\[\[SOURCE::(.*?)::(.*?)::(.*?)::SOURCE\]\]/g;
-//     safeText = safeText.replace(sourceRegex, (match, title, url, quote) => {
-//         const finalUrl = createFragmentUrl(url, quote);
-//         let cleanTitle = title.trim();
-//         // Fix: Remove Google Redirects if present (cleaner links)
-//         // if (cleanUrl.includes("/url?q=")) {
-//         //     cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
-//         // }
-//         return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
-//                 <span class="source-icon">✓</span> ${escapeHtml(cleanTitle)}
-//             </a>`;
-//     });
-
-//     // Step C: Link Parsing (Contradicting)
-//     const contraRegex = /\[\[CONTRA::(.*?)::(.*?)::(.*?)::CONTRA\]\]/g;
-//     safeText = safeText.replace(contraRegex, (match, title, url, quote) => {
-//         const finalUrl = createFragmentUrl(url, quote);
-//         let cleanTitle = title.trim();
-//         // if (cleanUrl.includes("/url?q=")) {
-//         //     cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
-//         // }
-//         return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
-//                 <span class="source-icon">✗</span> ${escapeHtml(cleanTitle)}
-//             </a>`;
-//     });
-
-//     // Step D: Text Formatting (Crucial for readability!)
-//     // 1. Convert **Bold** to <strong>
-//     safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+function createDirectLink(domain, title) {
+    // 1. Construct a precise query
+    // "foxbusiness.com Trump Iran protests Davos 2026"
+    const query = `${domain}: ${title}`;
     
-//     // 2. Convert Newlines to <br> (This fixes the "messy block" look)
-//     safeText = safeText.replace(/\n/g, '<br>');
+    // 2. Add the !ducky bang (Trigger "I'm Feeling Lucky")
+    // This tells DuckDuckGo: "Don't show me results, just take me to the first one."
+    const luckyUrl = `https://duckduckgo.com/?q=!ducky+${encodeURIComponent(query)}`;
+    
+    return luckyUrl;
+}
 
-//     return safeText;
-// }
 function parseAndLinkifySources(rawExplanation) {
     if (!rawExplanation) return "";
 
     let safeText = escapeHtml(rawExplanation);
 
-    const createFragmentUrl = (url, quote, type) => {
-        if (!url) return "";
-        let cleanUrl = url.trim();
-        
-        // Remove Google redirects
-        if (cleanUrl.includes("/url?q=")) {
-            cleanUrl = cleanUrl.split("/url?q=")[1].split("&")[0];
-        }
-
-        // If we have a quote, build the custom URL
-        if (quote && quote.trim().length > 5) {
-            try {
-                // Check if URL is valid before parsing
-                const urlObj = new URL(cleanUrl);
-                
-                let cleanQuote = quote.trim()
-                    .replace(/^["'“]+|["'”]+$/g, '') // Remove surrounding quotes
-                    .replace(/[.,;:]$/, '');          // Remove trailing punctuation
-
-                // Add Legit Params
-                urlObj.searchParams.set('legit_quote', cleanQuote);
-                urlObj.searchParams.set('legit_type', type); // 'supporting' or 'contra'
-
-                return urlObj.toString();
-            } catch (e) {
-                console.warn("Invalid URL for parsing, returning raw:", cleanUrl);
-                // Fallback: If URL parsing fails, return raw URL without highlight
-                return cleanUrl;
-            }
-        }
-        
-        return cleanUrl;
-    };
-
-    // Step B: Link Parsing (Supporting)
+    // Link Parsing (Supporting)
     const sourceRegex = /\[\[SOURCE::(.*?)::(.*?)::(.*?)::SOURCE\]\]/g;
-    safeText = safeText.replace(sourceRegex, (match, title, url, quote) => {
-        const finalUrl = createFragmentUrl(url, quote, 'supporting');
+    safeText = safeText.replace(sourceRegex, (match, domainName, title, quote) => {
 
-        console.log('Creating supporting source FINAL URL:', finalUrl);
-        const cleanTitle = title.trim();
+        const cleanDomain = domainName.trim();
         const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 
-        return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-supporting" title="Click to open: ${escapeHtml(cleanTitle)}">
-                <span class="source-icon">✓</span> ${escapeHtml(cleanTitle)}
+        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-supporting" title="Click to open: ${escapeHtml(title)}">
+                <span class="source-icon">✓</span> ${escapeHtml(cleanDomain)}
             </a>`;
     });
 
-    // Step C: Link Parsing (Contradicting)
+    // Link Parsing (Contradicting)
     const contraRegex = /\[\[CONTRA::(.*?)::(.*?)::(.*?)::CONTRA\]\]/g;
-    safeText = safeText.replace(contraRegex, (match, title, url, quote) => {
-        const finalUrl = createFragmentUrl(url, quote, 'contra'); 
-        const cleanTitle = title.trim();
+    safeText = safeText.replace(contraRegex, (match, domainName, title, quote) => {
+
+        const cleanDomain = domainName.trim();
         const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 
-        return `<a href="${finalUrl}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-contra" title="Click to open: ${escapeHtml(cleanTitle)}">
-                <span class="source-icon">✗</span> ${escapeHtml(cleanTitle)}
+        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-contra" title="Click to open: ${escapeHtml(title)}">
+                <span class="source-icon">✗</span> ${escapeHtml(cleanDomain)}
             </a>`;
     });
 
@@ -690,6 +704,18 @@ function parseAndLinkifySources(rawExplanation) {
     safeText = safeText.replace(/\n/g, '<br>');
 
     return safeText;
+}
+
+function waitForTabLoad(tabId) {
+    return new Promise((resolve) => {
+        const listener = (updatedTabId, changeInfo, tab) => {
+            if (!tab.url.includes("duckduckgo.com") && !tab.url.includes("google.com")) {
+                    chrome.tabs.onUpdated.removeListener(listener);
+                    resolve(tab);
+                }
+        };
+        chrome.tabs.onUpdated.addListener(listener);
+    });
 }
 
 function attachSourceLinkListeners() {
@@ -710,39 +736,60 @@ function attachSourceLinkListeners() {
             console.log('📝 Quote to highlight:', quote);
             
             try {
-                // Open the new tab FIRST
+                // 1. Open the new tab
                 const newTab = await chrome.tabs.create({ 
                     url: href,
                     active: true 
                 });
                 
-                console.log('📂 New tab opened:', newTab.id);
+                console.log('⏳ Waiting for redirect to finish...');
+
+                // 2. Wait for tab to load (using the fixed function from previous step)
+                await waitForTabLoad(newTab.id);
+                
+                // 3. Small buffer for JS rendering
+                await new Promise(r => setTimeout(r, 500));
+
+                console.log('✅ Page loaded. waiting for text...');
                 
                 if (!quote || quote.length < 2) {
                     console.log('No quote to highlight');
                     return;
                 }
                 
+                // 4. ROBUST WAIT: Wait for text with a TIMEOUT [FIX IS HERE]
                 try {
                     await chrome.scripting.executeScript({
                         target: { tabId: newTab.id },
                         args: [quote],
                         func: (textToFind) => {
                             return new Promise((resolve) => {
-                                // A. Helper to check if text exists yet
-                                const hasText = () => document.body && document.body.innerText.includes(textToFind);
+                                // A. Set a hard timeout (e.g., 1 seconds)
+                                const timeoutId = setTimeout(() => {
+                                    resolve(false); // Resolve even if not found so script continues
+                                }, 1000);
 
-                                if (hasText()) return resolve();
+                                // B. Helper to check text
+                                const hasText = () => {
+                                    // Simple check. We don't need to be perfect here, 
+                                    // contentHighlighter.js is the expert.
+                                    return document.body && document.body.innerText.includes(textToFind);
+                                };
 
-                                // B. If not, watch for changes
+                                if (hasText()) {
+                                    clearTimeout(timeoutId);
+                                    return resolve(true);
+                                }
+
+                                // C. Watch for changes
                                 const observer = new MutationObserver(() => {
                                     if (hasText()) {
                                         observer.disconnect();
-                                        resolve();
+                                        clearTimeout(timeoutId);
+                                        resolve(true);
                                     }
                                 });
 
-                                // C. Start watching the document root
                                 observer.observe(document.documentElement, {
                                     childList: true,
                                     subtree: true,
@@ -752,33 +799,33 @@ function attachSourceLinkListeners() {
                         }
                     });
                 } catch (err) {
-                    console.error('Error waiting for text:', err);
+                    console.error('⚠️ Wait for text warning (non-fatal):', err);
+                    // We continue anyway! 
                 }
                 
-                // Inject content script on new tab
-                try {
-                    await chrome.scripting.executeScript({
-                        target: { tabId: newTab.id },
-                        files: ['scripts/contentHighlighter.js']
-                    });
-                    console.log('✅ Content script injected');
-                } catch (err) {
-                    console.error('Failed to inject script:', err);
-                    return;
-                }
+                console.log('💉 Injecting highlighter script...');
+
+                // 5. Inject content script
+                await chrome.scripting.executeScript({
+                    target: { tabId: newTab.id },
+                    files: ['scripts/localization.js', 'scripts/contentHighlighter.js']
+                });
                 
-                // Send highlight message to NEW tab
+                // 6. Trigger the Highlight
+                // We do this REGARDLESS of whether step 4 found the text strictly.
+                // The highlighter has Levenshtein/Fuzzy matching which might succeed where strict includes() failed.
                 chrome.tabs.sendMessage(newTab.id, {
                     type: 'HIGHLIGHT_QUOTE',
                     quote: quote,
+                    lang: currentLang,
                     highlightType: sourceType
                 }, (response) => {
                     if (chrome.runtime.lastError) {
-                        console.warn('Highlight failed:', chrome.runtime.lastError.message);
+                        console.warn('Highlight failed (Runtime Error):', chrome.runtime.lastError.message);
                     } else if (response?.success) {
-                        console.log('✅ Quote highlighted on source page');
+                        console.log('✅ Quote highlighted successfully');
                     } else {
-                        console.warn('⚠️ Quote not found on source page');
+                        console.warn('⚠️ Quote not found by fuzzy matcher');
                     }
                 });
                 
@@ -794,7 +841,7 @@ async function generateFinalSummary(agents, finalScore) {
     const summaryBox = document.getElementById('scoreSummary');
 
     // Reset classes
-    summaryBox.className = 'summary-container'; 
+    summaryBox.className = 'summary-container';
 
     // Add dynamic class
     if (finalScore >= 80) summaryBox.classList.add('safe');
@@ -805,7 +852,7 @@ async function generateFinalSummary(agents, finalScore) {
     // 1. Show loading state in the UI
     if(summaryBox) {
         summaryBox.style.display = "block";
-        summaryBox.innerHTML = `<span style="color:#9ca3af; font-style:italic;">✨ Summarizing...</span>`;
+        summaryBox.innerHTML = `<span style="color:#9ca3af; font-style:italic;">${TRANSLATIONS[currentLang].summarizing}</span>`;
     }
 
     // 2. Find the Summary Agent Config (Safe Mode)
@@ -861,7 +908,7 @@ async function generateFinalSummary(agents, finalScore) {
             // Cleanup: Remove common prefixes like "Summary:" or "Verdict:"
             summaryBox.innerHTML = `
                 <div class="summary-body">
-                    <h3 class="summary-title">📝Analysis Summary</h3>
+                    <h3 class="summary-title">${TRANSLATIONS[currentLang].summaryTitle}</h3>
                     <div class="summary-content" id="summaryText">
                         <span>${finalSummary}</span>
                     </div>

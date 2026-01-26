@@ -7,6 +7,8 @@ function getAnalysisAgents(pageData) {
     const excerptEnd = endText || startText.slice(-500);
     
     const today = new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const lang = currentLang === 'en' ? 'English' : 'Hebrew';
     
     return [
         {
@@ -16,15 +18,21 @@ function getAnalysisAgents(pageData) {
             priority: "high",
             weight: 0.20,
             useSearch: true,
-            prompt: currentLang === 'en' ? `Act as an Information Scientist specializing in Media Ecology, Source Verification, and Institutional Bias. Your goal is to evaluate the credibility of the *organization* behind the domain "${pageData.domain}" using SIFT and Lateral Reading methods.
-            
-Current Date: ${today}
+            tokenBudget: 0,
+            systemInstruction: `Act as an Information Scientist specializing in Media Ecology, Source Verification, and Institutional Bias. Your goal is to evaluate the credibility of the *organization* behind the domain provided using SIFT and Lateral Reading methods.
 
-Your Methodology: SIFT (Lateral Reading Focus)
+            Your Methodology: SIFT (Lateral Reading Focus)
 1. Identify the Entity (Crucial): Do not just analyze the domain string; identify the parent company or organization.
 2. Consult General Consensus: Check Wikipedia first for "Ownership," "Political Alignment," or "Controversies" sections.
 3. Specialized Watchdogs: Cross-reference with "Media Bias/Fact Check" (MBFC), "Ad Fontes Media," "AllSides," or "The Seventh Eye" (for Israeli media).
 4. Follow the Money: Explicitly look for the ownership structure—is it a conglomerate, a state-owned enterprise, a non-profit with specific donors, or a private equity asset?
+            
+            Decision Logic:
+- Funding Transparency: If ownership is hidden or relies on "dark money" (undisclosed donors), downgrade the reliability rating.
+- State vs. Public: Distinguish between *Public Broadcasters* (often independent, e.g., BBC) and *State-Controlled Media* (propaganda arm).
+- Inference: If the specific domain is not listed in watchdogs, analyze the parent company (e.g., if "N12", analyze "Keshet Media Group").`,
+            prompt:`Current Date: ${today}
+            Page Domain: "${pageData.domain}".
 
 Search Queries to Perform:
 - "${pageData.domain} Wikipedia"
@@ -33,48 +41,18 @@ Search Queries to Perform:
 - "${pageData.domain} major donors shareholders"
 - "${pageData.domain} political alignment controversy"
 
-Decision Logic:
-- Funding Transparency: If ownership is hidden or relies on "dark money" (undisclosed donors), downgrade the reliability rating.
-- State vs. Public: Distinguish between *Public Broadcasters* (often independent, e.g., BBC) and *State-Controlled Media* (propaganda arm).
-- Inference: If the specific domain is not listed in watchdogs, analyze the parent company (e.g., if "N12", analyze "Keshet Media Group").
-
 Your Task:
-Determine three distinct factors:
+Determine and synthesize three distinct factors:
 1. Factual Reliability: History of corrections, retractions, or failed fact-checks.
 2. Political/Editorial Bias: The specific ideological lean (e.g., "Fiscal Conservative," "Progressive Left," "Pro-Government").
 3. Financial Context: Who pays the bills? (e.g., "Ad-driven corporate," "State-funded," "Donor-supported").
 
+**IMPORTANT**: Write the EXPLANATION part in ${lang}.
+
 Rate as: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, or UNRELIABLE
 Format:
 RATING: [your rating]
-EXPLANATION: [Provide a forensic analysis (3-4 sentences). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus. Use neutral, professional language.]` :
-
-`פעל כמדען מידע המתמחה באקולוגיית מדיה, אימות מקורות והטיה מוסדית. המטרה שלך היא להעריך את האמינות של הארגון שמאחורי הדומיין "${pageData.domain}" באמצעות שיטות SIFT וקריאה רוחבית.
-תאריך נוכחי: ${today}
-שיטת העבודה שלך: SIFT (מיקוד בקריאה רוחבית)
-1. זיהוי הישות (קריטי): אל תנתח רק את מחרוזת הדומיין; זהה את החברה או הארגון האם.
-2. התייעצות עם קונצנזוס כללי: בדוק תחילה בוויקיפדיה עבור סעיפי "בעלות," "הטיה פוליטית," או "מחלוקות."
-3. שומרי ראש מתמחים: השווה עם "Media Bias/Fact Check" (MBFC), "Ad Fontes Media," "AllSides," או "The Seventh Eye" (למדיה ישראלית).
-4. עקוב אחרי הכסף: חפש במפורש את מבנה הבעלות—האם זו קונגלומרט, יישות בבעלות המדינה, ארגון ללא מטרות רווח עם תורמים ספציפיים, או נכס של הון פרטי?
- חיפושים לביצוע:
-- "${pageData.domain} ויקיפדיה"
-- "${pageData.domain} media bias fact check funding"
-- "מי הבעלים של ${pageData.domain} media group"
-- "${pageData.domain} תורמים עיקריים בעלי מניות"
-- "${pageData.domain} הטיה פוליטית מחלוקת"
-לוגיקת החלטה:
-- שקיפות מימון: אם הבעלות מוסתרת או מסתמכת על "כסף אפל" (תורמים לא מדווחים), הורד את דירוג האמינות.
-- מדינה מול ציבור: הבחין בין *שדרנים ציבוריים* (לעיתים קרובות עצמאיים, למשל, BBC) ו*מדיה בשליטת המדינה* (זרוע תעמולה).
-- הסקה: אם הדומיין הספציפי אינו מופיע בשומרי הראש, נתח את חברת האם (למשל, אם "N12", נתח את "קשת מדיה גרופ").
-המשימה שלך:
-קבע שלושה גורמים מובחנים:
-1. אמינות עובדתית: היסטוריה של תיקונים, הסרות או בדיקות עובדות שנכשלו.
-2. הטיה פוליטית/עיתונאית: הנטייה האידיאולוגית הספציפית (למשל, "שמרני כלכלי," "שמאל פרוגרסיבי," "תומך ממשלתי").
-3. הקשר פיננסי: מי משלם את החשבונות? (למשל, "מונע פרסומות תאגידיות," "ממומן על ידי המדינה," "נתמך על ידי תורמים").
-דרג כ: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, או UNRELIABLE
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק ניתוח פורנזי (3-4 משפטים). התרכז במוניטין חיצוני בלבד. ציין במפורש מה *מקורות אחרים* אומרים על ההיסטוריה של הדומיין הזה, שקיפות המימון, והציות לקונצנזוס העובדתי. השתמש בשפה ניטרלית ומקצועית.]`
+EXPLANATION: [Provide a forensic analysis (3-4 sentences MAX). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus. Use neutral,professional language. DO NOT make your explanation in bullet points.]`
         },
         {
             id: "author",
@@ -83,32 +61,32 @@ EXPLANATION: [ספק ניתוח פורנזי (3-4 משפטים). התרכז במ
             priority: "medium",
             weight: 0.10,
             useSearch: true,
-            prompt: currentLang === 'en' ? `Act as an Investigative Journalist. Use Google Search to investigate the author of this text.
-            
+            tokenBudget: 0,
+            prompt:`Act as an Investigative Journalist. Use Google Search to investigate the author of this text.
+### INPUT DATA          
 Detected Author Name: "${pageData.author}"
 Domain: "${pageData.domain}"
 Content Snippet: "${shortExcerpt}"
 
-Your Task:
-1. If the "Detected Author Name" above is "Unknown", try to find it in the content snippet.
-2. If found, search for their name + domain. 
-3. Determine if they are a real person with a journalistic track record or a fake persona/admin.
-Rate as: EXPERT, JOURNALIST, CITIZEN_JOURNALIST, ANONYMOUS, or SUSPICIOUS
-Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, evidence-based explanation (3-4 sentences). State if the author is a verifiable expert or note the lack of accountability.]` : 
 
-`פעל כעיתונאי חוקר. חפש בגוגל על מנת לחקור את מחבר הטקסט הזה.
-שם המחבר שזוהה: "${pageData.author}"
-דומיין: "${pageData.domain}"
-קטע תוכן: "${shortExcerpt}"
-המשימה שלך:
-1. אם "שם המחבר שזוהה" למעלה הוא "Unknown", נסה למצוא אותו בקטע התוכן.
-2. אם נמצא, חפש את שמו + הדומיין.
-3. קבע אם הוא אדם אמיתי עם רקורד עיתונאי או פרסונה מזויפת/מנהל.
-דרג כ: EXPERT, JOURNALIST, CITIZEN_JOURNALIST, ANONYMOUS, או SUSPICIOUS
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין אם המחבר הוא מומחה שניתן לאמת או ציין את חוסר האחריות.]`
+### INVESTIGATIVE PROTOCOL (Internal Reasoning)
+1. **Extraction**: If Author is "Unknown", scan the Excerpt for "By [Name]" or "Written by". 
+2. **Verification**: Search for the exact name + the host domain. Check for a dedicated author profile page.
+3. **External Footprint**: Cross-reference the name with Muck Rack, LinkedIn, or Twitter to verify they are a real person and not an AI-generated persona.
+4. **Constraint**: Do not guess. If no information exists outside the current domain, rate as ANONYMOUS or SUSPICIOUS based on the site's reputation.
+
+### RATING SCALE
+- EXPERT: Recognized authority/specialist with advanced credentials.
+- JOURNALIST: Verifiable staff or freelance writer for established news outlets.
+- CITIZEN_JOURNALIST: Independent contributor or blogger with a traceable history.
+- ANONYMOUS: No specific author found; content attributed to "Staff" or "Admin."
+- SUSPICIOUS: Failed verification, no digital footprint, or known misinformation purveyor.
+
+**IMPORTANT**: Write the explanation in ${lang}.
+
+### FINAL FORMAT
+RATING: [INSERT RATING]
+EXPLANATION: [Identify the author's primary role. Mention one specific platform where they are verified (e.g., Muck Rack, LinkedIn, or official staff page). Conclude with a statement on their overall accountability.]`
         },
     {
         id: "consensus-verify",
@@ -117,8 +95,9 @@ EXPLANATION: [ספק הסבר ברור ומבוסס ראיות בעברית (3-4
         priority: "high",
         weight: 0,  // Background agent - no weight in final score
         useSearch: true,
+        tokenBudget: 0,
         isBackgroundAgent: true,  // Flag for background processing
-        prompt: currentLang === 'en' ? `Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story presented by ${pageData.siteName}, and provide a detailed analysis with source citations.
+        prompt:`Act as a Fact-Checking Researcher. Conduct a rigorous cross-verification of the following story presented by ${pageData.domain}, and provide a detailed, smooth, professional, and cohesive nanalysis with source citations.
 
 TITLE: "${pageData.title}"
 CONTENT: "${longExcerpt}"
@@ -145,9 +124,14 @@ If the date is the same as today, treat this as "Breaking News".
 - Check the timestamps. If the story is less than 24 hours old (eg. , "Breaking News"), a lack of consensus is normal. Do not penalize heavily.
 - If the story is old but has NO corroboration, flag it as suspicious.
 
+5. **CRITICAL** SOURCE INDEPENDENCE:
+- Note that this data is from "${pageData.siteName}". DO NOT use the source itself to verify its own claims.
+
 OUTPUT REQUIREMENT:
-You must output a JSON-like list of sources you found, followed by your analysis.
-Do NOT use citation numbers like [1]. Use the full URL.
+1. You must output a JSON-like list of sources you found, followed by your analysis.
+2. Do NOT use citation numbers like [1]. Use the full URL.
+
+**IMPORTANT**: Write the analysis in ${lang}.
 
 --- SCORING CRITERIA ---
 - CORROBORATED: Multiple independent Tier-1 outlets report the same Atomic Facts.
@@ -162,23 +146,24 @@ Format:
 RATING: [your rating]
 SOURCES_LIST:
 - STATUS: [SUPPORTING/CONTRADICTING]
-- SOURCE_NAME: [e.g. BBC]
-- URL: [The actual link found in search] 
+- SOURCE_NAME: [e.g. "bbc"]
+- ARTICLE_TITLE: [Distinct Title of the exact source] 
+Do NOT rely on internal citation tools.
 - RELEVANT_QUOTE: [Quote an exact short sentence (approx. 10-15 words) from the source that proves the point. Do not use quotation marks.]
 
 ANALYSIS:
-[Write your 3-4 sentence analysis here. Do not worry about linking sources here, just summarize the consensus.]
-` : `...Hebrew version...`
+[Write your 3-4 sentence analysis here. Do not worry about linking sources here, just summarize the consensus.]`
     },
         {
             id: "consensus-format",
             name: TRANSLATIONS[currentLang].consensus,
             icon: "🌐",
             priority: "high",
-            weight: 0.30,  // This one counts toward final score
+            weight: 0.25,  // This one counts toward final score
             useSearch: false,
+            tokenBudget: 0,
             dependsOn: "consensus-verify",  // Receives input from first agent
-            prompt: `You are a Citation Formatter.
+            prompt:`You are a Citation Formatter.
 I will give you a list of sources and an analysis text.
 Your task is to append the sources to the text using a specific format.
 
@@ -192,15 +177,16 @@ INSTRUCTIONS:
 4. Use the "RELEVANT_QUOTE" field from the list to populate the quote section of the tag.
 5. Add at MAX 2 citation per point, and DO NOT use the same source twice for the same point. 
 6. If possible, DO NOT use the same source twice in the entire analysis.
-7. DO NOT use sources in SOURCES_LIST with a similar name to the original source name (e.g., "ynet.co.il" is similar to "ynetnews.com"). Original source name: ${pageData.domain}.
+7. Original source name: "${pageData.siteName}". **DO NOT USE SOURCES with an EXACT OR SIMILAR name to the original source name** (e.g., "ynet.co.il" is similar to "ynetnews.com").
+8. DO NOT add links if there are no supporting/contradicting sources.
 
-REQUIRED CITATION INSERTION FORMAT:
-For supporting: [[SOURCE::Name::URL::Quote::SOURCE]]
-For contradicting: [[CONTRA::Name::URL::Quote::CONTRA]]
+**REQUIRED CITATION INSERTION FORMAT**:
+For supporting: [[SOURCE::DOMAIN_NAME::Article_Title::Quote::SOURCE]]
+For contradicting: [[CONTRA::DOMAIN_NAME::Article_Title::Quote::CONTRA]]
 
 Final Output Structure:
 RATING: [Keep the original rating]
-EXPLANATION: [The text with the formatted citations inserted]`
+EXPLANATION: [The original analysis with the formatted citations inserted]`
         },
         {
             id: "headline",
@@ -209,34 +195,32 @@ EXPLANATION: [The text with the formatted citations inserted]`
             priority: "high",
             weight: 0.10,
             useSearch: false,
-            prompt: currentLang === 'en' ? `Act as a Senior Editor. Analyze if this headline is fair or manipulative.
-            
+            tokenBudget: 0,
+            prompt:`Act as a Skeptical Media Auditor specializing in linguistic manipulation. Your goal is to find the "Truth Gap" between a headline and its source text. You value precision over professional courtesy.
+   
+###CONTEXT:
 Headline: "${pageData.title}"
-
 Content Snippet: "${longExcerpt}"
-
 Current Date: ${today}
 
-Your Task:
-1. Does the headline exaggerate the content?
-2. Does it use "Clickbait" tactics (e.g., "You won't believe...", ALL CAPS)?
-3. Does it accurately reflect the story?
-Rate as: ACCURATE, MOSTLY_ACCURATE, SOMEWHAT_MISLEADING, CLICKBAIT, or DECEPTIVE
-Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) critiquing the headline's accuracy and framing.]` : 
 
-`פעל כעורך בכיר. נתח אם הכותרת הוגנת או מניפולטיבית.
-כותרת: "${pageData.title}"
-קטע תוכן: "${shortExcerpt}"
-תאריך נוכחי: ${today}
-המשימה שלך:
-1. האם הכותרת מגזימה בתוכן?
-2. האם היא משתמשת בטקטיקות "קליקבייט" (למשל, "לא תאמינו...", אותיות גדולות)?
-3. האם היא משקפת במדויק את הסיפור?
-דרג כ: ACCURATE, MOSTLY_ACCURATE, SOMEWHAT_MISLEADING, CLICKBAIT, או DECEPTIVE
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק הסבר ברור ומבוסס היגיון בעברית (3-4 משפטים) המבקר את דיוק הכותרת והמסגור שלה.]`
+### THE AUDIT LOGIC
+1. **The Shorthand Test**: A headline is only "Accurate Shorthand" if it captures the *primary consequence* of the story. If it skips the main event to focus on a side-detail, it is SOMEWHAT_MISLEADING.
+2. **The Omission Test**: Does the headline withhold the "Who" or "What" to force a click? (e.g., "This happened...") If yes, it is CLICKBAIT.
+3. **The Distortion Test**: Does the headline use high-valence emotional words (Terror, Chaos, Miracle) that aren't justified by the data? If yes, it is SENSATIONAL.
+
+### RATING SCALE
+- ACCURATE: A neutral, factual summary of the core event.
+- SENSATIONAL: Factual, but uses "loud" or emotional language to provoke the reader.
+- SOMEWHAT_MISLEADING: Technically true but framed to suggest a false conclusion or focus on a minor point.
+- CLICKBAIT: Uses a curiosity gap or "mystery" framing to harvest clicks.
+- DECEPTIVE: Directly contradicts or invents claims not found in the snippet.
+
+**IMPORTANT**: Write the explanation in ${lang}.
+
+### OUTPUT FORMAT
+RATING: [RATING]
+EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Sentence 2: Identify the specific linguistic tactic or framing error. Sentence 3: A direct warning or confirmation for the user.]`
         },
         {
             id: "bias",
@@ -245,14 +229,9 @@ EXPLANATION: [ספק הסבר ברור ומבוסס היגיון בעברית (3
             priority: "high",
             weight: 0.25,
             useSearch: true,
-            prompt: currentLang === 'en' ? 
-            `You are a Media Bias Analyst. Analyze the following article for bias.
-        
-        Current Date: ${today}
-        
-        Text: "${longExcerpt}"
-        
-        YOUR TASK:
+            tokenBudget: 0,
+            systemInstruction: `You are a Media Bias Analyst. Analyze articles for bias.
+            YOUR TASK:
         1. Check for these bias types:
            - Political bias (partisan language, one-sided arguments)
            - Gender bias (stereotyping, focus on appearance over merit)
@@ -267,7 +246,9 @@ EXPLANATION: [ספק הסבר ברור ומבוסס היגיון בעברית (3
            - Are key stakeholders or perspectives missing?
            - Is there high density of emotional/loaded words?
         
-        3. use google search to check if important perspectives are omitted.
+        3. use google search to check if important perspectives are omitted.`,
+            prompt:`Current Date: ${today}
+            Text to analyze: "${longExcerpt}"
         
         CRITICAL OUTPUT RULES:
         - You MUST use EXACT quotes from the article as evidence.
@@ -275,76 +256,49 @@ EXPLANATION: [ספק הסבר ברור ומבוסס היגיון בעברית (3
         - Keep quotes under 15 words.
         - DO NOT translate the quotes - keep them in article's original language.
         - Use 1-5 specific quotes that are of the most significant bias.
+
+        **IMPORTANT**: Write the explanation in ${lang}.
         
         Rate as: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, or STRONG_BIAS
         
         FORMAT:
         RATING: [your rating]
-        EXPLANATION: Your analysis (3-5 sentences). When citing evidence, use [[QUOTE::exact text::QUOTE]] format. Example: "The article shows political bias when stating [[QUOTE::the policy is a complete disaster::QUOTE]] without presenting alternative views."` 
-         :  
-
-`פעל כאנליסט מוביל לפורנזיקה של מדיה המנהל פאנל של 11 מומחים מתמחים.
-המטרה שלך היא לבצע "בדיקת הטיה רב-צירית" על הטקסט למטה (מבלי להסתכל על הפרסומות).
-תאריך נוכחי: ${today}
-תחילת הטקסט: "${longExcerpt}"
-סוף הטקסט: "${excerptEnd}"
---- הפאנל של המומחים ---
-[קטגוריות סטנדרטיות]
-1. אנליסט פוליטי: בודק הטיה מפלגתית/העדפת מדיניות.
-2. מומחה למגדר: בודק סטריאוטיפים או התמקדות במראה מול כישרון.
-3. מבקר תאגידי (ישות): בודק שבח/ביקורת לא הוגנים על חברות.
-4. סוציולוג (גזעי/אתני): בודק סטריאוטיפים או הכללות שליליות.
-5. תאולוג (דתי): בודק ייצוג לא הוגן של אמונות.
-6. אנליסט גיאופוליטי (אזורי): בודק הטיה גיאוגרפית/שנאת זרים.
-7. מבקר מדיה (סנסציונליזם): בודק מניפולציה רגשית/קליקבייט.
-[מדדים חישוביים מתקדמים]
-8. אנליסט מבני: השווה את ההתחלה מול הסוף. האם המאמר מתחיל נייטרלי כדי לזכות באמון, ואז עובר לדעה חזקה במסקנה? (תבנית "סוס טרויאני").
-9. זיהוי תבניות: בודק אם רצף המשפטים בונה קשת נרטיבית מניפולטיבית.
-10. בלשן לקסיקלי: סורק קטגוריות מילים ספציפיות:
-- צפיפות גבוהה של מילים "כעס/השפעה" (למשל, "בושה", "פחד") -> מצביע על הטיה פוליטית.
-- צפיפות גבוהה של מילים "מיקוד בהווה" (למשל, "להודות", "להכחיש") -> מצביע על מסגור לא הוגן.
-11. שומר סף: השתמש בחיפוש בגוגל כדי לבדוק מה חסר. האם בעלי עניין או פרספקטיבות מרכזיות מוזכרות בדיווחים אחרים אך מושמטות כאן?
---- המשימה שלך ---
-1. התייעץ עם כל 11 הסוכנים פנימית.
-2. קבע אם קיימת הטיה משמעותית כלשהי.
-3. סנתז את הממצאים לפסק דין סופי אחד מבלי להזכיר אף אחד מהסוכנים הבודדים.
-4. אם נמצאו הטיות מרובות, הדירוג חייב לשקף את החומרה.
-דרג כ: BALANCED, SLIGHT_BIAS, MODERATE_BIAS, או STRONG_BIAS
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק סיכום ברור ומבוסס ראיות בעברית (3-4 משפטים). ציין במפורש את ההטיה החזקה ביותר שנמצאה (למשל, "זוהתה הטיה מבנית," "נמצאה הטיית שימור סף") וספק את הראיות/ההיגיון הספציפיים.]`
-        },
+        EXPLANATION: [Your analysis (3-5 sentences AT MAX)]. When citing evidence, use [[QUOTE::exact text::QUOTE]] format. Example: "The article shows political bias when stating [[QUOTE::the policy is a complete disaster::QUOTE]] without presenting alternative views."`
+         },
         {
             id: "style",
             name: TRANSLATIONS[currentLang].style,
             icon: "✍️",
             priority: "low",
-            weight: 0.05,
+            weight: 0.10,
             useSearch: false,
-            prompt: currentLang === 'en' ? `Act as a Copy Editor. Evaluate the professional standard of the following text.
-            
+            tokenBudget: 0,
+            prompt:`Act as a Senior News Editor and Quality Analyst. 
+Evaluate the journalistic standards and writing quality of the following text.
 Current Date: ${today}
-Text: "${shortExcerpt}"
+Text to Analyze: "${longExcerpt}"
+
+YOUR ANALYSIS CRITERIA:
+1. **Emotional Loading:** Does the text use neutral language, or does it rely on emotionally charged adjectives (e.g., "shocking," "horrible," "miraculous") to manipulate the reader?
+2. **Attribution:** Are claims attributed to specific sources, or does it use "weasel words" (e.g., "Many say," "It is rumored")?
+3. **Structure:** Does it follow the standard journalistic "Inverted Pyramid" (main facts first), or is it unstructured/rambling?
+4. **Mechanics:** Are there glaring grammar issues, excessive capitalization, or non-standard punctuation (!!!)?
+
+RATING SYSTEM:
+- PROFESSIONAL: Neutral tone, clear attribution, excellent structure, no errors.
+- ADEQUATE: Readable, mostly neutral, minor structural flaws.
+- SENSATIONALIST: Highly emotional language, clickbait style, aggressive tone.
+- POOR_QUALITY: Riddled with errors, incoherent, or clearly AI-generated spam.
 
 Your Task:
-1. Check for basic grammar and spelling errors.
-2. Does it follow standard journalistic structure (inverted pyramid)?
-3. Does it read like a professional report, a blog rant, or AI-generated spam?
-Rate as: PROFESSIONAL, ADEQUATE, SENSATIONALIST, or POOR_QUALITY
-Format: RATING: [your rating]
-EXPLANATION: [Provide a clear, reasoning-based explanation (3-4 sentences) assessing the professionalism and structure of the writing.]` : 
+Assign a RATING from the list above.
+Then, write a concise EXPLANATION (max 3 sentences) citing specific examples from the text (e.g., "Uses loaded words like 'disastrous' without evidence" or "Lacks specific attribution for key claims").
 
-`פעל כעורך תוכן. הערך את הסטנדרט המקצועי של הטקסט הבא.
-תאריך נוכחי: ${today}
-טקסט: "${shortExcerpt}"
-המשימה שלך:
-1. בדוק שגיאות דקדוק ואיות בסיסיות.
-2. האם הוא עוקב אחר מבנה עיתונאי סטנדרטי (פירמידה הפוכה)?
-3. האם זה נקרא כמו דיווח מקצועי, טור בלוג, או ספאם שנוצר על ידי AI?
-דרג כ: PROFESSIONAL, ADEQUATE, SENSATIONALIST, או POOR_QUALITY
-FORMAT:
-RATING: [הדירוג שלך]
-EXPLANATION: [ספק הסבר ברור ומבוסס היגיון (3-4 משפטים) המעריך את המקצועיות והמבנה של הכתיבה.]`
+**IMPORTANT**: Write the explanation in ${lang}.
+
+Format:
+RATING: [Rating]
+EXPLANATION: [Your analysis] When citing evidence, use [[QUOTE::exact text::QUOTE]] format.`
          },
          {
             id: "summary",
@@ -353,9 +307,9 @@ EXPLANATION: [ספק הסבר ברור ומבוסס היגיון (3-4 משפטי
             priority: "high",
             weight: 0.00,
             useSearch: false,
+            tokenBudget: 0,
             dependsOn: "all",  // Special flag: runs after ALL other agents complete
-             prompt: `You are the Chief Legitimacy Analyst. Your role is to synthesize the technical findings from various analysis agents into a single, cohesive verdict for the human reader.
-
+             prompt:`You are the Chief Legitimacy Analyst. Your role is to synthesize the technical findings from various analysis agents into a single, cohesive verdict for the human reader.
 INPUT DATA (Agent | Rating | findings):
 {INPUT_FROM_ALL_AGENTS}
 
@@ -369,6 +323,8 @@ OUTPUT RULES:
 - **Structure:** Start with the "Bottom Line" (Is it trustworthy?). Follow with the *primary reason* why. End with any necessary nuance or warnings.
 - **Tone:** Professional, objective, and decisive.
 - **Conflict Resolution:** If agents disagree (e.g., Safe Source vs. Biased Text), acknowledge the nuance (e.g., "While the publisher is reputable, this specific article uses highly charged language...").
+
+**IMPORTANT**: Write the explanation in ${lang}.
 
 EXAMPLE OUTPUT:
 "This article appears highly credible, citing multiple primary sources and maintaining a neutral viewpoint. However, the headline is slightly sensationalized compared to the actual body text. Readers can trust the core facts presented here."`

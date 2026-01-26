@@ -13,9 +13,11 @@ let currentLang = 'en'; // Default
             getKey: "Get one free",
             analysis: "🔍 Starting analysis...",
             overallScoreTitle: "Overall Legitimacy Score",
-            newScanBtn: "🔄 New Analysis",
+            newScanBtn: "✨ New Analysis",
             exportBtn: "📥 Export Results",
-            
+            reanalyzeBtn: "🔄 Re-Analyze Page",
+            reanalyzing: "🔄 Re-analyzing...",
+
             // Status & Errors
             calculating: "Calculating...",
             readyMsg: "New tab detected. Ready to analyze.",
@@ -24,6 +26,10 @@ let currentLang = 'en'; // Default
             apiKeySaved: "✅ API key saved successfully!",
             noTextError: "No text found on this page to analyze.",
             errorPrefix: "Error: ",
+            cacheBadge: "♻️ Result from previous scan",
+            Summarizing: "✨ Summarizing...",
+            quoteMatchWarning: "Exact quote match not found. Showing closest match.",
+            quoteMatchError: "Quote not found. Please try searching manually.",
             
             // Agent Names
             source: "Source Credibility",
@@ -36,6 +42,7 @@ let currentLang = 'en'; // Default
             bias: "Bias Detection",
             style: "Writing Quality",
             freshness: "Content Freshness",
+            summaryTitle: "Analysis Summary", 
 
             // --- RATINGS (GRADES) ---
             // General / Source
@@ -82,8 +89,10 @@ let currentLang = 'en'; // Default
             getKey: "השג אחד בחינם",
             analysis: "🔍 מתחיל ניתוח...",
             overallScoreTitle: "ציון אמינות כללי",
-            newScanBtn: "🔄 ניתוח חדש",
+            newScanBtn: "✨ ניתוח חדש",
             exportBtn: "📥 ייצוא תוצאות",
+            reanalyzeBtn: "🔄 נתח שוב",
+            reanalyzing: "🔄 מנתח מחדש...",
             
             // Status & Errors
             calculating: "מחשב...",
@@ -93,6 +102,10 @@ let currentLang = 'en'; // Default
             apiKeySaved: "✅ המפתח נשמר בהצלחה!",
             noTextError: "לא נמצא טקסט לניתוח בעמוד זה.",
             errorPrefix: "שגיאה: ",
+            cacheBadge: "♻️ תוצאה מסריקה קודמת",
+            summarizing: "✨ מסכם...",
+            quoteMatchWarning: "לא נמצא ציטוט מדויק. מוצג הציטוט הקרוב ביותר.",
+            quoteMatchError: "לא נמצא ציטוט. אנא נסה לחפש ידנית.",
 
             // Agent Names
             source: "אמינות המקור",
@@ -100,17 +113,15 @@ let currentLang = 'en'; // Default
             summary: "סיכום ניהולי",
             consensus: "הצלבת מקורות",
             headline: "ניתוח כותרת",
-            sources: "בדיקת ציטוטים",
-            accuracy: "דיוק עובדתי",
             bias: "זיהוי הטיה",
             style: "איכות כתיבה",
-            freshness: "רעננות התוכן",
+            summaryTitle: "סיכום הניתוח",
 
             // --- RATINGS (GRADES) ---
             // General / Source
             HIGHLY_CREDIBLE: "אמין מאוד", CREDIBLE: "אמין", NEUTRAL: "ניטרלי", 
             QUESTIONABLE: "מוטל בספק", UNRELIABLE: "לא אמין",
-            
+
             // Author
             EXPERT: "מומחה", JOURNALIST: "עיתונאי", CITIZEN_JOURNALIST: "עיתונאי אזרחי", 
             ANONYMOUS: "אנונימי", SUSPICIOUS: "חשוד",
@@ -171,10 +182,23 @@ let currentLang = 'en'; // Default
         });
 
         // Update dynamic text if visible (like status message)
-        if (statusMsg.style.opacity === "1") {
-             // Re-set default ready message if it's the default state
-             if (statusMsg.textContent.includes("New tab") || statusMsg.textContent.includes("זוהה טאב")) {
+        // We use getElementById here to ensure we grab the element even if it's not in global scope
+        const statusMsg = document.getElementById("statusMsg");
+        
+        if (statusMsg && statusMsg.style.opacity === "1") {
+             const text = statusMsg.textContent;
+
+             // 1. Handle "Ready" Message
+             if (text.includes("New tab") || text.includes("זוהה טאב")) {
                  statusMsg.textContent = TRANSLATIONS[lang].readyMsg;
+             }
+             // 2. Handle "API Key Saved" Message (THIS WAS MISSING)
+             else if (text.includes("API key") || text.includes("המפתח")) {
+                 statusMsg.textContent = TRANSLATIONS[lang].apiKeySaved;
+             }
+             // 3. Handle "No Key" Message
+             else if (text.includes("Don't have") || text.includes("אין לך")) {
+                 statusMsg.textContent = TRANSLATIONS[lang].noKey;
              }
         }
 

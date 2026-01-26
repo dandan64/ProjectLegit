@@ -70,13 +70,14 @@ The extension calls Google’s Gemini API from the background service worker and
    - `manifest.json`
    - `Legit.html`
    - `legit.css`
-   - `background.js`
-   - `popup.js`
-   - `utils.js`
-   - `agents.js`
-   - `localization.js`
-   - `Readability.js` (or `readability.js`, depending on your filename)
-   - `contentHighlighter.js`
+   - `scripts/`
+        - `background.js`
+        - `popup.js`
+        - `utils.js`
+        - `agents.js`
+        - `localization.js`
+        - `Readability.js` 
+        - `contentHighlighter.js`
 
    If your repository structure differs, either:
    - Move files into the folders referenced by `manifest.json`, or

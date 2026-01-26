@@ -125,7 +125,7 @@ If the date is the same as today, treat this as "Breaking News".
 - If the story is old but has NO corroboration, flag it as suspicious.
 
 5. **CRITICAL** SOURCE INDEPENDENCE:
-- Note that this data is from "${pageData.siteName}". DO NOT use the source itself to verify its own claims.
+- Note that this data is from "${pageData.siteName}". DO NOT USE THE SOURCE TO "${pageData.siteName}" TO VERIFY ITS OWN CLAIMS.
 
 OUTPUT REQUIREMENT:
 1. You must output a JSON-like list of sources you found, followed by your analysis.
@@ -147,12 +147,12 @@ RATING: [your rating]
 SOURCES_LIST:
 - STATUS: [SUPPORTING/CONTRADICTING]
 - SOURCE_NAME: [e.g. "bbc"]
-- ARTICLE_TITLE: [Distinct Title of the exact source] 
-Do NOT rely on internal citation tools.
+- ARTICLE_TITLE: [The distinct title of the article]
+DO NOT rely on internal citation tools.
 - RELEVANT_QUOTE: [Quote an exact short sentence (approx. 10-15 words) from the source that proves the point. Do not use quotation marks.]
 
 ANALYSIS:
-[Write your 3-4 sentence analysis here. Do not worry about linking sources here, just summarize the consensus.]`
+[Write your 3-5 sentences analysis here. Do not worry about linking sources here, just summarize the consensus.]`
     },
         {
             id: "consensus-format",
@@ -181,8 +181,8 @@ INSTRUCTIONS:
 8. DO NOT add links if there are no supporting/contradicting sources.
 
 **REQUIRED CITATION INSERTION FORMAT**:
-For supporting: [[SOURCE::DOMAIN_NAME::Article_Title::Quote::SOURCE]]
-For contradicting: [[CONTRA::DOMAIN_NAME::Article_Title::Quote::CONTRA]]
+For supporting: [[SOURCE::SOURCE_NAME::Article_Title::Quote::SOURCE]]
+For contradicting: [[CONTRA::SOURCE_NAME::Article_Title::Quote::CONTRA]]
 
 Final Output Structure:
 RATING: [Keep the original rating]

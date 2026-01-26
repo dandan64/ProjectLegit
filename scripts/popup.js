@@ -379,6 +379,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (response.error) throw new Error(response.error);
 
             const result = parseAgentResponse(response.result);
+
             agent.result = result;
 
             // --- IMPORTANT: Save Score to DOM for Sorting ---

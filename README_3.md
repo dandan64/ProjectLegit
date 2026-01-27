@@ -109,9 +109,55 @@ Contributions are what make the open-source community such an amazing place to l
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
+139
+140
+141
+142
+143
+# Legit: AI-Powered Media Forensics
+    * `scripts/`: `background.js`, `popup.js`, `utils.js`, `agents.js`, `localization.js`, `Readability.js`, `contentHighlighter.js`
+
+    *If your repository structure differs, move files into the folders referenced by the manifest or update the paths.*
+
+3.  **Load into Chrome**
+    * Open `chrome://extensions`.
+    * Enable **Developer mode**.
+    * Click **Load unpacked**.
+    * Select the project folder (the folder containing `manifest.json`).
+
+4.  **Setup**
+    * Open the side panel (Click extension icon or use `Ctrl+B` / `Cmd+B`).
+    * Paste your **Gemini API Key** into the setup screen and save it.
+
+## 💡 Usage
+
+1.  Navigate to an article page you want to evaluate.
+2.  Open **Legit** in the side panel.
+3.  Click **Analyze This Page**.
+4.  **Review Results**:
+    * Check the Overall Legitimacy Score and Label.
+    * Read the Final Verdict Summary.
+    * Explore Agent Cards (ratings and reasoning).
+    * Click on **Linked Quotes** to highlight the text inside the page.
+
+## 🔒 Data and Privacy
+
+* **Explicit Trigger:** The extension analyzes only when the user explicitly triggers it for the active tab.
+* **Local Key Storage:** The Gemini API key is stored locally via `chrome.storage.local`.
+* **Data Transmission:** Extracted page text is sent to the Gemini API for analysis.
+* **Caching:** Results may be cached locally per-URL to speed up repeat checks and reduce API calls.
+
+
+## 📄 License
+
+No `LICENSE` file was found in the provided project files.
+*Please add a LICENSE file (e.g., MIT or Apache-2.0) and update the badge at the top accordingly.*
+
 ## 📧 Contact
 
-**Project Link:** [https://github.com/yourusername/legit-extension](https://github.com/yourusername/legit-extension)
+* **Names:** Daniel Ben Zeev, Moshe Aizenfratz.
+* **Email:** ddbenzeev@gmail.com , moshoiko2209000@gmail.com 
+* **Chrome Extension Link:** https://chromewebstore.google.com/detail/legit/hpnnojnijcmgfhhpenmfenbcngpckfdh
 
 ---
 

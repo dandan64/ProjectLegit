@@ -1,88 +1,120 @@
-# Legit: AI-Powered Media Forensics
+# Legit - AI-Powered News Credibility Verifier
 
 <div align="center">
   <img src="Images/Legit_logo_128.png" alt="Legit Logo" width="100" />
   <br />
   
-  **A Chrome side panel extension that analyzes the current page’s credibility using a multi-agent Gemini workflow.**
+  **Instantly verify news credibility, detect bias, and cross-reference sources using a multi-agent AI system directly in your browser.**
   
-  [![Language](https://img.shields.io/badge/language-JavaScript-yellow?style=flat-square)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-  [![Manifest](https://img.shields.io/badge/Chrome%20Extension-Manifest%20V3-blue?style=flat-square)](https://developer.chrome.com/docs/extensions/mv3/intro/)
-  [![Build](https://img.shields.io/badge/build-UNKNOWN-lightgrey?style=flat-square)]()
-  [![License](https://img.shields.io/badge/license-UNKNOWN-lightgrey?style=flat-square)]()
+  [![Manifest V3](https://img.shields.io/badge/Manifest-V3-blue?style=flat-square)](https://developer.chrome.com/docs/extensions/mv3/intro/)
+  [![Powered By Gemini](https://img.shields.io/badge/AI-Gemini%20Flash-8E75B2?style=flat-square&logo=google)](https://deepmind.google/technologies/gemini/)
+  [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 </div>
 
 ---
 
 ## 📖 About The Project
 
-**Legit** helps you sanity-check articles while you browse. It extracts the readable content of the active tab (using a bundled Readability parser), runs multiple specialized analysis agents, and combines their outputs into a cohesive report.
+**Legit** is a Chrome Side Panel extension designed to combat misinformation and media bias using advanced Large Language Model (LLM) analysis. Unlike simple fact-checkers, Legit employs a **Multi-Agent Architecture** where specialized AI personas analyze different aspects of a news article simultaneously.
 
-The extension calls Google’s Gemini API from the background service worker and can enable the `Google Search` tool for agents that need external verification. It provides:
-* An overall legitimacy score.
-* A concise, human-readable summary verdict.
-* Agent-level ratings and explanations.
-* Evidence snippets that can be clicked to highlight the matching text on the page.
+When you analyze a page, Legit extracts the content and dispatches it to agents specializing in **Source Verification (SIFT method)**, **Author Background**, **Consensus Checking**, **Bias Detection**, and **Linguistic Analysis**. The results are aggregated into a weighted credibility score, providing a forensic breakdown of the content you are reading.
 
 ## ✨ Key Features
 
-* **🕵️‍♂️ Multi-Agent Analysis**:
-    * **Source Credibility:** Ownership signals and history (with search).
-    * **Author Verification:** Checks identity and expertise (with search).
-    * **Consensus Check:** Cross-verification against independent reporting (with search).
-    * **Headline Audit:** Detects "truth gaps" between the title and body.
-    * **Bias Analysis:** Detects bias with specific quote evidence (with search).
-    * **Style Check:** Evaluates journalistic standards.
-* **🧠 Smart Synthesis**: Generates a final summary verdict that runs only after all agents complete.
-* **🔦 Precision Highlighting**:
-    * Highlights text via exact match, flexible whitespace match, or **Levenshtein fuzzy-match** fallback.
-    * Supports multi-node highlighting (works even when a quote spans multiple DOM text nodes).
-* **⚡ Caching & Performance**:
-    * **Local Storage:** Per-page result caching (24-hour validity) with quota-aware cleanup.
-    * **In-Memory:** Prompt-response cache in the background worker (30-minute TTL) plus simple LRU eviction.
-    * **Rate Limiting:** Background throttling (Default: 30 requests/minute).
-* **🌍 Localization**: Full support for **English** and **Hebrew** with RTL layout switching.
-* **🛠️ Robust Extraction**: Safe script injection into the active tab using a bundled Readability parser.
-
-## ⚙️ Architecture
-
-1.  **Extract:** Inject Readability into the active tab and extract a clean article representation (title, byline/author, main text).
-2.  **Orchestrate:** Build the agent set for the page and run:
-    * *Independent agents* in parallel.
-    * *Dependent agents* sequentially (when one agent’s output feeds another).
-3.  **Aggregate:** Compute the overall score from weighted agent outputs and generate a final summary.
-4.  **Render:** Display agent cards, overall score, and summary in the side panel UI.
-5.  **Highlight:** When the user clicks a quote, a content script finds and highlights the relevant text.
+* **🕵️‍♂️ Multi-Agent Analysis Engine**:
+    * **Source Credibility:** Evaluates domain history, funding transparency, and adherence to factual consensus.
+    * **Author Analysis:** Investigates the writer's digital footprint and expertise using live search.
+    * **Cross-Verification (Consensus):** Atomizes claims and checks them against Tier-1 news outlets to detect circular reporting or breaking news.
+    * **Bias & Style:** Detects emotional manipulation, political leaning, and clickbait tactics.
+* **🧠 Smart Context Search (SIFT)**: Agents actively use Google Search tools to perform "Lateral Reading," verifying claims against external sources rather than relying solely on the text provided.
+* **🔦 Fuzzy Quote Highlighting**: Click on any quote or claim in the analysis to instantly scroll to and highlight it on the webpage, powered by a robust **Levenshtein Distance** algorithm (handles minor text formatting differences).
+* **🌍 Localization & RTL Support**: Full support for **English** and **Hebrew** (Right-to-Left UI), including localized prompts and UI elements.
+* **⚡ Performance Optimized**:
+    * **LRU Caching**: Caches analysis results locally to prevent API rate limiting and reduce costs.
+    * **Smart Parsing**: Uses a custom implementation of Mozilla's `Readability.js` to extract clean article text without ads or clutter.
 
 ## 🛠️ Tech Stack
 
-* **Core**: JavaScript (Vanilla ES6+), HTML, CSS
-* **Platform**: Chrome Extensions APIs (Manifest V3)
-    * Side Panel API
-    * Service Worker Background
-    * `chrome.storage`, `chrome.scripting`, `chrome.tabs`
-* **Parsing**: Readability (bundled)
-* **AI Backend**: Google Gemini API (`generativelanguage.googleapis.com`)
-    * Optional `Google Search` tool enabled per-agent
+* **Platform**: Chrome Extension (Manifest V3)
+* **Core Logic**: Vanilla JavaScript (ES6+)
+* **AI Backend**: Google Gemini API (Model: `gemini-2.5-flash`)
+* **UI/Styling**: CSS3 (Glassmorphism, CSS Variables, Animations), HTML5
+* **Content Extraction**: [Readability.js](https://github.com/mozilla/readability)
+* **Storage**: `chrome.storage.local` with Quota Management
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-* A Chromium-based browser that supports Side Panel extensions (Chrome, Edge, Brave).
-* A **Gemini API Key**.
+* **Google Chrome** or **Microsoft Edge** (Chromium based).
+* A **Google Gemini API Key** (Free tier available). [Get one here](https://aistudio.google.com/app/apikey).
 
 ### Installation
 
 1.  **Clone the Repository**
     ```bash
-    git clone <YOUR_REPO_URL>
-    cd <YOUR_REPO_FOLDER>
+    git clone [https://github.com/yourusername/legit-extension.git](https://github.com/yourusername/legit-extension.git)
+    cd legit-extension
     ```
 
-2.  **Verify File Structure**
-    Ensure the file layout matches your `manifest.json` and `Legit.html` references. Typical structure:
-    * `manifest.json`, `Legit.html`, `legit.css`
+2.  **Load into Chrome**
+    * Open Chrome and navigate to `chrome://extensions/`.
+    * Toggle **Developer mode** (top right corner).
+    * Click **Load unpacked**.
+    * Select the directory where you cloned the repository.
+
+3.  **Setup**
+    * Open the Chrome Side Panel (click the square icon next to your profile or press `Ctrl+B`).
+    * Select "Legit" from the dropdown.
+    * Enter your **Gemini API Key** and click Save.
+
+## 💡 Usage
+
+1.  Navigate to any news article (e.g., CNN, BBC, Fox News, or a blog).
+2.  Open the **Legit** Side Panel.
+3.  Click **"Analyze This Page"**.
+4.  **View Results**:
+    * **Overall Score**: A weighted 0-100 score indicating trustworthiness.
+    * **Agent Breakdown**: Click on individual agents (e.g., "Bias Detection") to read detailed findings.
+    * **Interactive Quotes**: Click on highlighted quotes in the analysis to find them in the text.
+    * **Source Links**: Click on Green (Supporting) or Red (Contradicting) source links to verify claims externally.
+
+## ⚙️ Architecture
+
+The project follows a modular pattern:
+
+* **`popup.js`**: Handles the main UI logic, orchestrates the analysis flow, and renders results.
+* **`agents.js`**: Defines the "System Instructions" and "Prompts" for each AI agent (Source, Author, Bias, etc.).
+* **`background.js`**: Acts as the bridge to the Gemini API, handles rate limiting, and manages the caching layer.
+* **`contentHighlighter.js`**: Injected into the page to perform fuzzy text matching and DOM manipulation for highlighting.
+
+## 🗺️ Roadmap
+
+* [ ] **Export Reports**: Generate PDF/Markdown reports of the analysis.
+* [ ] **History Tab**: View a timeline of previously analyzed articles.
+* [ ] **Custom Agents**: Allow users to define their own focus (e.g., "Check for scientific accuracy").
+* [ ] **Improved Text Extraction**: Enhance `extractTextWithNewlines` (currently WIP) for better formatting preservation.
+
+## 🤝 Contributing
+
+Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+139
+140
+141
+142
+143
+# Legit: AI-Powered Media Forensics
     * `scripts/`: `background.js`, `popup.js`, `utils.js`, `agents.js`, `localization.js`, `Readability.js`, `contentHighlighter.js`
 
     *If your repository structure differs, move files into the folders referenced by the manifest or update the paths.*
@@ -114,6 +146,7 @@ The extension calls Google’s Gemini API from the background service worker and
 * **Local Key Storage:** The Gemini API key is stored locally via `chrome.storage.local`.
 * **Data Transmission:** Extracted page text is sent to the Gemini API for analysis.
 * **Caching:** Results may be cached locally per-URL to speed up repeat checks and reduce API calls.
+
 
 ## 📄 License
 

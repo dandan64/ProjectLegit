@@ -1,7 +1,7 @@
 {
     "name": "Legit - AI Powered Fake News Detector",
     "description": "Instantly verify news credibility using multi-agent AI analysis.",
-    "version": "2.5",
+    "version": "2.1.0",
     "manifest_version": 3,
     "content_scripts": [
     {

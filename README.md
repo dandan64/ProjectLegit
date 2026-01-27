@@ -88,23 +88,6 @@ The project follows a modular pattern:
 * **`background.js`**: Acts as the bridge to the Gemini API, handles rate limiting, and manages the caching layer.
 * **`contentHighlighter.js`**: Injected into the page to perform fuzzy text matching and DOM manipulation for highlighting.
 
-## 🗺️ Roadmap
-
-* [ ] **Export Reports**: Generate PDF/Markdown reports of the analysis.
-* [ ] **History Tab**: View a timeline of previously analyzed articles.
-* [ ] **Custom Agents**: Allow users to define their own focus (e.g., "Check for scientific accuracy").
-* [ ] **Improved Text Extraction**: Enhance `extractTextWithNewlines` (currently WIP) for better formatting preservation.
-
-## 🤝 Contributing
-
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
-
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.

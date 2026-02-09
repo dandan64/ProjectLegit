@@ -180,7 +180,7 @@ INSTRUCTIONS:
 7. Original source name: "${pageData.siteName}". **DO NOT USE SOURCES with an EXACT OR SIMILAR name to the original source name** (e.g., "ynet.co.il" is similar to "ynetnews.com").
 8. DO NOT add links if there are no supporting/contradicting sources.
 
-**REQUIRED CITATION INSERTION FORMAT**:
+**##IMPORTANT## REQUIRED CITATION INSERTION FORMAT**:
 For supporting: [[SOURCE::SOURCE_NAME::Article_Title::Quote::SOURCE]]
 For contradicting: [[CONTRA::SOURCE_NAME::Article_Title::Quote::CONTRA]]
 
@@ -253,7 +253,6 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
         CRITICAL OUTPUT RULES:
         - You MUST use EXACT quotes from the article as evidence.
         - Format quotes as: [[QUOTE::text from article::QUOTE]]
-        - Keep quotes under 15 words.
         - DO NOT translate the quotes - keep them in article's original language.
         - Use 1-5 specific quotes that are of the most significant bias.
 
@@ -263,7 +262,7 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
         
         FORMAT:
         RATING: [your rating]
-        EXPLANATION: [Your analysis (3-5 sentences AT MAX)]. When citing evidence, use [[QUOTE::exact text::QUOTE]] format. Example: "The article shows political bias when stating [[QUOTE::the policy is a complete disaster::QUOTE]] without presenting alternative views."`
+        EXPLANATION: [Your analysis (1-3 sentences AT MAX)]. When citing evidence, use [[QUOTE::exact text::QUOTE]] format. Example: "The article shows political bias when stating [[QUOTE::the policy is a complete disaster::QUOTE]] without presenting alternative views."`
          },
         {
             id: "style",
@@ -292,7 +291,7 @@ RATING SYSTEM:
 
 Your Task:
 Assign a RATING from the list above.
-Then, write a concise EXPLANATION (max 3 sentences) citing specific examples from the text (e.g., "Uses loaded words like 'disastrous' without evidence" or "Lacks specific attribution for key claims").
+Then, write a concise EXPLANATION (max 3 sentences) citing exact specific examples from the text (e.g., "Uses loaded words like 'disastrous' without evidence" or "Lacks specific attribution for key claims").
 
 **IMPORTANT**: Write the explanation in ${lang}.
 

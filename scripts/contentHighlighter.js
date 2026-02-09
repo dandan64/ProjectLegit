@@ -239,61 +239,84 @@ if (!window.legitHighlighterLoaded) {
         return matrix[b.length][a.length];
     }
 
-    // --- HELPER: Fuzzy Levenshtein Matcher ---
+    // --- HELPER: Fuzzy Levenshtein Matcher (Adaptive Window) ---
     function findLevenshteinMatch(fullText, query) {
-        if (!query || query.length < 10) return null;
+        // 1. Safety checks
+        if (!query || query.length < 5) return null; // Lowered threshold slightly
 
+        // 2. Tokenize the PAGE text (capture start/end indices)
         const wordMatches = [];
         const wordRegex = /\S+/g; 
         let match;
         while ((match = wordRegex.exec(fullText)) !== null) {
             wordMatches.push({
-                text: match[0],
                 start: match.index,
                 end: match.index + match[0].length
             });
         }
 
-        const queryWords = query.trim().split(/\s+/);
-        const queryWordCount = queryWords.length;
-        const target = query.toLowerCase().replace(/\s+/g, ' ').trim();
+        // 3. Prepare the Query
+        // We normalize to ignore punctuation/capitalization for the math
+        const normalize = (str) => str.toLowerCase().replace(/[^\p{L}\p{N}]/gu, ''); 
+        const queryTokens = query.trim().split(/\s+/);
+        const qLen = queryTokens.length;
+        const targetNorm = normalize(query);
+
+        // 4. Adaptive Window Settings
+        // If LLM misses words, real text is LONGER. If LLM hallucinates words, real text is SHORTER.
+        // We check windows from 0.7x to 1.5x the length of the quote word count.
+        const minWindow = Math.max(1, Math.floor(qLen * 0.7)); 
+        const maxWindow = Math.ceil(qLen * 1.5);
 
         let bestDistance = Infinity;
         let bestLocation = null;
         
-        const step = 1; 
+        // Performance optimization: Don't run Levenshtein if lengths are vastly different
+        const maxLenDiff = targetNorm.length * 0.4; 
 
-        for (let i = 0; i <= wordMatches.length - queryWordCount; i += step) {
-            const startWord = wordMatches[i];
-            const endWord = wordMatches[i + queryWordCount - 1];
+        // 5. Sliding Window Loop
+        for (let i = 0; i < wordMatches.length; i++) {
             
-            const candidateText = fullText.substring(startWord.start, endWord.end);
-            
-            if (Math.abs(candidateText.length - target.length) > target.length * 0.5) {
-                continue;
-            }
+            // Inner Loop: Check different window sizes at this position
+            for (let windowSize = minWindow; windowSize <= maxWindow; windowSize++) {
+                
+                // Boundary check
+                if (i + windowSize > wordMatches.length) break;
 
-            const normCandidate = candidateText.toLowerCase().replace(/\s+/g, ' ').trim();
-            const distance = getLevenshteinDistance(target, normCandidate);
+                const startNode = wordMatches[i];
+                const endNode = wordMatches[i + windowSize - 1];
+                
+                // Extract the candidate text from the raw fullText
+                const candidateRaw = fullText.substring(startNode.start, endNode.end);
+                
+                // Fast fail: Length check
+                const candidateNorm = normalize(candidateRaw);
+                if (Math.abs(candidateNorm.length - targetNorm.length) > maxLenDiff) continue;
 
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                bestLocation = {
-                    start: startWord.start,
-                    end: endWord.end,
-                    text: candidateText
-                };
+                // Calculate Distance
+                const distance = getLevenshteinDistance(targetNorm, candidateNorm);
+                
+                // Score Logic: Normalized distance (0.0 = perfect, 1.0 = terrible)
+                // We verify against the longer string to prevent short string bias
+                const score = distance / Math.max(targetNorm.length, candidateNorm.length);
+
+                // Update best match if this is the best so far
+                if (score < bestDistance) {
+                    bestDistance = score;
+                    bestLocation = {
+                        start: startNode.start,
+                        end: endNode.end
+                    };
+                }
             }
         }
 
-        const threshold = target.length * 0.4; 
-
-        if (bestLocation && bestDistance <= threshold) {
-            console.log(`🎯 Fuzzy Match Found! Score: ${bestDistance}`);
-            return {
-                start: bestLocation.start,
-                end: bestLocation.end
-            };
+        // 6. Final Threshold
+        // Allow up to 35% error/hallucination rate (0.35)
+        // This allows for missed adjectives but prevents highlighting random paragraphs
+        if (bestLocation && bestDistance < 0.35) {
+            console.log(`🎯 Fuzzy Match Found! Score: ${bestDistance.toFixed(2)}`);
+            return bestLocation;
         }
 
         return null;

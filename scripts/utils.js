@@ -388,44 +388,45 @@ function displayOverallScore(agents) {
 }
 
 function styleScoreLabel(scoreLabelElement, scoreValueElement, scoreBarElement, overallScore, color, gradient, emoji, labelKey) {
-    // Apply styles to score value
-    scoreValueElement.textContent = overallScore;
-    scoreValueElement.style.color = color;
-    scoreValueElement.className = '';
-    scoreValueElement.classList.add('score-value-final');
-    scoreValueElement.style.backgroundImage = gradient;
-    scoreValueElement.style.filter = `drop-shadow(0 4px 6px ${color}33)`; // 33 = 20% opacity
-    scoreValueElement.style.filter = `drop-shadow(0 4px 6px ${color}33) drop-shadow(0 0 20px ${color}66)`;
+    // 1. STYLE THE SCORE VALUE (The Big Number)
+    scoreValueElement.style.background = gradient;
+    scoreValueElement.style.webkitBackgroundClip = "text"; // Clips gradient to text
+    scoreValueElement.style.webkitTextFillColor = "transparent"; // Makes text see-through
     scoreValueElement.style.display = "block";
+    scoreValueElement.style.filter = `drop-shadow(0 0 8px ${color}66) drop-shadow(0 0 20px ${color}33)`;
+    
+    // 2. TRIGGER COUNT-UP ANIMATION
+    // Animate from 0 to overallScore over 1500ms
+    animateValue(scoreValueElement, 0, overallScore, 1200);
 
-    // Apply styles to score bar
+    // 3. STYLE THE BAR (Progress Bar)
+    // Reset to 0 first to allow transition
+    scoreBarElement.style.width = "0%";
+    scoreBarElement.style.background = gradient;
+    scoreBarElement.style.boxShadow = `0 0 10px ${color}66`; // Glowing bar
+    scoreBarElement.style.display = "block";
+
+    // Force a small delay so the CSS transition catches the width change
     setTimeout(() => {
+        scoreBarElement.style.transition = "width 1.5s cubic-bezier(0.22, 1, 0.36, 1)";
         scoreBarElement.style.width = `${overallScore}%`;
-        scoreBarElement.style.backgroundImage = gradient; // Apply the gradient background
-        scoreBarElement.style.boxShadow = `0 0 10px ${color}40`;
-        scoreBarElement.style.filter = `drop-shadow(0 2px 4px ${color}33)`;
+    }, 50);
 
-        // Ensure it is visible
-        scoreBarElement.style.display = "block";
-    }, 100);
-
-    // Apply styles to score label
+    // 4. STYLE THE LABEL (Text like "Highly Credible")
     const translatedLabel = TRANSLATIONS[currentLang][labelKey] || labelKey;
     
-    // 1. Reset Content & Apply Class
     scoreLabelElement.textContent = `${emoji} ${translatedLabel}`;
-    scoreLabelElement.className = ''; // Clear "jumping-letter" classes
-    scoreLabelElement.classList.add('score-final'); // Add our new design class
-
-    // 2. Apply Dynamic Gradient
-    scoreLabelElement.style.backgroundImage = gradient;
-
-    scoreLabelElement.style.whiteSpace = "nowrap";
+    scoreLabelElement.className = 'score-final'; 
+    scoreLabelElement.style.color = color; // Fallback color
+    scoreLabelElement.style.background = gradient;
+    scoreLabelElement.style.webkitBackgroundClip = "text";
+    scoreLabelElement.style.webkitTextFillColor = "transparent";
+    scoreLabelElement.style.fontWeight = "800";
+    scoreLabelElement.style.filter = `drop-shadow(0 2px 4px ${color}33)`;
     
-    // 3. Add a colored glow using drop-shadow filter
-    // (We use the main color variable for the shadow color)
-    scoreLabelElement.style.filter = `drop-shadow(0 4px 6px ${color}33) drop-shadow(0 0 20px ${color}66)`; // 33 = 20% opacity
-
+    // 5. ADD "POP" ANIMATION
+    // We add a class that contains a CSS keyframe animation (see CSS step below)
+    scoreValueElement.classList.add('pop-in-animation');
 }
 
 // Utility function to escape HTML and clean Markdown
@@ -998,4 +999,25 @@ function startCalculatingAnimation(container, text) {
             clearTimeout(parseInt(container.dataset.animationTimeout));
         }
     };
+}
+
+// Helper: Smoothly counts up a number in an element
+function animateValue(obj, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        
+        // Use ease-out effect (starts fast, slows down)
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        
+        obj.innerHTML = Math.floor(progress * (end - start) + start);
+        
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        } else {
+            obj.innerHTML = end; // Ensure it ends on exact number
+        }
+    };
+    window.requestAnimationFrame(step);
 }

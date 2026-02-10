@@ -320,7 +320,7 @@ ANALYSIS GUIDELINES:
 OUTPUT RULES:
 - **Format:** A single, smooth paragraph (2-4 sentences).
 - **Structure:** Start with the "Bottom Line" (Is it trustworthy?). Follow with the *primary reason* why. End with any necessary nuance or warnings.
-- **Highlighting:** Use ==double equals== to highlight the single most important warning or insight (e.g., ==this content is unverifiable==).
+- **Highlighting:** Use ==double equals== to highlight the 1-3 most important warnings or insights (e.g., ==this content is unverifiable==).
 - **Tone:** Professional, objective, and decisive.
 - **Conflict Resolution:** If agents disagree (e.g., Safe Source vs. Biased Text), acknowledge the nuance (e.g., "While the publisher is reputable, this specific article uses highly charged language...").
 

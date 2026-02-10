@@ -609,7 +609,7 @@ button:disabled {
 
 .summary-title {
     font-family: 'Rubik', 'Segoe UI', system-ui, -apple-system, sans-serif;
-    font-size: 14px;
+    font-size: 15px;
     text-transform: uppercase;
     letter-spacing: 1px;
     font-weight: 700;
@@ -663,6 +663,38 @@ button:disabled {
     background: linear-gradient(145deg, rgba(15, 118, 110, 0.05), rgba(255, 255, 255, 0.5));
     border-radius: 8px;
     padding: 12px;
+}
+
+/* Base Style (Default) */
+.summary-highlight {
+    font-weight: 700;
+    padding: 0 4px;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.05); /* Neutral Gray */
+}
+
+.safe .summary-highlight {
+    background-color: rgba(16, 185, 129, 0.2); /* Soft Emerald */
+    color: #065f46; /* Dark Emerald Text */
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.caution .summary-highlight {
+    background-color: rgba(250, 204, 21, 0.25); /* Soft Gold */
+    color: #854d0e; /* Dark Gold Text */
+    border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.warning .summary-highlight {
+    background-color: rgba(249, 115, 22, 0.2); /* Soft Orange */
+    color: #9a3412; /* Dark Orange Text */
+    border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.critical .summary-highlight {
+    background-color: rgba(239, 68, 68, 0.2); /* Soft Red */
+    color: #7f1d1d; /* Dark Red Text */
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 /* =====================================

@@ -27,7 +27,7 @@ let currentLang = 'en'; // Default
             noTextError: "No text found on this page to analyze.",
             errorPrefix: "Error: ",
             cacheBadge: "♻️ Result from previous scan",
-            Summarizing: "✨ Summarizing...",
+            summarizing: "✨ Summarizing...",
             quoteMatchWarning: "Exact quote match not found. Showing closest match.",
             quoteMatchError: "Quote not found. Please try searching manually.",
             
@@ -88,7 +88,7 @@ let currentLang = 'en'; // Default
             noKey: "אין לך מפתח?",
             getKey: "השג אחד בחינם",
             analysis: "🔍 מתחיל ניתוח...",
-            overallScoreTitle: "ציון אמינות כללי",
+            overallScoreTitle: "ציון אמינות משוקלל",
             newScanBtn: "✨ ניתוח חדש",
             exportBtn: "📥 ייצוא תוצאות",
             reanalyzeBtn: "🔄 נתח שוב",

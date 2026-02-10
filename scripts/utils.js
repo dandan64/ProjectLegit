@@ -441,6 +441,16 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function escapeAttribute(text) {
+    if (!text) return "";
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
+
 function displayPageHeader(pageData) {
     const headerDiv = document.getElementById("pageHeader");
     const existingBadge = document.getElementById("cacheBadge");
@@ -504,12 +514,9 @@ function createCompletedAgentCard(agent, tabId) {
 
 function getRelevantCachedResult(agent, tabId) {
     const result = agent.result;
-    if(agent.id === 'bias') {
+    if(agent.id === 'bias' || agent.id === 'style') {
         return parseAndLinkifyQuotes(result.explanation, tabId);
     } 
-    else if(agent.id === 'style') {
-        return parseAndLinkifyQuotes(result.explanation, tabId);
-    }
     else if(agent.id === 'consensus-format') {
         return parseAndLinkifySources(escapeHtml(result.explanation));
     } else {
@@ -574,9 +581,7 @@ function parseAndLinkifyQuotes(rawExplanation, tabId) {
         const uniqueId = `quote-${baseTimestamp}-${quoteIndex++}`;
         
         // Re-escape for safe HTML attribute storage
-        const safeQuoteForAttribute = cleanQuote
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+        const safeQuoteForAttribute = escapeAttribute(cleanQuote);
         
         return `<span class="quote-link" 
                     data-quote="${safeQuoteForAttribute}" 
@@ -661,12 +666,10 @@ function attachQuoteLinkListeners() {
 
 function createDirectLink(domain, title) {
     // 1. Construct a precise query
-    // "foxbusiness.com Trump Iran protests Davos 2026"
-    const query = `${domain}: ${title}`;
+    const query = `${domain} ${title}`;
     
-    // 2. Add the !ducky bang (Trigger "I'm Feeling Lucky")
-    // This tells DuckDuckGo: "Don't show me results, just take me to the first one."
-    const luckyUrl = `https://duckduckgo.com/?q=!ducky+${encodeURIComponent(query)}`;
+    // 2. Construct the Google URL
+    const luckyUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&btnI=1`;
     
     return luckyUrl;
 }
@@ -683,7 +686,7 @@ function parseAndLinkifySources(rawExplanation) {
         const cleanDomain = domainName.trim();
         const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 
-        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-supporting" title="Click to open: ${escapeHtml(title)}">
+        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeAttribute(cleanQuote)}" class="source-link source-supporting" title="Click to open: ${escapeAttribute(title)}">
                 <span class="source-icon">✓</span> ${escapeHtml(cleanDomain)}
             </a>`;
     });
@@ -695,7 +698,7 @@ function parseAndLinkifySources(rawExplanation) {
         const cleanDomain = domainName.trim();
         const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 
-        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-contra" title="Click to open: ${escapeHtml(title)}">
+        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeAttribute(cleanQuote)}" class="source-link source-contra" title="Click to open: ${escapeAttribute(title)}">
                 <span class="source-icon">✗</span> ${escapeHtml(cleanDomain)}
             </a>`;
     });
@@ -904,6 +907,12 @@ async function generateFinalSummary(agents, finalScore) {
             }
 
             finalSummary = finalSummary.replace(/^(Summary|Verdict|Analysis):/i, '').trim();
+
+            // 1. Sanitize HTML first (Security best practice)
+            finalSummary = escapeHtml(finalSummary);
+
+            // 2. Convert ==text== to <mark> tags
+            finalSummary = finalSummary.replace(/==(.*?)==/g, '<span class="summary-highlight">$1</span>');
 
             // Cleanup: Remove common prefixes like "Summary:" or "Verdict:"
             summaryBox.innerHTML = `

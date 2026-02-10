@@ -209,34 +209,37 @@ if (!window.legitHighlighterLoaded) {
     }
 
     // --- HELPER: Levenshtein Distance Calculation ---
-    function getLevenshteinDistance(a, b) {
-        const matrix = [];
+    function getLevenshteinDistance(a, b, threshold = Infinity) {
+        if (a === b) return 0;
+        if (a.length > b.length) [a, b] = [b, a]; // Ensure 'a' is shorter
 
-        for (let i = 0; i <= b.length; i++) {
-            matrix[i] = [i];
-        }
+        let prevRow = new Array(a.length + 1);
+        let currentRow = new Array(a.length + 1);
 
-        for (let j = 0; j <= a.length; j++) {
-            matrix[0][j] = j;
-        }
+        for (let i = 0; i <= a.length; i++) prevRow[i] = i;
 
         for (let i = 1; i <= b.length; i++) {
+            currentRow[0] = i;
+            let minRowDist = currentRow[0];
+
             for (let j = 1; j <= a.length; j++) {
-                if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                    matrix[i][j] = matrix[i - 1][j - 1];
-                } else {
-                    matrix[i][j] = Math.min(
-                        matrix[i - 1][j - 1] + 1,
-                        Math.min(
-                            matrix[i][j - 1] + 1,
-                            matrix[i - 1][j] + 1
-                        )
-                    );
-                }
+                const cost = a[j - 1] === b[i - 1] ? 0 : 1;
+                currentRow[j] = Math.min(
+                    currentRow[j - 1] + 1,    // Insertion
+                    prevRow[j] + 1,           // Deletion
+                    prevRow[j - 1] + cost     // Substitution
+                );
+                minRowDist = Math.min(minRowDist, currentRow[j]);
             }
+
+            // Optimization 3: Early Exit
+            if (minRowDist > threshold) return Infinity;
+
+            // Swap arrays for next iteration (avoid allocation)
+            [prevRow, currentRow] = [currentRow, prevRow];
         }
 
-        return matrix[b.length][a.length];
+        return prevRow[a.length];
     }
 
     // --- HELPER: Fuzzy Levenshtein Matcher (Adaptive Window) ---
@@ -441,6 +444,9 @@ if (!window.legitHighlighterLoaded) {
             transition: all 0.3s ease;
         `;
 
+        if (currentLang === 'he') toast.style.cssText += `\n
+        direction: rtl;`
+
         document.body.appendChild(toast);
 
         requestAnimationFrame(() => {
@@ -456,11 +462,16 @@ if (!window.legitHighlighterLoaded) {
     }
 
     function handleAutoRemove(type) {
+        if (highlightTimeoutId) {
+            clearTimeout(highlightTimeoutId);
+            highlightTimeoutId = null;
+        }
+
         if (type === 'default') {
             highlightTimeoutId = setTimeout(() => {
                 clearHighlights();
                 highlightTimeoutId = null;
-            }, 20000); 
+            }, 20000);
             
             if (visibilityListener) document.removeEventListener('visibilitychange', visibilityListener);
             

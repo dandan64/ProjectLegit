@@ -124,8 +124,8 @@ If the date is the same as today, treat this as "Breaking News".
 - Check the timestamps. If the story is less than 24 hours old (eg. , "Breaking News"), a lack of consensus is normal. Do not penalize heavily.
 - If the story is old but has NO corroboration, flag it as suspicious.
 
-5. **CRITICAL** SOURCE INDEPENDENCE:
-- Note that this data is from "${pageData.siteName}". DO NOT USE THE SOURCE TO "${pageData.siteName}" TO VERIFY ITS OWN CLAIMS.
+5. **VERY CRITICAL** SOURCE INDEPENDENCE:
+- Note that this data is from "${pageData.siteName}". DO NOT USE THE SOURCE "${pageData.siteName}" TO VERIFY ITS OWN CLAIMS.
 
 OUTPUT REQUIREMENT:
 1. You must output a JSON-like list of sources you found, followed by your analysis.
@@ -173,14 +173,14 @@ INPUT DATA:
 INSTRUCTIONS:
 1. Read the "ANALYSIS" text.
 2. Read the "SOURCES_LIST".
-3. Re-write the analysis. Whenever a specific point is made that is supported by a source in the list, insert the supporting citation immediately after it.
+3. Re-write the analysis. Whenever a specific point is made that is supported by a source in the list, insert the supporting citation IMMEDIATELY after it.
 4. Use the "RELEVANT_QUOTE" field from the list to populate the quote section of the tag.
-5. Add at MAX 2 citation per point, and DO NOT use the same source twice for the same point. 
+5. Add MAX 2 citation per point, and DO NOT use the same source twice for the same point. 
 6. If possible, DO NOT use the same source twice in the entire analysis.
 7. Original source name: "${pageData.siteName}". **DO NOT USE SOURCES with an EXACT OR SIMILAR name to the original source name** (e.g., "ynet.co.il" is similar to "ynetnews.com").
 8. DO NOT add links if there are no supporting/contradicting sources.
 
-**##IMPORTANT## REQUIRED CITATION INSERTION FORMAT**:
+###IMPORTANT **REQUIRED CITATION INSERTION FORMAT**:
 For supporting: [[SOURCE::SOURCE_NAME::Article_Title::Quote::SOURCE]]
 For contradicting: [[CONTRA::SOURCE_NAME::Article_Title::Quote::CONTRA]]
 
@@ -320,6 +320,7 @@ ANALYSIS GUIDELINES:
 OUTPUT RULES:
 - **Format:** A single, smooth paragraph (2-4 sentences).
 - **Structure:** Start with the "Bottom Line" (Is it trustworthy?). Follow with the *primary reason* why. End with any necessary nuance or warnings.
+- **Highlighting:** Use ==double equals== to highlight the single most important warning or insight (e.g., ==this content is unverifiable==).
 - **Tone:** Professional, objective, and decisive.
 - **Conflict Resolution:** If agents disagree (e.g., Safe Source vs. Biased Text), acknowledge the nuance (e.g., "While the publisher is reputable, this specific article uses highly charged language...").
 

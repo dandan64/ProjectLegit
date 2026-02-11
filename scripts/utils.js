@@ -340,12 +340,12 @@ function displayOverallScore(agents) {
     scoreValue.style.display = "block";
 
     // Stop Animation
-    if (scoreLabel.dataset.animationInterval) {
+    if (scoreLabel.dataset.animationTimeout) {
         if (scoreLabel.dataset.stopAnimation === 'false') {
              scoreLabel.dataset.stopAnimation = 'true';
         }
-        clearInterval(parseInt(scoreLabel.dataset.animationInterval));
-        delete scoreLabel.dataset.animationInterval;
+        clearTimeout(parseInt(scoreLabel.dataset.animationTimeout)); // Changed to clearTimeout
+        delete scoreLabel.dataset.animationTimeout; // Changed to animationTimeout
     }
 
     // --- DESIGN LOGIC ---
@@ -417,12 +417,11 @@ function styleScoreLabel(scoreLabelElement, scoreValueElement, scoreBarElement, 
     
     scoreLabelElement.textContent = `${emoji} ${translatedLabel}`;
     scoreLabelElement.className = 'score-final'; 
-    scoreLabelElement.style.color = color; // Fallback color
     scoreLabelElement.style.background = gradient;
     scoreLabelElement.style.webkitBackgroundClip = "text";
     scoreLabelElement.style.webkitTextFillColor = "transparent";
     scoreLabelElement.style.fontWeight = "800";
-    scoreLabelElement.style.filter = `drop-shadow(0 2px 4px ${color}33)`;
+    scoreLabelElement.style.filter = `drop-shadow(0 0 8px ${color}66) drop-shadow(0 0 20px ${color}33)`;
     
     // 5. ADD "POP" ANIMATION
     // We add a class that contains a CSS keyframe animation (see CSS step below)

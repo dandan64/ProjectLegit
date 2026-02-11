@@ -105,6 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- MAIN LOGIC ---
 
     async function startAnalysis() {
+        let stopAnimation = null;
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             if (!tab) throw new Error("No active tab found");
@@ -149,8 +150,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // RESET: Remove the final style so "Calculating..." looks normal
             scoreLabel.classList.remove('score-final'); 
-            scoreLabel.style.backgroundImage = '';     
+            scoreLabel.style.background = '';
+            scoreLabel.style.webkitTextFillColor = '';
+            scoreLabel.style.backgroundClip = '';
+            scoreLabel.style.fontWeight = '';
             scoreLabel.style.filter = '';
+            scoreLabel.style.backgroundImage = '';     
 
             stopAnimation = startCalculatingAnimation(scoreLabel, TRANSLATIONS[currentLang].calculating);
 
@@ -187,6 +192,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } catch (err) {
             console.error("Analysis error:", err);
+
+            if (stopAnimation) stopAnimation();
+
             showStatus(`❌ Error: ${err.message}`, "error");
             activateBtn.disabled = false;
         } finally {

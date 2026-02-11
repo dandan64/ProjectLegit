@@ -12,11 +12,13 @@ if (!window.legitHighlighterLoaded) {
         default:    { bg: '#fde047', border: '#ca8a04', shadow: 'rgba(234, 179, 8, 0.8)' }
     };
 
+    const scheduler = () => new Promise(resolve => setTimeout(resolve, 0));
+
     let highlightTimeoutId = null;
     let visibilityListener = null;
 
     // --- MAIN ENTRY POINT ---
-    function highlightAndScroll(searchText, index = 0, type = 'default') {
+    async function highlightAndScroll(searchText, index = 0, type = 'default') {
         console.log('🔍 Searching for quote:', searchText);
         
         clearHighlights();
@@ -41,9 +43,10 @@ if (!window.legitHighlighterLoaded) {
         }
         
         // --- STRATEGY 3: LEVENSHTEIN FUZZY MATCH (Fallback) ---
-        if (matches.length === 0) {
-            console.log('Whitespace match failed, running Levenshtein...');
-            const fuzzyMatch = findLevenshteinMatch(fullText, cleanSearch);
+        if (matches.length === 0 && cleanSearch.length < 500) { // Safety cap
+        console.log('Whitespace match failed, running Async Levenshtein...');
+        // Await the new async function
+        const fuzzyMatch = await findLevenshteinMatchAsync(fullText, cleanSearch);
             if (fuzzyMatch) {
                 matches = [fuzzyMatch];
                 matchType = 'fuzzy';
@@ -242,86 +245,64 @@ if (!window.legitHighlighterLoaded) {
         return prevRow[a.length];
     }
 
-    // --- HELPER: Fuzzy Levenshtein Matcher (Adaptive Window) ---
-    function findLevenshteinMatch(fullText, query) {
-        // 1. Safety checks
-        if (!query || query.length < 5) return null; // Lowered threshold slightly
+    
+    // --- HELPER: Async Fuzzy Levenshtein Matcher ---
+    async function findLevenshteinMatchAsync(fullText, query) {
+        if (!query || query.length < 5) return null;
 
-        // 2. Tokenize the PAGE text (capture start/end indices)
+        const normalize = (str) => str.toLowerCase().replace(/[^\p{L}\p{N}]/gu, ''); 
+        
+        // 1. Tokenize full text
         const wordMatches = [];
         const wordRegex = /\S+/g; 
         let match;
         while ((match = wordRegex.exec(fullText)) !== null) {
-            wordMatches.push({
-                start: match.index,
-                end: match.index + match[0].length
-            });
+            wordMatches.push({ start: match.index, end: match.index + match[0].length });
         }
 
-        // 3. Prepare the Query
-        // We normalize to ignore punctuation/capitalization for the math
-        const normalize = (str) => str.toLowerCase().replace(/[^\p{L}\p{N}]/gu, ''); 
-        const queryTokens = query.trim().split(/\s+/);
-        const qLen = queryTokens.length;
         const targetNorm = normalize(query);
-
-        // 4. Adaptive Window Settings
-        // If LLM misses words, real text is LONGER. If LLM hallucinates words, real text is SHORTER.
-        // We check windows from 0.7x to 1.5x the length of the quote word count.
-        const minWindow = Math.max(1, Math.floor(qLen * 0.7)); 
-        const maxWindow = Math.ceil(qLen * 1.5);
+        const queryWordCount = query.trim().split(/\s+/).length;
+        
+        // 2. Window Settings (0.9x to 1.1x length)
+        const minWindow = Math.max(1, Math.floor(queryWordCount * 0.9)); 
+        const maxWindow = Math.ceil(queryWordCount * 1.1);
 
         let bestDistance = Infinity;
         let bestLocation = null;
         
-        // Performance optimization: Don't run Levenshtein if lengths are vastly different
-        const maxLenDiff = targetNorm.length * 0.4; 
-
-        // 5. Sliding Window Loop
+        // 3. Sliding Window Loop
         for (let i = 0; i < wordMatches.length; i++) {
             
-            // Inner Loop: Check different window sizes at this position
+            // Yield to browser every 50 words to prevent freezing
+            if (i % 50 === 0) await scheduler();
+
             for (let windowSize = minWindow; windowSize <= maxWindow; windowSize++) {
-                
-                // Boundary check
                 if (i + windowSize > wordMatches.length) break;
 
                 const startNode = wordMatches[i];
                 const endNode = wordMatches[i + windowSize - 1];
                 
-                // Extract the candidate text from the raw fullText
                 const candidateRaw = fullText.substring(startNode.start, endNode.end);
-                
-                // Fast fail: Length check
                 const candidateNorm = normalize(candidateRaw);
-                if (Math.abs(candidateNorm.length - targetNorm.length) > maxLenDiff) continue;
 
-                // Calculate Distance
-                const distance = getLevenshteinDistance(targetNorm, candidateNorm);
-                
-                // Score Logic: Normalized distance (0.0 = perfect, 1.0 = terrible)
-                // We verify against the longer string to prevent short string bias
-                const score = distance / Math.max(targetNorm.length, candidateNorm.length);
+                // Optimization: Skip if lengths differ by more than 30%
+                if (Math.abs(candidateNorm.length - targetNorm.length) > targetNorm.length * 0.3) continue;
 
-                // Update best match if this is the best so far
+                const dist = getLevenshteinDistance(targetNorm, candidateNorm);
+                const score = dist / Math.max(targetNorm.length, candidateNorm.length);
+
                 if (score < bestDistance) {
                     bestDistance = score;
-                    bestLocation = {
-                        start: startNode.start,
-                        end: endNode.end
-                    };
+                    bestLocation = { start: startNode.start, end: endNode.end };
                 }
             }
         }
 
-        // 6. Final Threshold
-        // Allow up to 35% error/hallucination rate (0.35)
-        // This allows for missed adjectives but prevents highlighting random paragraphs
+        // Threshold: Allow 35% error
         if (bestLocation && bestDistance < 0.35) {
             console.log(`🎯 Fuzzy Match Found! Score: ${bestDistance.toFixed(2)}`);
             return bestLocation;
         }
-
         return null;
     }
 
@@ -504,15 +485,19 @@ if (!window.legitHighlighterLoaded) {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         try {
             if (message.type === 'HIGHLIGHT_QUOTE') {
-                // Run the highlighter
                 currentLang = message.lang || 'en';
-                const success = highlightAndScroll(
+                
+                // Call async function but don't await it (send immediate response to keep connection alive)
+                highlightAndScroll(
                     message.quote, 
                     message.index || 0, 
                     message.highlightType || 'default'
-                );
-                // Send response immediately
-                sendResponse({ success });
+                ).then(success => {
+                    console.log("Async Highlight Complete:", success);
+                });
+
+                // Send immediate success so popup doesn't timeout
+                sendResponse({ success: true, status: "processing" });
                 
             } else if (message.type === 'CLEAR_HIGHLIGHTS') {
                 clearHighlights();
@@ -528,4 +513,16 @@ if (!window.legitHighlighterLoaded) {
         // We only use 'return true' if we are doing something async like a fetch() inside here.
         return false; 
     });
+
+    // --- HELPER: Safe Translation ---
+    function getTranslation(key) {
+        // Try to access the global variable safely
+        if (typeof TRANSLATIONS !== 'undefined' && typeof currentLang !== 'undefined') {
+            return TRANSLATIONS[currentLang][key];
+        }
+        // Fallbacks if localization.js is missing
+        if (key === 'quoteMatchError') return "Quote not found. Please try searching manually.";
+        if (key === 'quoteMatchWarning') return "Exact quote match not found. Showing closest match.";
+        return key;
+    }
 }

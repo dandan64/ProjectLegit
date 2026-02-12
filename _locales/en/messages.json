@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "Legit - AI Powered Fake News Detector",
+    "description": "The name of the extension"
+  },
+  "appDesc": {
+    "message": "Instantly verify news credibility using multi-agent AI analysis.",
+    "description": "The description of the extension"
+  }
+}

@@ -1,16 +1,18 @@
 {
-    "name": "Legit - AI Powered Fake News Detector",
-    "description": "Instantly verify news credibility using multi-agent AI analysis.",
-    "version": "2.1.0",
+    "name": "__MSG_appName__",
+    "description": "__MSG_appDesc__",
+    "default_locale": "en", 
+    "version": "2.1.1",
     "manifest_version": 3,
     "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["scripts/contentHighlighter.js"],
-      "run_at": "document_idle"
-    }
+        {
+            "matches": ["<all_urls>"],
+            "js": ["scripts/contentHighlighter.js"],
+            "run_at": "document_idle"
+        }
     ],
     "action": {
+        "default_title": "__MSG_appName__",
         "default_icon": {
             "16": "Images/Legit_logo_16.png",
             "32": "Images/Legit_logo_32.png",

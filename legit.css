@@ -554,7 +554,7 @@ button:disabled {
     transition: all 0.5s ease;
     text-align: center;
     letter-spacing: 2px;
-    animation: grow 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    animation: grow 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .score-bar-container {

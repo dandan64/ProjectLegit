@@ -1,7 +1,3 @@
-// ========================================
-// SMART LEVENSHTEIN HIGHLIGHTER (Multi-Node Support)
-// ========================================
-
 if (!window.legitHighlighterLoaded) {
     window.legitHighlighterLoaded = true;
     
@@ -55,14 +51,15 @@ if (!window.legitHighlighterLoaded) {
 
         // --- FAILURE HANDLER ---
         if (matches.length === 0) {
-            showToast(TRANSLATIONS[currentLang].quoteMatchError, 'error');
+            // This works even if localization.js fails to load
+            showToast(getTranslation('quoteMatchError'), 'error'); 
             return false;
         }
 
         console.log(`✅ Found ${matches.length} match(es) via ${matchType}`);
         
         if (matchType === 'fuzzy') {
-            showToast(TRANSLATIONS[currentLang].quoteMatchWarning, 'warning');
+            showToast(getTranslation('quoteMatchWarning'), 'warning');
         }
 
         // 3. Select the target match and map it back to DOM Nodes

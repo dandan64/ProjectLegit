@@ -46,7 +46,8 @@ Here is how Legit helps you navigate the news landscape:
 ### 1. 🕵️‍♂️ Multi-Agent Analysis Engine
 Don't rely on a single opinion. Legit deploys a team of AI agents to investigate the article from multiple angles: source history, author credibility, and factual consensus.
 <div align="center">
-  <img src="Images/feature_analysis.png" alt="Multi Agent Analysis Screenshot" width="600" />
+  <img src="Images/feature_analysis.png" alt="Multi Agent Analysis Screenshot" width="300" />
+  <img src="Images/feature_analysis_1.png" alt="Multi Agent Analysis Screenshot" width="300" />
   <br><em>View a comprehensive breakdown of the article's credibility score.</em>
 </div>
 

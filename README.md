@@ -73,7 +73,7 @@ Found a suspicious claim in the analysis? Click it. Our robust **Levenshtein Dis
 
 Legit uses a "Mixture of Agents" approach. Each agent has a specific persona and responsibility. You can view the specific prompt engineering and logic for each agent in our codebase.
 
-| Agent Name | What it does (The "Human" Explanation) | Code Reference |
+| Agent Name | What it does | Code Reference |
 | :--- | :--- | :--- |
 | **The Investigator**<br>*(Source Verification)* | Checks the publisher's history. Is this a satire site? Is it state-sponsored? Does it have a history of failing fact-checks? | [View Prompt Logic](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L15-L63) |
 | **The Profiler**<br>*(Author Analysis)* | Looks up the writer. Do they exist? Are they a subject matter expert or a bot? Checks their digital footprint. | [View Prompt Logic](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L91-L1240) |

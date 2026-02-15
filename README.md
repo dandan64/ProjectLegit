@@ -6,6 +6,8 @@
   
   **Instantly verify news credibility, detect bias, and cross-reference sources using a multi-agent AI system directly in your browser.**
   
+  **Before you share an article, Legit gives you a clear credibility score, explains why, and shows supporting and contradicting sources in one click.**
+  
   [![Manifest V3](https://img.shields.io/badge/Manifest-V3-blue?style=flat-square)](https://developer.chrome.com/docs/extensions/mv3/intro/)
   [![Powered By Gemini](https://img.shields.io/badge/AI-Gemini%20Flash-8E75B2?style=flat-square&logo=google)](https://deepmind.google/technologies/gemini/)
   [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
@@ -23,8 +25,7 @@
 
 ## 🎓 Academic Context
 
-**This project was developed at the [Technion - Israel Institute of Technology](https://www.cs.technion.ac.il/), Faculty of Computer Science.**
-
+**This project was submitted as a final project at the [Technion - Israel Institute of Technology](https://www.cs.technion.ac.il/), Faculty of Computer Science.**
 It was created during the **Winter 2025-2026** semester.
 * **Developers:** Daniel Ben Zeev & Moshe Aizenfratz
 * **Supervisors:** Prof. Omri Ben-Eliezer & Dr. Oren Mishali
@@ -36,6 +37,13 @@ It was created during the **Winter 2025-2026** semester.
 **Legit** is a Chrome Side Panel extension designed to combat misinformation and media bias using advanced Large Language Model (LLM) analysis. Unlike simple fact-checkers, Legit employs a **Multi-Agent Architecture** where specialized AI personas analyze different aspects of a news article simultaneously.
 
 When you analyze a page, Legit extracts the content and dispatches it to agents specializing in **Source Verification (SIFT method)**, **Author Background**, **Consensus Checking**, **Bias Detection**, and **Linguistic Analysis**. The results are aggregated into a weighted credibility score, providing a forensic breakdown of the content you are reading.
+
+---
+
+## 🖼️ Screenshots & Demo
+
+* **Screenshots:** Stored in the `Images/` folder and embedded throughout this README.
+* **YouTube Demo:** https://youtu.be/fbSxRuwIo_o?si=oHpvwrn1oh9BUKqX
 
 ---
 
@@ -52,7 +60,7 @@ Don't rely on a single opinion. Legit deploys a team of AI agents to investigate
 </div>
 
 ### 2. 🧠 Smart Context Search (SIFT)
-The agents don't just read the text—they browse the web. Using "Lateral Reading" techniques, the system actively cross-references claims against trusted external sources to detect misinformation.
+The agents don’t rely only on the article text. They search for independent coverage and surface supporting or contradicting sources, so you can do quick “lateral reading” and verify the claims transparently.
 <div align="center">
   <img src="Images/feature_sift.png" alt="SIFT Search Screenshot" width="400" />
   <br><em>See exactly which sources support or contradict the claims.</em>
@@ -71,16 +79,19 @@ Found a suspicious claim in the analysis? Click it. Our robust **Levenshtein Dis
 
 ## 🤖 Meet the Agents
 
-Legit uses a "Mixture of Agents" approach. Each agent has a specific persona and responsibility. You can view the specific prompt engineering and logic for each agent in our codebase.
+Legit works like a small newsroom team. Each agent checks a different aspect of the article (the publisher, the author, factual agreement across sources, bias, and writing quality).
+Then Legit combines the findings into a clear credibility score with explanations and links, so you can verify the story yourself.
+
 
 | Agent Name | What it does | Code Reference |
 | :--- | :--- | :--- |
-| **The Investigator**<br>*(Source Verification)* | Checks the publisher's history. Is this a satire site? Is it state-sponsored? Does it have a history of failing fact-checks? | [View Prompt Logic](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L15-L63) |
-| **The Profiler**<br>*(Author Analysis)* | Looks up the writer. Do they exist? Are they a subject matter expert or a bot? Checks their digital footprint. | [View Prompt Logic](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L91-L1240) |
-| **The Fact-Checker**<br>*(cross Verification)* | Takes the main claims and checks if Tier-1 news outlets (AP, Reuters, etc.) agree. Detects if a story is "breaking news" with unverified details. | [View Prompt Logic](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L126-L190) |
-| **The Psychologist**<br>*(Bias)* | Analyzes *how* the article is written. It looks for emotionally manipulative language, logical fallacies, and rage-baiting tactics. | [View Prompt Logic](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L260-L300) |
-**The Editor**<br>*(Writing Quality)* | Assesses the technical quality of the text. Checks for grammar errors, poor structure, and coherence issues often found in low-quality "content farms." | [View Prompt Logic](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L302-L335) |
-| **The Headline Critic**<br>*(Headline Analysis)* | Compares the sensational title against the actual story. Is it clickbait? Does the article content actually support the headline's claim? | [View Prompt Logic](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L226-L258) |
+| **The Investigator**<br>*(Source Verification)* | Checks the publisher’s track record. Is it satire, propaganda, or known for repeated misinformation? | [View Implementation](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L15-L63) |
+| **The Profiler**<br>*(Author Analysis)* | Checks whether the author appears real and credible, and whether they have relevant background or expertise. | [View Implementation](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L91-L1240) |
+| **The Fact-Checker**<br>*(Cross-checking)* | Checks whether other reputable outlets report the same core facts, and flags claims that seem unverified. | [View Implementation](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L126-L190) |
+| **The Psychologist**<br>*(Bias)* | Looks for manipulative or emotionally loaded language, framing, and common persuasion tactics. | [View Implementation](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L260-L300) |
+| **The Editor**<br>*(Writing Quality)* | Evaluates writing quality and structure. Lots of errors and incoherence can be a warning sign of low-quality content. | [View Implementation](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L302-L335) |
+| **The Headline Critic**<br>*(Headline Analysis)* | Checks whether the headline matches what the article actually supports, or if it is exaggerated clickbait. | [View Implementation](https://github.com/dandan64/Project_Legit/blob/94d56f1d9fc5d012c4e4f5c58ca8fd933dd30f57/scripts/agents.js#L226-L258) |
+
 
 ---
 
@@ -104,7 +115,7 @@ Legit uses a "Mixture of Agents" approach. Each agent has a specific persona and
 
 1.  **Clone the Repository**
     ```bash
-    git clone [https://github.com/yourusername/legit-extension.git](https://github.com/yourusername/legit-extension.git)
+    git clone [https://github.com/dandan64/Project_Legit.git](https://github.com/dandan64/Project_Legit.git)
     cd legit-extension
     ```
 

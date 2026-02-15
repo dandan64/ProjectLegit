@@ -1,7 +1,3 @@
-// ========================================
-// SMART LEVENSHTEIN HIGHLIGHTER (Multi-Node Support)
-// ========================================
-
 if (!window.legitHighlighterLoaded) {
     window.legitHighlighterLoaded = true;
     
@@ -12,11 +8,13 @@ if (!window.legitHighlighterLoaded) {
         default:    { bg: '#fde047', border: '#ca8a04', shadow: 'rgba(234, 179, 8, 0.8)' }
     };
 
+    const scheduler = () => new Promise(resolve => setTimeout(resolve, 0));
+
     let highlightTimeoutId = null;
     let visibilityListener = null;
 
     // --- MAIN ENTRY POINT ---
-    function highlightAndScroll(searchText, index = 0, type = 'default') {
+    async function highlightAndScroll(searchText, index = 0, type = 'default') {
         console.log('🔍 Searching for quote:', searchText);
         
         clearHighlights();
@@ -41,9 +39,10 @@ if (!window.legitHighlighterLoaded) {
         }
         
         // --- STRATEGY 3: LEVENSHTEIN FUZZY MATCH (Fallback) ---
-        if (matches.length === 0) {
-            console.log('Whitespace match failed, running Levenshtein...');
-            const fuzzyMatch = findLevenshteinMatch(fullText, cleanSearch);
+        if (matches.length === 0 && cleanSearch.length < 500) { // Safety cap
+        console.log('Whitespace match failed, running Async Levenshtein...');
+        // Await the new async function
+        const fuzzyMatch = await findLevenshteinMatchAsync(fullText, cleanSearch);
             if (fuzzyMatch) {
                 matches = [fuzzyMatch];
                 matchType = 'fuzzy';
@@ -52,14 +51,15 @@ if (!window.legitHighlighterLoaded) {
 
         // --- FAILURE HANDLER ---
         if (matches.length === 0) {
-            showToast(TRANSLATIONS[currentLang].quoteMatchError, 'error');
+            // This works even if localization.js fails to load
+            showToast(getTranslation('quoteMatchError'), 'error'); 
             return false;
         }
 
         console.log(`✅ Found ${matches.length} match(es) via ${matchType}`);
         
         if (matchType === 'fuzzy') {
-            showToast(TRANSLATIONS[currentLang].quoteMatchWarning, 'warning');
+            showToast(getTranslation('quoteMatchWarning'), 'warning');
         }
 
         // 3. Select the target match and map it back to DOM Nodes
@@ -209,93 +209,97 @@ if (!window.legitHighlighterLoaded) {
     }
 
     // --- HELPER: Levenshtein Distance Calculation ---
-    function getLevenshteinDistance(a, b) {
-        const matrix = [];
+    function getLevenshteinDistance(a, b, threshold = Infinity) {
+        if (a === b) return 0;
+        if (a.length > b.length) [a, b] = [b, a]; // Ensure 'a' is shorter
 
-        for (let i = 0; i <= b.length; i++) {
-            matrix[i] = [i];
-        }
+        let prevRow = new Array(a.length + 1);
+        let currentRow = new Array(a.length + 1);
 
-        for (let j = 0; j <= a.length; j++) {
-            matrix[0][j] = j;
-        }
+        for (let i = 0; i <= a.length; i++) prevRow[i] = i;
 
         for (let i = 1; i <= b.length; i++) {
+            currentRow[0] = i;
+            let minRowDist = currentRow[0];
+
             for (let j = 1; j <= a.length; j++) {
-                if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                    matrix[i][j] = matrix[i - 1][j - 1];
-                } else {
-                    matrix[i][j] = Math.min(
-                        matrix[i - 1][j - 1] + 1,
-                        Math.min(
-                            matrix[i][j - 1] + 1,
-                            matrix[i - 1][j] + 1
-                        )
-                    );
-                }
+                const cost = a[j - 1] === b[i - 1] ? 0 : 1;
+                currentRow[j] = Math.min(
+                    currentRow[j - 1] + 1,    // Insertion
+                    prevRow[j] + 1,           // Deletion
+                    prevRow[j - 1] + cost     // Substitution
+                );
+                minRowDist = Math.min(minRowDist, currentRow[j]);
             }
+
+            // Optimization 3: Early Exit
+            if (minRowDist > threshold) return Infinity;
+
+            // Swap arrays for next iteration (avoid allocation)
+            [prevRow, currentRow] = [currentRow, prevRow];
         }
 
-        return matrix[b.length][a.length];
+        return prevRow[a.length];
     }
 
-    // --- HELPER: Fuzzy Levenshtein Matcher ---
-    function findLevenshteinMatch(fullText, query) {
-        if (!query || query.length < 10) return null;
+    
+    // --- HELPER: Async Fuzzy Levenshtein Matcher ---
+    async function findLevenshteinMatchAsync(fullText, query) {
+        if (!query || query.length < 5) return null;
 
+        const normalize = (str) => str.toLowerCase().replace(/[^\p{L}\p{N}]/gu, ''); 
+        
+        // 1. Tokenize full text
         const wordMatches = [];
         const wordRegex = /\S+/g; 
         let match;
         while ((match = wordRegex.exec(fullText)) !== null) {
-            wordMatches.push({
-                text: match[0],
-                start: match.index,
-                end: match.index + match[0].length
-            });
+            wordMatches.push({ start: match.index, end: match.index + match[0].length });
         }
 
-        const queryWords = query.trim().split(/\s+/);
-        const queryWordCount = queryWords.length;
-        const target = query.toLowerCase().replace(/\s+/g, ' ').trim();
+        const targetNorm = normalize(query);
+        const queryWordCount = query.trim().split(/\s+/).length;
+        
+        // 2. Window Settings (0.9x to 1.1x length)
+        const minWindow = Math.max(1, Math.floor(queryWordCount * 0.9)); 
+        const maxWindow = Math.ceil(queryWordCount * 1.1);
 
         let bestDistance = Infinity;
         let bestLocation = null;
         
-        const step = 1; 
-
-        for (let i = 0; i <= wordMatches.length - queryWordCount; i += step) {
-            const startWord = wordMatches[i];
-            const endWord = wordMatches[i + queryWordCount - 1];
+        // 3. Sliding Window Loop
+        for (let i = 0; i < wordMatches.length; i++) {
             
-            const candidateText = fullText.substring(startWord.start, endWord.end);
-            
-            if (Math.abs(candidateText.length - target.length) > target.length * 0.5) {
-                continue;
-            }
+            // Yield to browser every 50 words to prevent freezing
+            if (i % 50 === 0) await scheduler();
 
-            const normCandidate = candidateText.toLowerCase().replace(/\s+/g, ' ').trim();
-            const distance = getLevenshteinDistance(target, normCandidate);
+            for (let windowSize = minWindow; windowSize <= maxWindow; windowSize++) {
+                if (i + windowSize > wordMatches.length) break;
 
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                bestLocation = {
-                    start: startWord.start,
-                    end: endWord.end,
-                    text: candidateText
-                };
+                const startNode = wordMatches[i];
+                const endNode = wordMatches[i + windowSize - 1];
+                
+                const candidateRaw = fullText.substring(startNode.start, endNode.end);
+                const candidateNorm = normalize(candidateRaw);
+
+                // Optimization: Skip if lengths differ by more than 30%
+                if (Math.abs(candidateNorm.length - targetNorm.length) > targetNorm.length * 0.3) continue;
+
+                const dist = getLevenshteinDistance(targetNorm, candidateNorm);
+                const score = dist / Math.max(targetNorm.length, candidateNorm.length);
+
+                if (score < bestDistance) {
+                    bestDistance = score;
+                    bestLocation = { start: startNode.start, end: endNode.end };
+                }
             }
         }
 
-        const threshold = target.length * 0.4; 
-
-        if (bestLocation && bestDistance <= threshold) {
-            console.log(`🎯 Fuzzy Match Found! Score: ${bestDistance}`);
-            return {
-                start: bestLocation.start,
-                end: bestLocation.end
-            };
+        // Threshold: Allow 35% error
+        if (bestLocation && bestDistance < 0.35) {
+            console.log(`🎯 Fuzzy Match Found! Score: ${bestDistance.toFixed(2)}`);
+            return bestLocation;
         }
-
         return null;
     }
 
@@ -418,6 +422,9 @@ if (!window.legitHighlighterLoaded) {
             transition: all 0.3s ease;
         `;
 
+        if (currentLang === 'he') toast.style.cssText += `\n
+        direction: rtl;`
+
         document.body.appendChild(toast);
 
         requestAnimationFrame(() => {
@@ -433,11 +440,16 @@ if (!window.legitHighlighterLoaded) {
     }
 
     function handleAutoRemove(type) {
+        if (highlightTimeoutId) {
+            clearTimeout(highlightTimeoutId);
+            highlightTimeoutId = null;
+        }
+
         if (type === 'default') {
             highlightTimeoutId = setTimeout(() => {
                 clearHighlights();
                 highlightTimeoutId = null;
-            }, 20000); 
+            }, 20000);
             
             if (visibilityListener) document.removeEventListener('visibilitychange', visibilityListener);
             
@@ -470,15 +482,19 @@ if (!window.legitHighlighterLoaded) {
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         try {
             if (message.type === 'HIGHLIGHT_QUOTE') {
-                // Run the highlighter
                 currentLang = message.lang || 'en';
-                const success = highlightAndScroll(
+                
+                // Call async function but don't await it (send immediate response to keep connection alive)
+                highlightAndScroll(
                     message.quote, 
                     message.index || 0, 
                     message.highlightType || 'default'
-                );
-                // Send response immediately
-                sendResponse({ success });
+                ).then(success => {
+                    console.log("Async Highlight Complete:", success);
+                });
+
+                // Send immediate success so popup doesn't timeout
+                sendResponse({ success: true, status: "processing" });
                 
             } else if (message.type === 'CLEAR_HIGHLIGHTS') {
                 clearHighlights();
@@ -494,4 +510,16 @@ if (!window.legitHighlighterLoaded) {
         // We only use 'return true' if we are doing something async like a fetch() inside here.
         return false; 
     });
+
+    // --- HELPER: Safe Translation ---
+    function getTranslation(key) {
+        // Try to access the global variable safely
+        if (typeof TRANSLATIONS !== 'undefined' && typeof currentLang !== 'undefined') {
+            return TRANSLATIONS[currentLang][key];
+        }
+        // Fallbacks if localization.js is missing
+        if (key === 'quoteMatchError') return "Quote not found. Please try searching manually.";
+        if (key === 'quoteMatchWarning') return "Exact quote match not found. Showing closest match.";
+        return key;
+    }
 }

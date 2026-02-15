@@ -124,8 +124,8 @@ If the date is the same as today, treat this as "Breaking News".
 - Check the timestamps. If the story is less than 24 hours old (eg. , "Breaking News"), a lack of consensus is normal. Do not penalize heavily.
 - If the story is old but has NO corroboration, flag it as suspicious.
 
-5. **CRITICAL** SOURCE INDEPENDENCE:
-- Note that this data is from "${pageData.siteName}". DO NOT use the source itself to verify its own claims.
+5. **VERY CRITICAL** SOURCE INDEPENDENCE:
+- Note that this data is from "${pageData.siteName}". DO NOT USE THE SOURCE "${pageData.siteName}" TO VERIFY ITS OWN CLAIMS.
 
 OUTPUT REQUIREMENT:
 1. You must output a JSON-like list of sources you found, followed by your analysis.
@@ -147,12 +147,12 @@ RATING: [your rating]
 SOURCES_LIST:
 - STATUS: [SUPPORTING/CONTRADICTING]
 - SOURCE_NAME: [e.g. "bbc"]
-- ARTICLE_TITLE: [Distinct Title of the exact source] 
-Do NOT rely on internal citation tools.
+- ARTICLE_TITLE: [The distinct title of the article]
+DO NOT rely on internal citation tools.
 - RELEVANT_QUOTE: [Quote an exact short sentence (approx. 10-15 words) from the source that proves the point. Do not use quotation marks.]
 
 ANALYSIS:
-[Write your 3-4 sentence analysis here. Do not worry about linking sources here, just summarize the consensus.]`
+[Write your 3-5 sentences analysis here. Do not worry about linking sources here, just summarize the consensus.]`
     },
         {
             id: "consensus-format",
@@ -173,16 +173,16 @@ INPUT DATA:
 INSTRUCTIONS:
 1. Read the "ANALYSIS" text.
 2. Read the "SOURCES_LIST".
-3. Re-write the analysis. Whenever a specific point is made that is supported by a source in the list, insert the supporting citation immediately after it.
+3. Re-write the analysis. Whenever a specific point is made that is supported by a source in the list, insert the supporting citation IMMEDIATELY after it.
 4. Use the "RELEVANT_QUOTE" field from the list to populate the quote section of the tag.
-5. Add at MAX 2 citation per point, and DO NOT use the same source twice for the same point. 
+5. Add MAX 2 citation per point, and DO NOT use the same source twice for the same point. 
 6. If possible, DO NOT use the same source twice in the entire analysis.
 7. Original source name: "${pageData.siteName}". **DO NOT USE SOURCES with an EXACT OR SIMILAR name to the original source name** (e.g., "ynet.co.il" is similar to "ynetnews.com").
 8. DO NOT add links if there are no supporting/contradicting sources.
 
-**REQUIRED CITATION INSERTION FORMAT**:
-For supporting: [[SOURCE::DOMAIN_NAME::Article_Title::Quote::SOURCE]]
-For contradicting: [[CONTRA::DOMAIN_NAME::Article_Title::Quote::CONTRA]]
+###IMPORTANT **REQUIRED CITATION INSERTION FORMAT**:
+For supporting: [[SOURCE::SOURCE_NAME::Article_Title::Quote::SOURCE]]
+For contradicting: [[CONTRA::SOURCE_NAME::Article_Title::Quote::CONTRA]]
 
 Final Output Structure:
 RATING: [Keep the original rating]
@@ -253,7 +253,6 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
         CRITICAL OUTPUT RULES:
         - You MUST use EXACT quotes from the article as evidence.
         - Format quotes as: [[QUOTE::text from article::QUOTE]]
-        - Keep quotes under 15 words.
         - DO NOT translate the quotes - keep them in article's original language.
         - Use 1-5 specific quotes that are of the most significant bias.
 
@@ -263,7 +262,7 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
         
         FORMAT:
         RATING: [your rating]
-        EXPLANATION: [Your analysis (3-5 sentences AT MAX)]. When citing evidence, use [[QUOTE::exact text::QUOTE]] format. Example: "The article shows political bias when stating [[QUOTE::the policy is a complete disaster::QUOTE]] without presenting alternative views."`
+        EXPLANATION: [Your analysis (1-3 sentences AT MAX)]. When citing evidence, use [[QUOTE::exact text::QUOTE]] format. Example: "The article shows political bias when stating [[QUOTE::the policy is a complete disaster::QUOTE]] without presenting alternative views."`
          },
         {
             id: "style",
@@ -292,7 +291,7 @@ RATING SYSTEM:
 
 Your Task:
 Assign a RATING from the list above.
-Then, write a concise EXPLANATION (max 3 sentences) citing specific examples from the text (e.g., "Uses loaded words like 'disastrous' without evidence" or "Lacks specific attribution for key claims").
+Then, write a concise EXPLANATION (max 3 sentences) citing exact specific examples from the text (e.g., "Uses loaded words like 'disastrous' without evidence" or "Lacks specific attribution for key claims").
 
 **IMPORTANT**: Write the explanation in ${lang}.
 
@@ -321,6 +320,7 @@ ANALYSIS GUIDELINES:
 OUTPUT RULES:
 - **Format:** A single, smooth paragraph (2-4 sentences).
 - **Structure:** Start with the "Bottom Line" (Is it trustworthy?). Follow with the *primary reason* why. End with any necessary nuance or warnings.
+- **Highlighting:** Use ==double equals== to highlight the 1-3 most important warnings or insights (e.g., ==this content is unverifiable==).
 - **Tone:** Professional, objective, and decisive.
 - **Conflict Resolution:** If agents disagree (e.g., Safe Source vs. Biased Text), acknowledge the nuance (e.g., "While the publisher is reputable, this specific article uses highly charged language...").
 

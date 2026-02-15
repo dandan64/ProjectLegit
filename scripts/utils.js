@@ -340,12 +340,12 @@ function displayOverallScore(agents) {
     scoreValue.style.display = "block";
 
     // Stop Animation
-    if (scoreLabel.dataset.animationInterval) {
+    if (scoreLabel.dataset.animationTimeout) {
         if (scoreLabel.dataset.stopAnimation === 'false') {
              scoreLabel.dataset.stopAnimation = 'true';
         }
-        clearInterval(parseInt(scoreLabel.dataset.animationInterval));
-        delete scoreLabel.dataset.animationInterval;
+        clearTimeout(parseInt(scoreLabel.dataset.animationTimeout)); // Changed to clearTimeout
+        delete scoreLabel.dataset.animationTimeout; // Changed to animationTimeout
     }
 
     // --- DESIGN LOGIC ---
@@ -388,44 +388,44 @@ function displayOverallScore(agents) {
 }
 
 function styleScoreLabel(scoreLabelElement, scoreValueElement, scoreBarElement, overallScore, color, gradient, emoji, labelKey) {
-    // Apply styles to score value
-    scoreValueElement.textContent = overallScore;
-    scoreValueElement.style.color = color;
-    scoreValueElement.className = '';
-    scoreValueElement.classList.add('score-value-final');
-    scoreValueElement.style.backgroundImage = gradient;
-    scoreValueElement.style.filter = `drop-shadow(0 4px 6px ${color}33)`; // 33 = 20% opacity
-    scoreValueElement.style.filter = `drop-shadow(0 4px 6px ${color}33) drop-shadow(0 0 20px ${color}66)`;
+    // 1. STYLE THE SCORE VALUE (The Big Number)
+    scoreValueElement.style.background = gradient;
+    scoreValueElement.style.webkitBackgroundClip = "text"; // Clips gradient to text
+    scoreValueElement.style.webkitTextFillColor = "transparent"; // Makes text see-through
     scoreValueElement.style.display = "block";
+    scoreValueElement.style.filter = `drop-shadow(0 0 8px ${color}66) drop-shadow(0 0 20px ${color}33)`;
+    
+    // 2. TRIGGER COUNT-UP ANIMATION
+    // Animate from 0 to overallScore over 1500ms
+    animateValue(scoreValueElement, 0, overallScore, 1200);
 
-    // Apply styles to score bar
+    // 3. STYLE THE BAR (Progress Bar)
+    // Reset to 0 first to allow transition
+    scoreBarElement.style.width = "0%";
+    scoreBarElement.style.background = gradient;
+    scoreBarElement.style.boxShadow = `0 0 10px ${color}66`; // Glowing bar
+    scoreBarElement.style.display = "block";
+
+    // Force a small delay so the CSS transition catches the width change
     setTimeout(() => {
+        scoreBarElement.style.transition = "width 1.5s cubic-bezier(0.22, 1, 0.36, 1)";
         scoreBarElement.style.width = `${overallScore}%`;
-        scoreBarElement.style.backgroundImage = gradient; // Apply the gradient background
-        scoreBarElement.style.boxShadow = `0 0 10px ${color}40`;
-        scoreBarElement.style.filter = `drop-shadow(0 2px 4px ${color}33)`;
+    }, 50);
 
-        // Ensure it is visible
-        scoreBarElement.style.display = "block";
-    }, 100);
-
-    // Apply styles to score label
+    // 4. STYLE THE LABEL (Text like "Highly Credible")
     const translatedLabel = TRANSLATIONS[currentLang][labelKey] || labelKey;
     
-    // 1. Reset Content & Apply Class
     scoreLabelElement.textContent = `${emoji} ${translatedLabel}`;
-    scoreLabelElement.className = ''; // Clear "jumping-letter" classes
-    scoreLabelElement.classList.add('score-final'); // Add our new design class
-
-    // 2. Apply Dynamic Gradient
-    scoreLabelElement.style.backgroundImage = gradient;
-
-    scoreLabelElement.style.whiteSpace = "nowrap";
+    scoreLabelElement.className = 'score-final'; 
+    scoreLabelElement.style.background = gradient;
+    scoreLabelElement.style.webkitBackgroundClip = "text";
+    scoreLabelElement.style.webkitTextFillColor = "transparent";
+    scoreLabelElement.style.fontWeight = "800";
+    scoreLabelElement.style.filter = `drop-shadow(0 0 8px ${color}66) drop-shadow(0 0 20px ${color}33)`;
     
-    // 3. Add a colored glow using drop-shadow filter
-    // (We use the main color variable for the shadow color)
-    scoreLabelElement.style.filter = `drop-shadow(0 4px 6px ${color}33) drop-shadow(0 0 20px ${color}66)`; // 33 = 20% opacity
-
+    // 5. ADD "POP" ANIMATION
+    // We add a class that contains a CSS keyframe animation (see CSS step below)
+    scoreValueElement.classList.add('pop-in-animation');
 }
 
 // Utility function to escape HTML and clean Markdown
@@ -439,6 +439,16 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = cleanText;
     return div.innerHTML;
+}
+
+function escapeAttribute(text) {
+    if (!text) return "";
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
 }
 
 function displayPageHeader(pageData) {
@@ -504,12 +514,9 @@ function createCompletedAgentCard(agent, tabId) {
 
 function getRelevantCachedResult(agent, tabId) {
     const result = agent.result;
-    if(agent.id === 'bias') {
+    if(agent.id === 'bias' || agent.id === 'style') {
         return parseAndLinkifyQuotes(result.explanation, tabId);
     } 
-    else if(agent.id === 'style') {
-        return parseAndLinkifyQuotes(result.explanation, tabId);
-    }
     else if(agent.id === 'consensus-format') {
         return parseAndLinkifySources(escapeHtml(result.explanation));
     } else {
@@ -574,9 +581,7 @@ function parseAndLinkifyQuotes(rawExplanation, tabId) {
         const uniqueId = `quote-${baseTimestamp}-${quoteIndex++}`;
         
         // Re-escape for safe HTML attribute storage
-        const safeQuoteForAttribute = cleanQuote
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
+        const safeQuoteForAttribute = escapeAttribute(cleanQuote);
         
         return `<span class="quote-link" 
                     data-quote="${safeQuoteForAttribute}" 
@@ -661,12 +666,10 @@ function attachQuoteLinkListeners() {
 
 function createDirectLink(domain, title) {
     // 1. Construct a precise query
-    // "foxbusiness.com Trump Iran protests Davos 2026"
-    const query = `${domain}: ${title}`;
+    const query = `${domain} ${title}`;
     
-    // 2. Add the !ducky bang (Trigger "I'm Feeling Lucky")
-    // This tells DuckDuckGo: "Don't show me results, just take me to the first one."
-    const luckyUrl = `https://duckduckgo.com/?q=!ducky+${encodeURIComponent(query)}`;
+    // 2. Construct the Google URL
+    const luckyUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}&btnI=1`;
     
     return luckyUrl;
 }
@@ -683,7 +686,7 @@ function parseAndLinkifySources(rawExplanation) {
         const cleanDomain = domainName.trim();
         const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 
-        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-supporting" title="Click to open: ${escapeHtml(title)}">
+        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeAttribute(cleanQuote)}" class="source-link source-supporting" title="Click to open: ${escapeAttribute(title)}">
                 <span class="source-icon">✓</span> ${escapeHtml(cleanDomain)}
             </a>`;
     });
@@ -695,7 +698,7 @@ function parseAndLinkifySources(rawExplanation) {
         const cleanDomain = domainName.trim();
         const cleanQuote = quote.trim().replace(/^["'"]+|["'"]+$/g, '');
 
-        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeHtml(cleanQuote)}" class="source-link source-contra" title="Click to open: ${escapeHtml(title)}">
+        return `<a href="${createDirectLink(cleanDomain, title)}" target="_blank" rel="noopener noreferrer" data-quote="${escapeAttribute(cleanQuote)}" class="source-link source-contra" title="Click to open: ${escapeAttribute(title)}">
                 <span class="source-icon">✗</span> ${escapeHtml(cleanDomain)}
             </a>`;
     });
@@ -905,6 +908,12 @@ async function generateFinalSummary(agents, finalScore) {
 
             finalSummary = finalSummary.replace(/^(Summary|Verdict|Analysis):/i, '').trim();
 
+            // 1. Sanitize HTML first (Security best practice)
+            finalSummary = escapeHtml(finalSummary);
+
+            // 2. Convert ==text== to <mark> tags
+            finalSummary = finalSummary.replace(/==(.*?)==/g, '<span class="summary-highlight">$1</span>');
+
             // Cleanup: Remove common prefixes like "Summary:" or "Verdict:"
             summaryBox.innerHTML = `
                 <div class="summary-body">
@@ -989,4 +998,25 @@ function startCalculatingAnimation(container, text) {
             clearTimeout(parseInt(container.dataset.animationTimeout));
         }
     };
+}
+
+// Helper: Smoothly counts up a number in an element
+function animateValue(obj, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        
+        // Use ease-out effect (starts fast, slows down)
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        
+        obj.innerHTML = Math.floor(progress * (end - start) + start);
+        
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        } else {
+            obj.innerHTML = end; // Ensure it ends on exact number
+        }
+    };
+    window.requestAnimationFrame(step);
 }

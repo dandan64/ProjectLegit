@@ -21,9 +21,14 @@ if (typeof TRANSLATIONS === 'undefined') {
             reanalyzeBtn: "🔄 Re-Analyze Page",
             reanalyzing: "🔄 Re-analyzing...",
 
+            // Dashboard
+            systemReady: "System Ready",
+            apiKeyActive: "API Key is active and secure",
+            changeKey: "Change API Key",
+
             // Status & Errors
             calculating: "Calculating...",
-            readyMsg: "New tab detected. Ready to analyze.",
+            readyMsg: "Ready to analyze.",
             analyzing: "Analyzing...",
             loadingCache: "♻️ Loading cached results...",
             apiKeySaved: "✅ API key saved successfully!",
@@ -82,9 +87,14 @@ if (typeof TRANSLATIONS === 'undefined') {
             reanalyzeBtn: "🔄 נתח שוב",
             reanalyzing: "🔄 מנתח מחדש...",
             
+            // Dashboard
+            systemReady: "המערכת מוכנה",
+            apiKeyActive: "מפתח API פעיל ומאובטח",
+            changeKey: "החלף מפתח",
+
             // Status & Errors
             calculating: "מחשב...",
-            readyMsg: "זוהה טאב חדש. מוכן לניתוח.",
+            readyMsg: " מוכן לניתוח.",
             analyzing: "מנתח...",
             loadingCache: "♻️ טוען תוצאות מהזכרון...",
             apiKeySaved: "✅ המפתח נשמר בהצלחה!",
@@ -120,7 +130,7 @@ if (typeof TRANSLATIONS === 'undefined') {
             BALANCED: "מאוזן", SLIGHT_BIAS: "הטיה קלה", 
             MODERATE_BIAS: "הטיה בינונית", STRONG_BIAS: "הטיה חזקה",
             PROFESSIONAL: "מקצועי", ADEQUATE: "סביר", 
-            SENSATIONALIST: "סנסציוני", POOR_QUALITY: "איכות נמוכה",
+            SENSATIONAL: "סנסציוני", POOR_QUALITY: "איכות נמוכה",
             CURRENT: "עדכני", RECENT: "מהזמן האחרון", DATED: "מיושן", RECYCLED: "ממוחזר"
         }
     };
@@ -161,7 +171,7 @@ if (typeof setLanguage === 'undefined') {
         
         if (statusMsg && statusMsg.style.opacity === "1") {
              const text = statusMsg.textContent;
-             if (text.includes("New tab") || text.includes("זוהה טאב")) {
+             if (text.includes("Ready") || text.includes("מוכן")) {
                  statusMsg.textContent = TRANSLATIONS[lang].readyMsg;
              }
              else if (text.includes("API key") || text.includes("המפתח")) {

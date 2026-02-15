@@ -12,13 +12,14 @@ function getAnalysisAgents(pageData) {
     
     return [
         {
-            id: "source",
+            id: "source-verify",
             name: TRANSLATIONS[currentLang].source,
             icon: "🏛️",
             priority: "high",
-            weight: 0.20,
+            weight: 0,
             useSearch: true,
             tokenBudget: 0,
+            isBackgroundAgent: true,
             systemInstruction: `Act as an Information Scientist specializing in Media Ecology, Source Verification, and Institutional Bias. Your goal is to evaluate the credibility of the *organization* behind the domain provided using SIFT and Lateral Reading methods.
 
             Your Methodology: SIFT (Lateral Reading Focus)
@@ -42,17 +43,50 @@ Search Queries to Perform:
 - "${pageData.domain} political alignment controversy"
 
 Your Task:
-Determine and synthesize three distinct factors:
+Investigate the domain and output a structured list of sources and a raw analysis.
+
+Determine three distinct factors:
 1. Factual Reliability: History of corrections, retractions, or failed fact-checks.
 2. Political/Editorial Bias: The specific ideological lean (e.g., "Fiscal Conservative," "Progressive Left," "Pro-Government").
 3. Financial Context: Who pays the bills? (e.g., "Ad-driven corporate," "State-funded," "Donor-supported").
 
 **IMPORTANT**: Write the EXPLANATION part in ${lang}.
 
+Format:
+SOURCES_LIST:
+- SOURCE_NAME: [e.g. "Wikipedia" or "MBFC"]
+- ARTICLE_TITLE: [Page title]
+- RELEVANT_QUOTE: [Short quote confirming the finding]
+
+ANALYSIS:
+[Provide a forensic analysis (3-4 sentences MAX). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus.]`
+        },
+        {
+            id: "source-format",
+            name: TRANSLATIONS[currentLang].source,
+            icon: "🏛️",
+            priority: "high",
+            weight: 0.20,
+            useSearch: false,
+            tokenBudget: 0,
+            dependsOn: "source-verify",
+            prompt:`You are a Citation Formatter.
+INPUT DATA:
+{INPUT_FROM_SOURCE_VERIFY}
+
+INSTRUCTIONS:
+1. Read the ANALYSIS and SOURCES_LIST.
+2. Rewrite the analysis into a cohesive paragraph (3-4 sentences).
+3. Insert citations using the format: [[SOURCE::SOURCE_NAME::Article_Title::Quote::SOURCE]]
+4. Rate the domain based on the analysis.
+
+**IMPORTANT**: Write the explanation in ${lang}.
+
 Rate as: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, or UNRELIABLE
+
 Format:
 RATING: [your rating]
-EXPLANATION: [Provide a forensic analysis (3-4 sentences MAX). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus. Use neutral,professional language. DO NOT make your explanation in bullet points.]`
+EXPLANATION: [Your analysis with citations inserted. Example: "According to [[SOURCE::Media Bias Fact Check::N12 Profile::N12 has a history of publishing unverified rumors::SOURCE]], this domain has a track record of questionable reporting."]`
         },
         {
             id: "author",

@@ -95,9 +95,12 @@ async function handleQuotaExceeded() {
 
 // Removes specific URL from cache
 function removeFromCache(url) {
-    const key = getCacheKey(url);
-    chrome.storage.local.remove(key, () => {
-        console.log("Cache cleared for:", url);
+    return new Promise((resolve) => {
+        const key = getCacheKey(url);
+        chrome.storage.local.remove(key, () => {
+            console.log("Cache cleared for:", url);
+            resolve();
+        });
     });
 }
 
@@ -517,7 +520,7 @@ function getRelevantCachedResult(agent, tabId) {
     if(agent.id === 'bias' || agent.id === 'style') {
         return parseAndLinkifyQuotes(result.explanation, tabId);
     } 
-    else if(agent.id === 'consensus-format') {
+    else if(agent.id === 'consensus-format' || agent.id === 'source-format') {
         return parseAndLinkifySources(escapeHtml(result.explanation));
     } else {
         return escapeHtml(result.explanation);

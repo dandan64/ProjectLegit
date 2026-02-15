@@ -17,8 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const overallScoreBox = document.getElementById('overallScore');
     const scoreHeader = overallScoreBox.querySelector('.score-header');
 
-    // Initialize as collapsed
-    overallScoreBox.classList.add('collapsed');
+    overallScoreBox.classList.add('expanded'); // Start expanded to show agents immediately
 
     // Click handler for accordion
     scoreHeader.addEventListener('click', function() {
@@ -51,9 +50,8 @@ document.addEventListener("DOMContentLoaded", () => {
     chrome.storage.local.get(["geminiApiKey"], (res) => {
         if (res.geminiApiKey) {
             activateBtn.disabled = false;
-            statusMsg.textContent = TRANSLATIONS[currentLang].apiKeySaved;
-            statusMsg.className = "status success";
-            statusMsg.style.opacity = "1";
+            toggleApiKeyView(true);
+            showStatus(TRANSLATIONS[currentLang].readyMsg, "success");
         }
     });
 
@@ -61,26 +59,27 @@ document.addEventListener("DOMContentLoaded", () => {
     saveBtn.addEventListener("click", () => {
         const key = apiInput.value.trim();
         if (!key) {
-            showStatus(TRANSLATIONS[currentLang].noKey, "error");
+            showStatus(TRANSLATIONS[currentLang].noKey, "info");
             return;
         }
         chrome.storage.local.set({ geminiApiKey: key }, () => {
             showStatus(TRANSLATIONS[currentLang].apiKeySaved, "success");
             activateBtn.disabled = false;
             apiInput.value = "";
+            toggleApiKeyView(true);
             setTimeout(() => statusMsg.style.opacity = "0", 2000);
         });
     });
 
     langEnBtn.addEventListener("click", async () => {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab && tab.url) removeFromCache(tab.url);
+        if (tab && tab.url) await removeFromCache(tab.url);
         setLanguage('en');
     });
 
     langHeBtn.addEventListener("click", async () => {
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        if (tab && tab.url) removeFromCache(tab.url);
+        if (tab && tab.url) await removeFromCache(tab.url);
         setLanguage('he');
     });
 
@@ -100,6 +99,56 @@ document.addEventListener("DOMContentLoaded", () => {
         statusMsg.textContent = message;
         statusMsg.className = `status ${type}`;
         statusMsg.style.opacity = "1";
+    }
+
+    function toggleApiKeyView(isSaved) {
+        const inputCard = document.querySelector('.input-card');
+        const inputGroup = inputCard.querySelector('.input-group');
+        const helpText = inputCard.querySelector('.api-help');
+        
+        // Check/Create Dashboard Container
+        let dashboard = document.getElementById('apiStatusDashboard');
+        if (!dashboard) {
+            dashboard = document.createElement('div');
+            dashboard.id = 'apiStatusDashboard';
+            dashboard.className = 'api-status-dashboard';
+            dashboard.innerHTML = `
+                <div class="status-icon-large">🛡️</div>
+                <h3 class="status-title-large" data-i18n="systemReady">${TRANSLATIONS[currentLang].systemReady}</h3>
+                <p class="status-subtitle" data-i18n="apiKeyActive">${TRANSLATIONS[currentLang].apiKeyActive}</p>
+                <div class="change-key-wrapper">
+                    <a id="changeKeyLink" data-i18n="changeKey">${TRANSLATIONS[currentLang].changeKey}</a>
+                </div>
+            `;
+            // Insert into card
+            inputCard.appendChild(dashboard);
+            
+            // Add listener
+            dashboard.querySelector('#changeKeyLink').addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleApiKeyView(false);
+            });
+        }
+
+        if (isSaved) {
+            // Hide Form
+            if(inputCard) inputCard.classList.add('dashboard-mode');
+            if(inputGroup) inputGroup.style.display = 'none';
+            if(saveBtn) saveBtn.style.display = 'none';
+            if(helpText) helpText.style.display = 'none';
+            
+            // Show Dashboard
+            dashboard.style.display = 'flex';
+        } else {
+            // Show Form
+            if(inputCard) inputCard.classList.remove('dashboard-mode');
+            if(inputGroup) inputGroup.style.display = 'flex';
+            if(saveBtn) saveBtn.style.display = 'block';
+            if(helpText) helpText.style.display = 'block';
+            
+            // Hide Dashboard
+            dashboard.style.display = 'none';
+        }
     }
 
     // --- MAIN LOGIC ---
@@ -185,6 +234,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const summaryText = await generateFinalSummary(agents, finalScore);
             
+            if (summaryText) {
+                overallScoreBox.classList.remove('collapsed');
+                overallScoreBox.classList.add('expanded');
+
+                setTimeout(() => {
+                    agentGrid.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }, 100);
+            }
+
             analysisResults.summaryText = summaryText;
 
             // 3. SAVE TO CACHE
@@ -411,12 +472,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // for bias agent
             let linkedExplanation = result.explanation;
-            if(agent.id === 'bias') {
+            if(agent.id === 'bias' || agent) {
                 linkedExplanation = parseAndLinkifyQuotes(result.explanation, tab.id);
             }
             
             //for consensus agent
-            if (agent.id === 'consensus-format') {
+            if (agent.id === 'consensus-format' || agent.id === 'source-format') {
                 linkedExplanation = parseAndLinkifySources(linkedExplanation);
             } 
 
@@ -435,7 +496,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // --- TRIGGER DYNAMIC SORT ---
             sortGridDynamic();
 
-        } catch (err) {
+        }
+         catch (err) {
             loaderDiv.style.display = "none";
             textWrapper.insertAdjacentHTML('beforeend', `<span class="rating-badge rating-error">Error</span>`);
             contentDiv.innerHTML = `<div class="agent-error">⚠️ ${escapeHtml(err.message)}</div>`;
@@ -457,7 +519,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('reanalyzeBtn')?.addEventListener('click', async () => {
         // re-set UI
         const scoreBox = document.getElementById('overallScore');
-        scoreBox.classList.remove('expanded');
         
         const btn = document.getElementById('reanalyzeBtn');
 
@@ -469,6 +530,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             if (tab && tab.url) {
                 await removeFromCache(tab.url);
+                await chrome.runtime.sendMessage({ type: "CLEAR_CACHE" });
                 await startAnalysis();
             }
         } catch (error) {
@@ -494,6 +556,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 statusMsg.style.opacity = "0";
                 activateBtn.disabled = false;
                 analysisResults = null;
+
+                // Check key status again to render correct view
+                chrome.storage.local.get(["geminiApiKey"], (res) => {
+                    if (res.geminiApiKey) {
+                        toggleApiKeyView(true);
+                        showStatus(TRANSLATIONS[currentLang].readyMsg, "info");
+                    } else {
+                        toggleApiKeyView(false);
+                    }
+                });
             }
         });
     });

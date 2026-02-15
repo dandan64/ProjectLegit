@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
     saveBtn.addEventListener("click", () => {
         const key = apiInput.value.trim();
         if (!key) {
-            showStatus(TRANSLATIONS[currentLang].noKey, "info");
+            showStatus(TRANSLATIONS[currentLang].noKey, "error");
             return;
         }
         chrome.storage.local.set({ geminiApiKey: key }, () => {
@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
             dashboard.id = 'apiStatusDashboard';
             dashboard.className = 'api-status-dashboard';
             dashboard.innerHTML = `
-                <div class="status-icon-large">🛡️</div>
+                <div class="status-icon-large">🔑✅</div>
                 <h3 class="status-title-large" data-i18n="systemReady">${TRANSLATIONS[currentLang].systemReady}</h3>
                 <p class="status-subtitle" data-i18n="apiKeyActive">${TRANSLATIONS[currentLang].apiKeyActive}</p>
                 <div class="change-key-wrapper">
@@ -561,7 +561,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 chrome.storage.local.get(["geminiApiKey"], (res) => {
                     if (res.geminiApiKey) {
                         toggleApiKeyView(true);
-                        showStatus(TRANSLATIONS[currentLang].readyMsg, "info");
+                        showStatus(TRANSLATIONS[currentLang].readyMsg, "success");
                     } else {
                         toggleApiKeyView(false);
                     }

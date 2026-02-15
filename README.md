@@ -71,9 +71,9 @@ Legit uses a "Mixture of Agents" approach. Each agent has a specific persona and
 | Agent Name | What it does (The "Human" Explanation) | Code Reference |
 | :--- | :--- | :--- |
 | **The Investigator**<br>*(Source Verification)* | Checks the publisher's history. Is this a satire site? Is it state-sponsored? Does it have a history of failing fact-checks? | [View Prompt Logic](https://github.com/dandan64/Project_Legit/blob/6d72faab23fbcfa65f194da6af498caab67b7438/scripts/agents.js#L14C8-L56) |
-| **The Profiler**<br>*(Author Analysis)* | Looks up the writer. Do they exist? Are they a subject matter expert or a bot? Checks their digital footprint. | [View Prompt Logic](agents.js) |
-| **The Fact-Checker**<br>*(Consensus)* | Takes the main claims and checks if Tier-1 news outlets (AP, Reuters, etc.) agree. Detects if a story is "breaking news" with unverified details. | [View Prompt Logic](agents.js) |
-| **The Psychologist**<br>*(Bias & Style)* | Analyzes *how* the article is written. It looks for emotionally manipulative language, logical fallacies, and rage-baiting tactics. | [View Prompt Logic](agents.js) |
+| **The Profiler**<br>*(Author Analysis)* | Looks up the writer. Do they exist? Are they a subject matter expert or a bot? Checks their digital footprint. | [View Prompt Logic](https://github.com/dandan64/Project_Legit/blob/6d72faab23fbcfa65f194da6af498caab67b7438/scripts/agents.js#L58-L90) |
+| **The Fact-Checker**<br>*(Consensus)* | Takes the main claims and checks if Tier-1 news outlets (AP, Reuters, etc.) agree. Detects if a story is "breaking news" with unverified details. | [View Prompt Logic](https://github.com/dandan64/Project_Legit/blob/6d72faab23fbcfa65f194da6af498caab67b7438/scripts/agents.js#L92-L156) |
+| **The Psychologist**<br>*(Bias)* | Analyzes *how* the article is written. It looks for emotionally manipulative language, logical fallacies, and rage-baiting tactics. | [View Prompt Logic](https://github.com/dandan64/Project_Legit/blob/6d72faab23fbcfa65f194da6af498caab67b7438/scripts/agents.js#L225-L266) |
 
 ---
 

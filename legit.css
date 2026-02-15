@@ -179,6 +179,12 @@ h1 {
     border: 1px solid rgba(20, 184, 166, 0.2);
 }
 
+/* New state for when the dashboard is active */
+.input-card.dashboard-mode {
+    background: linear-gradient(135deg, #ffffff 0%, #d6fff1 100%);
+    border-color: #ddfff8;
+}
+
 .input-group {
     display: flex;
     flex-direction: column;
@@ -211,6 +217,59 @@ input[type="password"]:focus {
     background: white;
     box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
 }
+
+
+/* --- API STATUS DASHBOARD (New) --- */
+.api-status-dashboard {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0;
+    width: 100%;
+    animation: fadeIn 0.7s ease;
+}
+
+.status-icon-large {
+    font-size: 42px;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.status-title-large {
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0 0 4px 0;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+.status-subtitle {
+    font-size: 13px;
+    color: #57625e;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.change-key-wrapper {
+    margin-top: 12px;
+}
+
+#changeKeyLink {
+    font-size: 12px;
+    color: #9ca3af;
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+#changeKeyLink:hover { color: #6b7280; }
+
 
 /* Button Styles */
 button {
@@ -507,6 +566,11 @@ button:disabled {
 @keyframes popIn {
     0% { transform: scale(0.8); opacity: 0; }
     100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes grow {

@@ -36,13 +36,5 @@
     },
     "side_panel": {
         "default_path": "Legit.html"
-    },
-    "commands": {
-        "_execute_action": {
-            "suggested_key": {
-                "default": "Ctrl+B",
-                "mac": "Command+B"
-            }
-        }
     }
 }

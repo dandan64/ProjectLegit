@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
             dashboard.id = 'apiStatusDashboard';
             dashboard.className = 'api-status-dashboard';
             dashboard.innerHTML = `
-                <div class="status-icon-large">🔑✅</div>
+                <div class="status-icon-large">🔐</div>
                 <h3 class="status-title-large" data-i18n="systemReady">${TRANSLATIONS[currentLang].systemReady}</h3>
                 <p class="status-subtitle" data-i18n="apiKeyActive">${TRANSLATIONS[currentLang].apiKeyActive}</p>
                 <div class="change-key-wrapper">
@@ -342,36 +342,52 @@ document.addEventListener("DOMContentLoaded", () => {
         agentGrid.innerHTML = "";
 
         // 1. SPLIT AGENTS
-        // Filter out Background agents AND the Summary agent (it runs later)
-        // We use the flag 'isSummaryAgent' or check the ID explicitly
         const activeAgents = agents.filter(a => a.id !== 'summary');
-
-        const backgroundAgents = activeAgents.filter(a => a.isBackgroundAgent);
+        
+        // Initial Layout: Create Cards for Regular (UI) Agents
         const regularAgents = activeAgents.filter(a => !a.isBackgroundAgent);
-
-        // 2. Initial Layout: Create Cards for Regular Agents
-        const sorted = [...regularAgents].sort((a, b) => {
+        const sortedRegular = [...regularAgents].sort((a, b) => {
             const priorityOrder = { high: 0, medium: 1, low: 2 };
             return priorityOrder[a.priority] - priorityOrder[b.priority];
         });
 
-        for (const agent of sorted) {
+        for (const agent of sortedRegular) {
             const card = createAgentCard(agent);
             agentGrid.appendChild(card);
         }
 
         const agentResults = {};
+        const executionPromises = new Map(); // Maps agent.id -> Promise
 
-        // 3. Define Batches
-        const independentAgents = sorted.filter(a => !a.dependsOn);
-        const dependentAgents = activeAgents.filter(a => a.dependsOn); // Includes background dependents
+        // Helper: Executes a single agent and handles its dependencies natively
+        const executeAgent = async (agent) => {
+            try {
+                // A. Wait for dependency if needed
+                if (agent.dependsOn) {
+                    console.log(`⏳ [${agent.id}] waiting ONLY for [${agent.dependsOn}]...`);
+                    const dependencyPromise = executionPromises.get(agent.dependsOn);
+                    
+                    if (dependencyPromise) {
+                        await dependencyPromise; // Pauses here until parent is done
+                        
+                        const parentResult = agentResults[agent.dependsOn];
+                        if (parentResult) {
+                            // Inject result into prompt
+                            const placeholder = `{INPUT_FROM_${agent.dependsOn.toUpperCase().replace(/-/g, '_')}}`;
+                            agent.prompt = agent.prompt.replace(placeholder, parentResult.explanation);
+                        } else {
+                            throw new Error(`Dependency '${agent.dependsOn}' failed or returned no result.`);
+                        }
+                    } else {
+                        console.warn(`Dependency '${agent.dependsOn}' not found for '${agent.id}'`);
+                    }
+                }
 
-        // --- PHASE A: Parallel Execution (Background + Independent) ---
-        const parallelPromises = [
-            // Background Agents
-            ...backgroundAgents.map(async agent => {
-                console.log(`⚙️ Running background agent: ${agent.id}`);
-                try {
+                // B. Run the agent
+                console.log(`▶️ Running ${agent.isBackgroundAgent ? 'background' : 'UI'} agent: ${agent.id}`);
+                
+                if (agent.isBackgroundAgent) {
+                    // Background Execution
                     const response = await chrome.runtime.sendMessage({
                         type: "CALL_GEMINI",
                         systemInstruction: agent.systemInstruction,
@@ -386,44 +402,45 @@ document.addEventListener("DOMContentLoaded", () => {
                     agent.result = result;
                     agentResults[agent.id] = result;
                     console.log(`✅ Background agent complete: ${agent.id}`);
-                } catch (err) {
-                    console.error(`❌ Background agent failed: ${agent.id}`, err);
-                    agentResults[agent.id] = null;
-                }
-            }),
-            
-            // Independent Regular Agents
-            ...independentAgents.map(async agent => {
-                await analyzeAgent(agent);
-                if (agent.result) agentResults[agent.id] = agent.result;
-            })
-        ];
-    
-        await Promise.all(parallelPromises);
-    
-        // --- PHASE B: Sequential Execution (Dependent) ---
-        console.log(`⏳ Running ${dependentAgents.length} dependent agents sequentially`);
-        
-        for (const agent of dependentAgents) {
-            console.log(`⏳ Running dependent agent: ${agent.id} (depends on ${agent.dependsOn})`);
-            
-            // Inject Dependency
-            if (agent.dependsOn && agentResults[agent.dependsOn]) {
-                const parentResult = agentResults[agent.dependsOn];
-                const placeholder = `{INPUT_FROM_${agent.dependsOn.toUpperCase().replace(/-/g, '_')}}`;
-                agent.prompt = agent.prompt.replace(placeholder, parentResult.explanation);
-                
-                // If the dependent agent is a background agent, run it manually
-                if (agent.isBackgroundAgent) {
-                     // ... (copy background logic here if needed, or assume manual run)
+                    return result;
                 } else {
+                    // UI Execution
                     await analyzeAgent(agent);
-                    if (agent.result) agentResults[agent.id] = agent.result;
+                    if (agent.result) {
+                        agentResults[agent.id] = agent.result;
+                    }
+                    return agent.result;
                 }
-            } else {
-                 console.warn(`Skipping ${agent.id} because dependency ${agent.dependsOn} is missing.`);
+            } catch (error) {
+                console.error(`❌ Agent failed: ${agent.id}`, error);
+                
+                // Catch UI agents that failed BEFORE analyzeAgent could handle them (e.g. dependency failed)
+                if (!agent.isBackgroundAgent && !document.getElementById(`agent-${agent.id}`).classList.contains("completed")) {
+                    failAgentDependencyUI(agent, error.message);
+                }
+                
+                agentResults[agent.id] = null; // Mark as failed so children know
+                return null;
             }
+        };
+
+        // 2. START INDEPENDENT AGENTS
+        const independentAgents = activeAgents.filter(a => !a.dependsOn);
+        for (const agent of independentAgents) {
+            // We set the Promise in the map immediately
+            executionPromises.set(agent.id, executeAgent(agent));
         }
+
+        // 3. START DEPENDENT AGENTS
+        const dependentAgents = activeAgents.filter(a => a.dependsOn);
+        for (const agent of dependentAgents) {
+            // They start immediately, but will safely pause at `await dependencyPromise` inside executeAgent
+            executionPromises.set(agent.id, executeAgent(agent));
+        }
+
+        // 4. WAIT FOR EVERYTHING TO FINISH
+        await Promise.all(Array.from(executionPromises.values()));
+        console.log("🎉 All progressive agents completed!");
     }
 
     // Analyze individual agent (Updated for Dynamic Sorting)
@@ -514,6 +531,29 @@ document.addEventListener("DOMContentLoaded", () => {
             // Re-sort on error too
             sortGridDynamic();
         }
+    }
+
+    // Helper: Safely fails an agent card if its dependency crashes
+    function failAgentDependencyUI(agent, errorMsg) {
+        const card = document.getElementById(`agent-${agent.id}`);
+        if (!card) return;
+        
+        const headerDiv = card.querySelector(".agent-header");
+        const textWrapper = card.querySelector(".agent-text-wrapper");
+        const contentDiv = card.querySelector(".agent-content");
+        const loaderDiv = card.querySelector(".agent-loader");
+
+        if (loaderDiv) loaderDiv.style.display = "none";
+        
+        textWrapper.insertAdjacentHTML('beforeend', `<span class="rating-badge rating-error">Error</span>`);
+        contentDiv.innerHTML = `<div class="agent-error">⚠️ ${escapeHtml(errorMsg)}</div>`;
+        contentDiv.style.display = "block";
+
+        agent.result = { rating: "ERROR", explanation: errorMsg, score: 0 };
+        card.setAttribute("data-score", 0);
+        card.classList.add("score-low", "completed");
+        
+        sortGridDynamic(); // Bubble the error block to the top
     }
 
     document.getElementById('reanalyzeBtn')?.addEventListener('click', async () => {

@@ -14,14 +14,15 @@ if (typeof TRANSLATIONS === 'undefined') {
             analyzeBtn: "🔍 Analyze This Page",
             noKey: "Don't have an API key?",
             getKey: "Get one free",
-            videoTutorial: "📺 How to get a Key",
-            clickToWatch: "Click to watch",
+            videoTutorial: "📺 How to get a Key? ",
+            clickToWatch: "watch here",
             analysis: "🔍 Starting analysis...",
             overallScoreTitle: "Overall Legitimacy Score",
             newScanBtn: "✨ New Analysis",
             exportBtn: "📥 Export Results",
             reanalyzeBtn: "🔄 Re-Analyze Page",
             reanalyzing: "🔄 Re-analyzing...",
+            clickForDetails: "Click for detailed analysis",
 
             // Dashboard
             systemReady: "System Ready",
@@ -83,13 +84,14 @@ if (typeof TRANSLATIONS === 'undefined') {
             noKey: "אין לך מפתח?",
             getKey: "השג אחד בחינם",
             videoTutorial: "📺 מדריך להשגת מפתח",
-            clickToWatch: "לחץ לצפייה",
+            clickToWatch: "לצפייה כאן",
             analysis: "🔍 מתחיל ניתוח...",
             overallScoreTitle: "ציון אמינות משוקלל",
             newScanBtn: "✨ ניתוח חדש",
             exportBtn: "📥 ייצוא תוצאות",
             reanalyzeBtn: "🔄 נתח שוב",
             reanalyzing: "🔄 מנתח מחדש...",
+            clickForDetails: "לחץ לניתוח מפורט",
             
             // Dashboard
             systemReady: "המערכת מוכנה",

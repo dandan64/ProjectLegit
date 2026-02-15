@@ -46,29 +46,26 @@ Here is how Legit helps you navigate the news landscape:
 ### 1. 🕵️‍♂️ Multi-Agent Analysis Engine
 Don't rely on a single opinion. Legit deploys a team of AI agents to investigate the article from multiple angles: source history, author credibility, and factual consensus.
 <div align="center">
-  <img src="Images/feature_analysis.png" alt="Multi Agent Analysis Screenshot" width="600" />
+  <img src="Images/feature_analysis.png" alt="Multi Agent Analysis Screenshot" width="300" />
+  <img src="Images/feature_analysis_1.png" alt="Multi Agent Analysis Screenshot" width="300" />
   <br><em>View a comprehensive breakdown of the article's credibility score.</em>
 </div>
 
 ### 2. 🧠 Smart Context Search (SIFT)
 The agents don't just read the text—they browse the web. Using "Lateral Reading" techniques, the system actively cross-references claims against trusted external sources to detect misinformation.
 <div align="center">
-  <img src="Images/feature_sift.png" alt="SIFT Search Screenshot" width="600" />
+  <img src="Images/feature_sift.png" alt="SIFT Search Screenshot" width="300" />
   <br><em>See exactly which sources support or contradict the claims.</em>
 </div>
 
 ### 3. 🔦 Fuzzy Quote Highlighting
 Found a suspicious claim in the analysis? Click it. Our robust **Levenshtein Distance** algorithm instantly scrolls to and highlights the exact sentence in the article, even if there are formatting differences.
 <div align="center">
-  <img src="Images/feature_highlight.png" alt="Highlighting Feature Screenshot" width="600" />
+  <img src="Images/feature_highlight.png" alt="Highlighting Feature Screenshot" width="1000" />
   <br><em>Interactive highlighting brings the analysis to life inside the article.</em>
 </div>
 
-### 4. 🌍 Localization & RTL Support
-Fully optimized for global use with native support for **Hebrew** (Right-to-Left UI) and **English**, including localized prompts and interface elements.
-<div align="center">
-  <img src="Images/feature_rtl.png" alt="Hebrew Support Screenshot" width="600" />
-</div>
+
 
 ---
 

@@ -73,9 +73,7 @@ function getCachedResponse(promptText) {
     return null;
 }
 
-/**
- * Store response in cache
- */
+// Store response in cache
 function cacheResponse(promptText, response) {
     const key = getCacheKey(promptText);
     
@@ -108,9 +106,7 @@ function extractTextFromResponse(candidate) {
     return textParts.join('\n\n').trim();
 }
 
-/**
- * Calls the Gemini API with a given prompt text and returns the trimmed response text
- */
+// Calls the Gemini API with a given prompt text and returns the trimmed response text
 async function callGemini(promptText, options = {}) {
     const { skipCache = false, retries = 2, useSearch = false, tokensBudget = 0, systemInstruction = null } = options;
     
@@ -149,10 +145,7 @@ async function callGemini(promptText, options = {}) {
                     temperature: 0.1,
                     maxOutputTokens: 10000,
                     topK: 10,
-                    topP: 0.2,
-                    thinking_config: {
-                        thinking_budget: tokensBudget
-                    }
+                    topP: 0.2
                 },
                 safetySettings: [
                     { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
@@ -162,9 +155,17 @@ async function callGemini(promptText, options = {}) {
                 ]
             };
 
+            // FIX 1: Only add thinking config if budget is greater than 0
+            if (tokensBudget > 0) {
+                requestBody.generationConfig.thinking_config = {
+                    thinking_budget: tokensBudget
+                };
+            }
+
+            // FIX 2: camelCase for googleSearch
             if (useSearch) {
                 requestBody.tools = [
-                    { google_search: {} } 
+                    { googleSearch: {} } 
                 ];
             }
 
@@ -209,6 +210,9 @@ async function callGemini(promptText, options = {}) {
             // Check for finish reason issues
             if (candidate.finishReason && candidate.finishReason !== "STOP") {
                 console.warn("⚠️ Unusual finish reason:", candidate.finishReason);
+                if (candidate.finishReason === "RECITATION") {
+                    throw new Error("RECITATION_BLOCK - Gemini blocked the response for quoting too much verbatim text. Try again.");
+                }
             }
             
             const text = extractTextFromResponse(candidate);

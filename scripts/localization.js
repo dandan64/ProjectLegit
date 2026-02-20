@@ -136,7 +136,7 @@ if (typeof TRANSLATIONS === 'undefined') {
             BALANCED: "מאוזן", SLIGHT_BIAS: "הטיה קלה", 
             MODERATE_BIAS: "הטיה בינונית", STRONG_BIAS: "הטיה חזקה",
             PROFESSIONAL: "מקצועי", ADEQUATE: "סביר", 
-            SENSATIONAL: "סנסציוני", POOR_QUALITY: "איכות נמוכה",
+            SENSATIONAL: "סנסציוני", SENSATIONALIST: "סנסציונית", POOR_QUALITY: "איכות נמוכה",
             CURRENT: "עדכני", RECENT: "מהזמן האחרון", DATED: "מיושן", RECYCLED: "ממוחזר"
         }
     };

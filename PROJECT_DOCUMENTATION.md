@@ -80,9 +80,9 @@ flowchart TD
     classDef ai fill:#eff6ff,stroke:#3b82f6,color:#1e3a8a,stroke-width:2px,rx:8px,ry:8px;
     classDef logic fill:#fefce8,stroke:#eab308,color:#854d0e,stroke-width:2px,rx:8px,ry:8px;
     classDef visual fill:#f0fdf4,stroke:#22c55e,color:#166534,stroke-width:2px,rx:8px,ry:8px;
-    classDef click fill:#f1f5f9,stroke:#64748b,color:#0f172a,stroke-width:2px,rx:20px,ry:20px;
+    classDef clickable fill:#f1f5f9,stroke:#64748b,color:#0f172a,stroke-width:2px,rx:20px,ry:20px;
     
-    class Start,UserClick click;
+    class Start,UserClick clickable;
     class InjectRead,ParseDOM,Orchestrate phase;
     class SourceVerify,ConsensusVerify,Author,Headline,Bias,Style,SourceFormat,ConsensusFormat,Summary ai;
     class API_Call,CacheCheck,Gemini,API_Return logic;

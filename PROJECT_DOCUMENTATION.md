@@ -22,48 +22,48 @@ The following diagram illustrates the complete technical journey from the moment
 ```mermaid
 flowchart TD
     %% Phase 1: Initiation & Extraction
-    Start([<b>1. Start Analysis</b><br/>User clicks 'Activate' in Popup]) --> InjectRead[<b>2. Content Extraction</b><br/>Inject Readability.js into Tab]
-    InjectRead --> ParseDOM[<b>3. DOM Parsing</b><br/>Extract Clean Text, Title, Author,<br/>and Metadata using Mozilla Engine]
+    Start(["<b>1. Start Analysis</b><br/>User clicks 'Activate' in Popup"]) --> InjectRead["<b>2. Content Extraction</b><br/>Inject Readability.js into Tab"]
+    InjectRead --> ParseDOM["<b>3. DOM Parsing</b><br/>Extract Clean Text, Title, Author,<br/>and Metadata using Mozilla Engine"]
     
     %% Phase 2: Orchestration
-    ParseDOM --> Orchestrate[<b>4. Agent Orchestration</b><br/>Initialize Multi-Agent Suite<br/><i>(Source, Author, Bias, Consensus)</i>]
+    ParseDOM --> Orchestrate["<b>4. Agent Orchestration</b><br/>Initialize Multi-Agent Suite<br/><i>(Source, Author, Bias, Consensus)</i>"]
     
     %% Phase 3: AI Analysis (Parallel)
-    subgraph AI_Engine [<b>5. Multi-Agent Intelligence Layer</b>]
+    subgraph AI_Engine ["<b>5. Multi-Agent Intelligence Layer</b>"]
         direction TB
-        Orchestrate --> Agent1[<b>Source Agent</b><br/>Lateral Reading & Funding]
-        Orchestrate --> Agent2[<b>Consensus Agent</b><br/>Cross-Checking Claims]
-        Orchestrate --> Agent3[<b>Author Agent</b><br/>Reputation Research]
-        Orchestrate --> Agent4[<b>Psychologist Agent</b><br/>Bias & Emotion Detection]
+        Orchestrate --> Agent1["<b>Source Agent</b><br/>Lateral Reading & Funding"]
+        Orchestrate --> Agent2["<b>Consensus Agent</b><br/>Cross-Checking Claims"]
+        Orchestrate --> Agent3["<b>Author Agent</b><br/>Reputation Research"]
+        Orchestrate --> Agent4["<b>Psychologist Agent</b><br/>Bias & Emotion Detection"]
         
-        Agent1 & Agent2 & Agent3 & Agent4 --> API_Call[<b>6. API Communication</b><br/>Send message to background.js]
+        Agent1 & Agent2 & Agent3 & Agent4 --> API_Call["<b>6. API Communication</b><br/>Send message to background.js"]
     end
     
     %% Phase 4: Service Worker & External Tools
-    subgraph Service_Worker [<b>7. Background Logic</b>]
-        API_Call --> CacheCheck{<b>Cache Check</b><br/>Recent Result?}
-        CacheCheck -- No --> Gemini[<b>Gemini 1.5/2.5 Flash</b><br/>with Google Search Tooling]
-        Gemini --> API_Return[Process Response]
+    subgraph Service_Worker ["<b>7. Background Logic</b>"]
+        API_Call --> CacheCheck{"<b>Cache Check</b><br/>Recent Result?"}
+        CacheCheck -- No --> Gemini["<b>Gemini 1.5/2.5 Flash</b><br/>with Google Search Tooling"]
+        Gemini --> API_Return["Process Response"]
         CacheCheck -- Yes --> API_Return
     end
     
     %% Phase 5: Synthesis
-    API_Return --> Summary[<b>8. Synthesis</b><br/>Summary Agent compiles final verdict<br/>and calculates weighted score]
+    API_Return --> Summary["<b>8. Synthesis</b><br/>Summary Agent compiles final verdict<br/>and calculates weighted score"]
     
     %% Phase 6: UI Rendering
-    Summary --> Render[<b>9. UI Rendering</b><br/>Update Side-panel with Glassmorphism<br/>Ratings & Deep-dive Explanations]
+    Summary --> Render["<b>9. UI Rendering</b><br/>Update Side-panel with Glassmorphism<br/>Ratings & Deep-dive Explanations"]
     
     %% Phase 7: Interactive Highlighting
-    Render --> UserClick([<b>10. Interaction</b><br/>User clicks Citation Link])
-    UserClick --> InjectHighlighter[<b>11. Highlighter Injection</b><br/>Inject contentHighlighter.js]
+    Render --> UserClick(["<b>10. Interaction</b><br/>User clicks Citation Link"])
+    UserClick --> InjectHighlighter["<b>11. Highlighter Injection</b><br/>Inject contentHighlighter.js"]
     
-    subgraph Match_Engine [<b>12. Fuzzy Match Engine</b>]
-        InjectHighlighter --> MatchExact[Exact String Match]
-        MatchExact -- Fail --> MatchWS[Whitespace-flexible Match]
-        MatchWS -- Fail --> MatchLev[<b>Levenshtein Distance</b><br/>Fuzzy Matching Algorithm]
+    subgraph Match_Engine ["<b>12. Fuzzy Match Engine</b>"]
+        InjectHighlighter --> MatchExact["Exact String Match"]
+        MatchExact -- Fail --> MatchWS["Whitespace-flexible Match"]
+        MatchWS -- Fail --> MatchLev["<b>Levenshtein Distance</b><br/>Fuzzy Matching Algorithm"]
     end
     
-    MatchLev & MatchWS & MatchExact --> Highlight[<b>13. Visual Feedback</b><br/>Scroll to View & Animated<br/>Highlight Insertion]
+    MatchLev & MatchWS & MatchExact --> Highlight["<b>13. Visual Feedback</b><br/>Scroll to View & Animated<br/>Highlight Insertion"]
 
     %% Styling
     classDef phase fill:#f5f5f5,stroke:#333,stroke-width:2px;
@@ -75,7 +75,7 @@ flowchart TD
     class Agent1,Agent2,Agent3,Agent4,Summary ai;
     class API_Call,CacheCheck,Gemini,API_Return logic;
     class Render,UserClick,InjectHighlighter,MatchExact,MatchWS,MatchLev,Highlight visual;
-```
+    ```
 
 ---
 

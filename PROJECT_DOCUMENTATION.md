@@ -75,7 +75,7 @@ flowchart TD
     class Agent1,Agent2,Agent3,Agent4,Summary ai;
     class API_Call,CacheCheck,Gemini,API_Return logic;
     class Render,UserClick,InjectHighlighter,MatchExact,MatchWS,MatchLev,Highlight visual;
-    ```
+```
 
 ---
 

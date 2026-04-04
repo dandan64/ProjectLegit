@@ -26,17 +26,27 @@ flowchart TD
     InjectRead --> ParseDOM["<b>3. DOM Parsing</b><br/>Extract Clean Text, Title, Author,<br/>and Metadata using Mozilla Engine"]
     
     %% Phase 2: Orchestration
-    ParseDOM --> Orchestrate["<b>4. Agent Orchestration</b><br/>Initialize Multi-Agent Suite<br/><i>(Source, Author, Bias, Consensus)</i>"]
+    ParseDOM --> Orchestrate["<b>4. Agent Orchestration</b><br/>Initialize Multi-Agent Suite<br/><i>(Source, Consensus, Author, Headline, Bias, Style)</i>"]
     
-    %% Phase 3: AI Analysis (Parallel)
+    %% Phase 3: AI Analysis (Parallel & Dependent)
     subgraph AI_Engine ["<b>5. Multi-Agent Intelligence Layer</b>"]
         direction TB
-        Orchestrate --> Agent1["<b>Source Agent</b><br/>Lateral Reading & Funding"]
-        Orchestrate --> Agent2["<b>Consensus Agent</b><br/>Cross-Checking Claims"]
-        Orchestrate --> Agent3["<b>Author Agent</b><br/>Reputation Research"]
-        Orchestrate --> Agent4["<b>Psychologist Agent</b><br/>Bias & Emotion Detection"]
         
-        Agent1 & Agent2 & Agent3 & Agent4 --> API_Call["<b>6. API Communication</b><br/>Send message to background.js"]
+        %% Background Agents
+        Orchestrate --> SourceVerify["<b>Source Verify Agent</b><br/>Background Search"]
+        Orchestrate --> ConsensusVerify["<b>Consensus Verify Agent</b><br/>Background Fact-Checking"]
+        
+        %% Independent UI Agents
+        Orchestrate --> Author["<b>Author Agent</b><br/>Reputation Research"]
+        Orchestrate --> Headline["<b>Headline Agent</b><br/>Truth Gap Detection"]
+        Orchestrate --> Bias["<b>Bias Agent</b><br/>Bias & Emotion Detection"]
+        Orchestrate --> Style["<b>Style Agent</b><br/>Journalistic Quality"]
+        
+        %% Dependent UI Agents
+        SourceVerify --> SourceFormat["<b>Source Format Agent</b><br/>Formatting & Rating"]
+        ConsensusVerify --> ConsensusFormat["<b>Consensus Format Agent</b><br/>Citation & Rating"]
+        
+        SourceVerify & ConsensusVerify & SourceFormat & ConsensusFormat & Author & Headline & Bias & Style --> API_Call["<b>6. API Communication</b><br/>Send message to background.js"]
     end
     
     %% Phase 4: Service Worker & External Tools
@@ -65,16 +75,18 @@ flowchart TD
     
     MatchLev & MatchWS & MatchExact --> Highlight["<b>13. Visual Feedback</b><br/>Scroll to View & Animated<br/>Highlight Insertion"]
 
-    %% Styling
-    classDef phase fill:#f5f5f5,stroke:#333,stroke-width:2px;
-    classDef ai fill:#e1f5fe,stroke:#01579b,color:#01579b,stroke-width:2px;
-    classDef logic fill:#fff3e0,stroke:#e65100,color:#e65100,stroke-width:2px;
-    classDef visual fill:#e8f5e9,stroke:#2e7d32,color:#2e7d32,stroke-width:2px;
+    %% Improved Styling
+    classDef phase fill:#f8fafc,stroke:#94a3b8,stroke-width:2px,color:#0f172a,rx:8px,ry:8px;
+    classDef ai fill:#eff6ff,stroke:#3b82f6,color:#1e3a8a,stroke-width:2px,rx:8px,ry:8px;
+    classDef logic fill:#fefce8,stroke:#eab308,color:#854d0e,stroke-width:2px,rx:8px,ry:8px;
+    classDef visual fill:#f0fdf4,stroke:#22c55e,color:#166534,stroke-width:2px,rx:8px,ry:8px;
+    classDef click fill:#f1f5f9,stroke:#64748b,color:#0f172a,stroke-width:2px,rx:20px,ry:20px;
     
-    class Start,InjectRead,ParseDOM,Orchestrate phase;
-    class Agent1,Agent2,Agent3,Agent4,Summary ai;
+    class Start,UserClick click;
+    class InjectRead,ParseDOM,Orchestrate phase;
+    class SourceVerify,ConsensusVerify,Author,Headline,Bias,Style,SourceFormat,ConsensusFormat,Summary ai;
     class API_Call,CacheCheck,Gemini,API_Return logic;
-    class Render,UserClick,InjectHighlighter,MatchExact,MatchWS,MatchLev,Highlight visual;
+    class Render,InjectHighlighter,MatchExact,MatchWS,MatchLev,Highlight visual;
 ```
 
 ---
@@ -118,9 +130,10 @@ Legit runs multiple agents concurrently. Some are **Background Agents** (doing r
 | **Consensus Verify** | Background | Cross-checks facts against independent news outlets. | None |
 | **Source Format** | UI | Formats raw research into readable citations. | `source-verify` |
 | **Consensus Format** | UI | Links findings to supporting/contradicting sources. | `consensus-verify` |
-| **The Profiler** | UI | Researches author credentials and professional history. | None |
-| **The Psychologist** | UI | Analyzes text for emotional bias and loaded language. | None |
-| **The Headline Critic**| UI | Detects clickbait by comparing title to body text. | None |
+| **Author Agent** | UI | Researches author credentials and professional history. | None |
+| **Headline Agent**| UI | Detects clickbait and truth gaps by comparing title to body text. | None |
+| **Bias Agent** | UI | Analyzes text for emotional manipulation and various types of bias. | None |
+| **Style Agent** | UI | Evaluates journalistic standards, tone, and writing quality. | None |
 
 ### Phase 3: Scoring & Synthesis
 - **Weighting**: Factual consensus (25%) and Source reputation (20%) carry the highest weight, while style and headline carry less (10%).

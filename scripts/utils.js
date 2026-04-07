@@ -1027,7 +1027,7 @@ function waitForTabLoad(tabId) {
                         chrome.tabs.onUpdated.removeListener(listener);
                         resolve(tab);
                     }
-            }, 10000); // Buffer to ensure URL has fully updated
+            }, 1000); // Buffer to ensure URL has fully updated
         };
         chrome.tabs.onUpdated.addListener(listener);
     });

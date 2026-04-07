@@ -472,7 +472,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // for bias agent
             let linkedExplanation = result.explanation;
-            if(agent.id === 'bias' || agent) {
+            if(agent.id === 'bias' || agent.id == 'style') {
                 linkedExplanation = parseAndLinkifyQuotes(result.explanation, tab.id);
             }
             

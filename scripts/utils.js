@@ -383,7 +383,7 @@ function displayOverallScore(agents) {
         emoji = "☠"; 
     }
 
-    styleScoreLabel(scoreLabel, scoreValue, scoreBar, overallScore, color, gradient, labelKey, emoji);
+    styleScoreLabel(scoreLabel, scoreValue, scoreBar, overallScore, color, gradient, emoji, labelKey);
 
     scoreDisplay.style.display = "block";
 
@@ -715,10 +715,12 @@ function parseAndLinkifySources(rawExplanation) {
 function waitForTabLoad(tabId) {
     return new Promise((resolve) => {
         const listener = (updatedTabId, changeInfo, tab) => {
-            if (!tab.url.includes("duckduckgo.com") && !tab.url.includes("google.com")) {
-                    chrome.tabs.onUpdated.removeListener(listener);
-                    resolve(tab);
-                }
+            setTimeout(() => {
+                if (!tab.url.includes("duckduckgo.com") && !tab.url.includes("google.com")) {
+                        chrome.tabs.onUpdated.removeListener(listener);
+                        resolve(tab);
+                    }
+            }, 1000); // Small buffer to ensure page has started loading
         };
         chrome.tabs.onUpdated.addListener(listener);
     });

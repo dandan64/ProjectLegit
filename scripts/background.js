@@ -1,4 +1,23 @@
-// background.js - Enhanced version with caching and rate limiting
+/**
+ * @fileoverview Service Worker for the Legit Chrome Extension.
+ *
+ * Responsibilities
+ * ----------------
+ * 1. **API proxy** – All calls to the Gemini API are made here so that the
+ *    API key never leaves the extension background context.
+ * 2. **Two-tier caching** – Responses are cached in memory (fast, session-scoped)
+ *    to avoid redundant API calls for identical prompts within a 30-minute window.
+ * 3. **Rate limiting** – Enforces a hard cap of 30 requests per 60-second window
+ *    to stay within the Gemini free-tier quota.
+ * 4. **Side-panel wiring** – Opens the side panel automatically when the toolbar
+ *    icon is clicked.
+ *
+ * Message types handled
+ * ---------------------
+ * • CALL_GEMINI  – Run a prompt through the Gemini API and return the result.
+ * • CLEAR_CACHE  – Flush the in-memory response cache.
+ * • GET_STATS    – Return current cache size and recent request count.
+ */
 
 // Open Side Panel when the extension icon is clicked
 chrome.sidePanel
@@ -91,20 +110,32 @@ function cacheResponse(promptText, response) {
     });
 }
 
+/**
+ * Extracts all plain-text content from a single Gemini response candidate.
+ *
+ * A candidate's `content.parts` array may contain multiple objects: some
+ * are plain text (`part.text`), others are grounding metadata or tool-use
+ * blocks. Only the `text` parts are collected and joined so that grounding
+ * metadata does not pollute the returned string.
+ *
+ * @param {Object|null} candidate - A single item from `data.candidates[]`.
+ * @returns {string|null} Concatenated text from all text parts, or null if the
+ *   candidate is missing or contains no text.
+ */
 function extractTextFromResponse(candidate) {
     if (!candidate || !candidate.content || !candidate.content.parts) {
         return null;
     }
-    
+
     // Collect all text parts (search results return multiple parts)
     const textParts = [];
-    
+
     for (const part of candidate.content.parts) {
         if (part.text) {
             textParts.push(part.text);
         }
     }
-    
+
     return textParts.join('\n\n').trim();
 }
 
@@ -282,7 +313,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     }
 });
 
-// Clear old cache entries periodically
+// Periodic cache eviction: sweep the in-memory cache every 10 minutes
+// and remove any entries whose age exceeds CACHE_DURATION (30 min).
+// This prevents unbounded memory growth across long browser sessions.
 setInterval(() => {
     const now = Date.now();
     for (const [key, value] of responseCache.entries()) {

@@ -1,9 +1,34 @@
-if (typeof currentLang === 'undefined') {
-    var currentLang = 'en';
-}
+/**
+ * @fileoverview Localisation engine for the Legit Chrome Extension.
+ *
+ * This script is loaded in two contexts:
+ *  1. **Side panel** (`Legit.html`) – provides UI string translations and the
+ *     `setLanguage()` switcher.
+ *  2. **Content script** (`contentHighlighter.js`) – needs access to
+ *     `currentLang` and `TRANSLATIONS` for toast messages inside the article tab.
+ *
+ * Guard pattern: all declarations use `typeof … === 'undefined'` checks so the
+ * file can be injected multiple times (e.g. into an already-loaded tab) without
+ * throwing "already defined" errors.
+ *
+ * Supported languages
+ * -------------------
+ * • `en` – English (default)
+ * • `he` – Hebrew (RTL; `<body class="rtl">` is toggled by `setLanguage()`)
+ *
+ * AI prompt language
+ * ------------------
+ * Agent prompts in `agents.js` read `currentLang` at construction time and
+ * append "Write the explanation in English/Hebrew" to each prompt, so the
+ * AI output language follows the user's UI language preference.
+ */
 
-if (typeof TRANSLATIONS === 'undefined') {
-    var TRANSLATIONS = {
+(() => {
+
+window.currentLang = window.currentLang || 'en';
+
+if (typeof window.TRANSLATIONS === 'undefined') {
+    window.TRANSLATIONS = {
         en: {
             // UI Elements
             appName: "Legit",
@@ -140,9 +165,25 @@ if (typeof TRANSLATIONS === 'undefined') {
     };
 }
 
-if (typeof setLanguage === 'undefined') {
-    function setLanguage(lang) {
-        currentLang = lang;
+if (!window.setLanguage) {
+    /**
+     * Switches the extension UI to the specified language and persists the choice.
+     *
+     * Actions performed:
+     *  1. Updates the global `currentLang` variable (read by agents.js at analysis time).
+     *  2. Toggles the `rtl` class on `<body>` for Hebrew RTL layout.
+     *  3. Updates the active/inactive state of the EN/HE toggle buttons.
+     *  4. Re-renders all elements annotated with `data-i18n` or
+     *     `data-i18n-placeholder` attributes.
+     *  5. Updates any currently-visible status message text if it matches a
+     *     known string (avoids resetting error messages mid-flow).
+     *  6. Persists the chosen language to `chrome.storage.local` under the key
+     *     `"legitLang"` so it survives browser restarts.
+     *
+     * @param {'en'|'he'} lang - Language code to switch to.
+     */
+    window.setLanguage = function setLanguage(lang) {
+        window.currentLang = lang;
         
         // Toggle UI Classes
         document.body.classList.toggle('rtl', lang === 'he');
@@ -188,5 +229,7 @@ if (typeof setLanguage === 'undefined') {
 
         // Save preference
         chrome.storage.local.set({ legitLang: lang });
-    }
+    };
 }
+
+})();

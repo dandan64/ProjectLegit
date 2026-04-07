@@ -1,93 +1,52 @@
-# 🚀 Transitioning to Gemini OAuth2 (Google Account)
+# Legit AI Code Review & Security Report (Gemini CLI Perspective)
 
-This document outlines the step-by-step implementation required to move from the manual **API Key** method to a **Google Account (OAuth2)** authentication flow for the Legit extension.
+This file summarizes the findings from the internal code review and security audit of the **Legit — AI-Powered Fake News Detector** (v2.1.2).
 
-## 1. External Setup (Google Cloud Console)
-Before modifying the code, you must register the extension as an OAuth client.
-1.  **Create a Project:** Go to the [Google Cloud Console](https://console.cloud.google.com/).
-2.  **Enable API:** Search for and enable the **Generative Language API**.
-3.  **Configure Consent Screen:** Set up the "OAuth consent screen" (Internal or External).
-4.  **Create Credentials:** 
-    *   Go to **Credentials** -> **Create Credentials** -> **OAuth client ID**.
-    *   Select **Application type**: "Chrome extension".
-    *   **Item ID**: Paste your extension's ID (found in `chrome://extensions`).
-    *   Copy the generated **Client ID**.
+## 🛡️ Security & Privacy Assessment
+The codebase demonstrates a strong commitment to user privacy and security:
+- **Clean Networking:** The extension only communicates with `generativelanguage.googleapis.com`. No hidden tracking or data exfiltration endpoints were found.
+- **BYOK (Bring Your Own Key):** User data stays within the user's Google ecosystem.
+- **XSS Prevention:** Consistent use of `escapeHtml()` and safe DOM manipulation ensures model-generated content cannot execute malicious scripts.
+- **No Unsafe Eval:** Avoidance of `eval()` and `new Function()` aligns with modern security best practices.
 
----
+## 🏗️ Architectural Strengths
+- **Multi-Agent DAG:** The use of independent and dependent agents running in parallel (via a Dependency Directed Acyclic Graph) is a sophisticated and efficient design choice.
+- **Dual-Layer Caching:** The combination of in-memory LRU and persistent `chrome.storage.local` ensures a responsive UX while respecting browser quotas.
+- **Fuzzy Matching:** Implementing Levenshtein distance for quote highlighting shows high attention to robustness against slight text variations.
 
-## 2. Update `manifest.json`
-Add the `identity` permission and the `oauth2` configuration block.
+## ⚠️ Critical & Priority Issues
 
-```json
-{
-  "permissions": [
-    "identity",
-    "storage", 
-    "sidePanel",
-    "activeTab",
-    "scripting"
-  ],
-  "oauth2": {
-    "client_id": "YOUR_CLIENT_ID_HERE.apps.googleusercontent.com",
-    "scopes": ["https://www.googleapis.com/auth/generative-language"]
-  }
-}
-```
+### 1. Functional Bug: Parameter Swap in `styleScoreLabel`
+**Location:** `scripts/utils.js` (Call at line 567, Definition at line 593)
+The `labelKey` and `emoji` parameters are swapped in the call. 
+- *Call:* `styleScoreLabel(..., labelKey, emoji)`
+- *Definition:* `function styleScoreLabel(..., emoji, labelKey)`
+**Impact:** Emojis are displayed as text and labels may be lost or displayed incorrectly.
 
----
+### 2. Logical Error: Tautological Condition
+**Location:** `scripts/popup.js` (Line 575)
+`if(agent.id === 'bias' || agent)`
+**Impact:** Since `agent` is always truthy, `parseAndLinkifyQuotes` runs for every agent, not just `bias`. This leads to redundant processing and potential side effects in other agents' explanations.
 
-## 3. Modify `scripts/background.js`
-Replace the API key retrieval logic with Google OAuth token retrieval.
+### 3. Memory & Resource Leak: `waitForTabLoad`
+**Location:** `scripts/utils.js` (Line 1053)
+The listener for `chrome.tabs.onUpdated` is never removed if the target page remains on a Google/DuckDuckGo domain (e.g., if a redirect fails or the user stays on the search page).
+**Recommendation:** Add a 10-second `setTimeout` to cleanup the listener and reject the promise.
 
-### A. New Token Function
-Replace `getGeminiKey()` with a token-based function:
-```javascript
-async function getAuthToken() {
-    return new Promise((resolve, reject) => {
-        chrome.identity.getAuthToken({ interactive: true }, (token) => {
-            if (chrome.runtime.lastError) {
-                reject(new Error("AUTH_FAILED: " + chrome.runtime.lastError.message));
-            } else {
-                resolve(token);
-            }
-        });
-    });
-}
-```
+### 4. Efficiency: Over-sending Context
+**Location:** `scripts/popup.js` (Line 385)
+The full article body text is sent to every agent (via `excerptStart`).
+**Impact:** High token costs and potential for model distraction. Agents like `headline` or `author` do not need the full text.
 
-### B. Update `callGemini` Fetch Call
-Remove the `?key=` parameter from the URL and use the `Authorization` header instead.
-```javascript
-const token = await getAuthToken(); // Get OAuth token instead of API key
+### 5. Efficiency: Verify-Format Chains
+Several agents are split into `verify` and `format` stages, doubling the API cost. 
+**Recommendation:** Consolidate formatting into the initial prompt or handle it via local JavaScript parsing.
 
-const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`,
-    {
-        method: "POST",
-        headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` 
-        },
-        body: JSON.stringify(requestBody)
-    }
-);
-```
+## 📐 General Recommendations
+- **Modularization:** Move away from the global namespace to **ES Modules** to prevent potential naming collisions as the project grows.
+- **Refactoring `popup.js`:** The file is currently a monolith. Splitting UI logic from orchestration logic will improve maintainability.
+- **Dead Code:** Remove `extractTextWithNewlines` (WIP) and redundant script tags for `Readability.js` in `Legit.html`.
+- **Policy Compliance:** A formal Privacy Policy is required for Chrome Web Store submission due to `<all_urls>` permissions.
 
 ---
-
-## 4. UI Adjustments
-
-### A. Update `Legit.html`
-*   **Remove:** The `<div class="input-card">` containing the `apiKeyInput` and `saveKeyBtn`.
-*   **Add:** (Optional) A "Sign in with Google" button if you want manual control, or simply allow the `interactive: true` flag in `getAuthToken` to handle it when the user clicks "Analyze".
-
-### B. Update `scripts/popup.js`
-*   **Remove:** The logic that checks for `res.geminiApiKey` on startup.
-*   **Remove:** The `saveKeyBtn` click listener.
-*   **Update:** The `toggleApiKeyView` function to show "Account Connected" status based on whether a valid token is retrieved from `chrome.identity`.
-
----
-
-## 5. Security & Testing
-1.  **Removal:** After confirming OAuth works, remove all references to `geminiApiKey` from `chrome.storage.local`.
-2.  **Testing:** Use the **"Inspect"** tool on the background worker to ensure tokens are being retrieved and that the 401/403 errors are handled if a token expires.
+*Generated by Gemini CLI based on audit version 2.1.2.*

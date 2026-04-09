@@ -1,6 +1,6 @@
 # Privacy Policy for Legit
 
-**Last Updated:** [הכניסו תאריך]
+**Last Updated:** 06.04.2026
 
 The **Legit** extension is dedicated to protecting your privacy. This policy explains how we handle your data.
 

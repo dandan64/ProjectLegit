@@ -199,6 +199,14 @@ Contributions are welcome! Here is how to get started:
 
 ---
 
+## 🔒 Privacy & Data Usage
+
+Legit is committed to user transparency and digital rights. In order to analyze credibility, the text of the article you choose to scan is sent securely to the Google Gemini API. **We do not collect, store, or monitor your personal browsing history or data on our servers.**
+
+For full details on how we handle data, please read our [Privacy Policy](https://sites.google.com/view/legit-extension-privacy/home).
+
+---
+
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
@@ -206,7 +214,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ## 📧 Contact
 
 * **Names:** Daniel Ben Zeev, Moshe Aizenfratz.
-* **Email:** ddbenzeev@gmail.com , moshoiko2209000@gmail.com 
+* **Email:** ddbenzeev@gmail.com , moshiko2209000@gmail.com 
 * **Chrome Extension Link:** [Download Legit from Chrome Web Store](https://chromewebstore.google.com/detail/legit/hpnnojnijcmgfhhpenmfenbcngpckfdh)
 
 ---

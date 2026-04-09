@@ -158,6 +158,47 @@ The project follows a modular pattern:
 * **`background.js`**: Acts as the bridge to the Gemini API, handles rate limiting, and manages the caching layer.
 * **`contentHighlighter.js`**: Injected into the page to perform fuzzy text matching and DOM manipulation for highlighting.
 
+For a deep dive into data flow, the two-phase agent pipeline, and the caching strategy, see [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md).
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Here is how to get started:
+
+### Development Setup
+
+1. Fork and clone the repository.
+2. Load the extension in Chrome (see [Installation](#installation) above).
+3. Open `chrome://extensions/`, find Legit, and click the **Service Worker** link to open the background DevTools console.
+4. Open the side panel on any news page to see the popup DevTools console.
+
+### Project Conventions
+
+| File | Purpose | What to change here |
+| :--- | :--- | :--- |
+| `scripts/agents.js` | AI prompt definitions | Tune prompts, add new agents, adjust weights |
+| `scripts/background.js` | API proxy & caching | Rate limits, cache TTL, Gemini model version |
+| `scripts/popup.js` | UI orchestration | Analysis flow, card rendering |
+| `scripts/utils.js` | Shared helpers | Scoring, linkification, animations |
+| `scripts/contentHighlighter.js` | In-page highlighter | Fuzzy match thresholds, highlight colours |
+| `scripts/localization.js` | i18n strings | Add languages or update translated strings |
+
+### Adding a New Agent
+
+1. Add a new object to the array returned by `getAnalysisAgents()` in `agents.js`.
+2. Give it a unique `id`, set `weight` (the six scored agents must still sum to 1.0), and write a `prompt`.
+3. Add a translation key matching the agent `id` to both `en` and `he` blocks in `localization.js`.
+4. If your agent needs another agent's output, set `dependsOn: "<parent-id>"` and include a matching `{INPUT_FROM_<PARENT_ID>}` placeholder in the prompt.
+
+### Pull Request Guidelines
+
+- Keep PRs focused on a single change.
+- Run through at least three different news articles manually before submitting.
+- Do not commit `.env` files or API keys.
+
+---
+
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.

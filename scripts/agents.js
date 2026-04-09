@@ -1,9 +1,67 @@
+/**
+ * @fileoverview Agent definitions for Legit's multi-agent AI analysis pipeline.
+ *
+ * Each agent object describes one specialised AI analyst. The orchestrator
+ * in popup.js reads these definitions to decide execution order, scoring
+ * weight, and how to display results in the UI.
+ *
+ * Execution model
+ * ---------------
+ * • Background agents  (isBackgroundAgent: true, weight: 0)
+ *     Run silently in parallel. Their raw output is injected into a paired
+ *     "formatter" agent via the {INPUT_FROM_<ID>} placeholder. They do not
+ *     produce visible cards themselves.
+ *
+ * • Regular agents  (!isBackgroundAgent)
+ *     Each maps to an accordion card in the side panel. Independent agents
+ *     run in parallel (Phase A). Agents with a `dependsOn` field run after
+ *     their dependency completes (Phase B).
+ *
+ * • Summary agent  (id: "summary", dependsOn: "all")
+ *     Runs last, after every other agent has finished, to synthesise a
+ *     2-4 sentence executive verdict.
+ *
+ * Scoring
+ * -------
+ * Each agent with weight > 0 contributes to the weighted final score.
+ * The weights across all scored agents sum to 1.0:
+ *   source-format  0.20
+ *   author         0.10
+ *   consensus-format 0.25
+ *   headline       0.10
+ *   bias           0.25
+ *   style          0.10
+ *                  ────
+ *                  1.00
+ */
+
+(() => {
+
+/**
+ * Builds and returns the ordered list of analysis agent configuration objects.
+ *
+ * Call this once per analysis run, passing the page metadata produced by
+ * `extractPageData()` in popup.js. The returned array is consumed directly
+ * by `runProgressiveAnalysis()`.
+ *
+ * @param {Object} pageData               - Metadata extracted from the active tab.
+ * @param {string} pageData.title         - Article headline.
+ * @param {string} pageData.domain        - Hostname of the article URL (e.g. "bbc.com").
+ * @param {string} pageData.author        - Author name detected by Readability, or "Unknown".
+ * @param {string} pageData.siteName      - Publication name returned by Readability.
+ * @param {string} pageData.excerptStart  - Full cleaned article body text (may be long).
+ * @param {string} pageData.excerptEnd    - Last ~1500 chars of body used for ending context.
+ * @returns {Array<Object>} Ordered array of agent configuration objects ready for execution.
+ */
 function getAnalysisAgents(pageData) {
     const startText = pageData.excerptStart || "";
     const endText = pageData.excerptEnd || "";
-    
+
+    // longExcerpt: full article body sent to agents that need full context (bias, consensus).
     const longExcerpt = startText;
+    // shortExcerpt: first 600 chars only — used for cheaper author-lookup prompts.
     const shortExcerpt = startText.slice(0, 600);
+    // excerptEnd: conclusion of the article; falls back to last 500 chars if not pre-sliced.
     const excerptEnd = endText || startText.slice(-500);
     
     const today = new Date().toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' });
@@ -262,7 +320,7 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
             icon: "⚖️",
             priority: "high",
             weight: 0.25,
-            useSearch: true,
+            useSearch: false,
             tokenBudget: 0,
             systemInstruction: `You are a Media Bias Analyst. Analyze articles for bias.
             YOUR TASK:
@@ -280,8 +338,8 @@ EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Se
            - Are key stakeholders or perspectives missing?
            - Is there high density of emotional/loaded words?
         
-        3. use google search to check if important perspectives are omitted.`,
-            prompt:`Current Date: ${today}
+       `,
+        prompt:`Current Date: ${today}
             Text to analyze: "${longExcerpt}"
         
         CRITICAL OUTPUT RULES:
@@ -365,3 +423,7 @@ EXAMPLE OUTPUT:
         }
     ];
 }
+
+window.getAnalysisAgents = getAnalysisAgents;
+
+})();

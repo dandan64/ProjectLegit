@@ -1,6 +1,34 @@
+/**
+ * @fileoverview Content script for Legit — fuzzy quote highlighting engine.
+ *
+ * This script is injected into the news article tab (not the side panel) and
+ * provides interactive in-page highlighting. It is guarded by the
+ * `window.legitHighlighterLoaded` flag so multiple injections are idempotent.
+ *
+ * Matching strategy (three-tier waterfall)
+ * -----------------------------------------
+ * 1. **Exact match**        – Case-insensitive literal regex search.
+ * 2. **Flexible whitespace** – Same regex with `\s+` wildcards between tokens
+ *                              to handle HTML-normalised whitespace differences.
+ * 3. **Levenshtein fuzzy**  – Async sliding-window search (yields to the event
+ *                              loop every 50 words). Accepts up to 35% edit distance.
+ *                              Capped at 500-char quotes for performance.
+ *
+ * Highlight palettes
+ * ------------------
+ * • `default`    – yellow (bias / style quotes, auto-removed after 20 s)
+ * • `supporting` – green  (supporting source citations)
+ * • `contra`     – red    (contradicting source citations)
+ *
+ * Message protocol (chrome.runtime.onMessage)
+ * -------------------------------------------
+ * • `HIGHLIGHT_QUOTE` – { quote, index?, highlightType?, lang? }
+ *     Finds and highlights the quote, scrolls to it, and plays a pulse animation.
+ * • `CLEAR_HIGHLIGHTS` – Removes all `.legit-highlight` spans and normalises the DOM.
+ */
 if (!window.legitHighlighterLoaded) {
     window.legitHighlighterLoaded = true;
-    
+
     // 1. GLOBAL PALETTES
     const PALETTES = {
         supporting: { bg: '#86efac', border: '#16a34a', shadow: 'rgba(22, 163, 74, 0.8)' },
@@ -14,6 +42,24 @@ if (!window.legitHighlighterLoaded) {
     let visibilityListener = null;
 
     // --- MAIN ENTRY POINT ---
+    /**
+     * Main entry point: locates a quote in the article and highlights it.
+     *
+     * Executes the three-tier match waterfall (exact → flexible → Levenshtein).
+     * On a fuzzy match, shows a warning toast. On total failure, shows an error toast.
+     *
+     * After a successful match:
+     *  1. Wraps matching DOM text nodes in `.legit-highlight` spans.
+     *  2. Scrolls the first fragment into view (`block: center`).
+     *  3. Plays a three-iteration pulse animation on every fragment.
+     *  4. Schedules auto-removal via `handleAutoRemove()`.
+     *
+     * @async
+     * @param {string}  searchText - The quote text to find (may be AI-paraphrased).
+     * @param {number}  [index=0]  - Which occurrence to highlight if multiple found.
+     * @param {string}  [type='default'] - Palette key: "default" | "supporting" | "contra".
+     * @returns {Promise<boolean>} `true` if highlighting succeeded, `false` otherwise.
+     */
     async function highlightAndScroll(searchText, index = 0, type = 'default') {
         console.log('🔍 Searching for quote:', searchText);
         
@@ -122,6 +168,24 @@ if (!window.legitHighlighterLoaded) {
     }
 
     // --- HELPER: Gather Text Nodes ---
+    /**
+     * Traverses the live DOM and builds a flat, searchable representation of
+     * all visible text content.
+     *
+     * Uses a `TreeWalker` to visit every `TEXT_NODE`. Non-visual nodes
+     * (script, style, hidden elements) are rejected. To handle block-element
+     * boundaries (e.g. paragraph breaks) without losing position tracking, a
+     * single space is injected into `fullText` whenever the walker crosses into
+     * a new block-level parent element.
+     *
+     * Returns three parallel data structures:
+     * - `textNodes`  – raw DOM Text node references (used for wrapping).
+     * - `nodeMap`    – `{ node, start, end }` entries mapping each text node to
+     *                  its character range within `fullText`.
+     * - `fullText`   – the concatenated string searched by the match strategies.
+     *
+     * @returns {{ textNodes: Text[], fullText: string, nodeMap: Array<Object> }}
+     */
     function getAllTextNodes() {
         const walker = document.createTreeWalker(
             document.body,
@@ -182,6 +246,21 @@ if (!window.legitHighlighterLoaded) {
     }
 
     // --- HELPER: Standard Search ---
+    /**
+     * Finds all occurrences of `query` within `fullText` using a compiled regex.
+     *
+     * Two modes are supported:
+     *  - `'exact'`      – Literal match (special regex chars escaped).
+     *  - `'whitespace'` – Each run of whitespace in the query is replaced with
+     *                     `\s+` to tolerate HTML-normalised whitespace differences.
+     *
+     * Both modes are case-insensitive (`gi` flags).
+     *
+     * @param {string} fullText         - Concatenated page text from `getAllTextNodes()`.
+     * @param {string} query            - The search string.
+     * @param {{ mode: 'exact'|'whitespace' }} options
+     * @returns {Array<{ start: number, end: number }>} Array of character-index ranges.
+     */
     function findGlobalMatches(fullText, query, options) {
         let regex;
         const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -209,6 +288,25 @@ if (!window.legitHighlighterLoaded) {
     }
 
     // --- HELPER: Levenshtein Distance Calculation ---
+    /**
+     * Computes the Levenshtein (edit) distance between two strings using the
+     * optimised two-row dynamic programming algorithm.
+     *
+     * Optimisations applied:
+     *  1. **Length swap** – ensures `a` is always the shorter string, minimising
+     *     inner-loop iterations.
+     *  2. **Row reuse**   – only two rows are kept in memory (O(min(|a|,|b|)) space)
+     *     rather than a full |a|×|b| matrix.
+     *  3. **Early exit**  – if the minimum value in the current row already exceeds
+     *     `threshold`, returns `Infinity` immediately to prune the sliding window
+     *     in `findLevenshteinMatchAsync`.
+     *
+     * @param {string} a             - First string.
+     * @param {string} b             - Second string.
+     * @param {number} [threshold]   - Early-exit threshold; skip computation once
+     *                                 the distance exceeds this value.
+     * @returns {number} Edit distance, or `Infinity` if threshold was exceeded.
+     */
     function getLevenshteinDistance(a, b, threshold = Infinity) {
         if (a === b) return 0;
         if (a.length > b.length) [a, b] = [b, a]; // Ensure 'a' is shorter
@@ -242,8 +340,32 @@ if (!window.legitHighlighterLoaded) {
         return prevRow[a.length];
     }
 
-    
+
     // --- HELPER: Async Fuzzy Levenshtein Matcher ---
+    /**
+     * Searches `fullText` for the window of words most similar to `query`
+     * using a sliding-window Levenshtein approach.
+     *
+     * Algorithm:
+     *  1. Tokenise `fullText` into word-boundary positions via `/\S+/g`.
+     *  2. Determine a window size range (90%–110% of `query`'s word count).
+     *  3. For each starting word `i`, test windows of each size:
+     *     a. Extract the raw substring and normalise (lowercase, strip non-alphanumeric).
+     *     b. Skip windows whose normalised length differs from the target by > 30%
+     *        (cheap pre-filter before the expensive Levenshtein call).
+     *     c. Compute `dist / max(|candidate|, |target|)` as a normalised error score.
+     *  4. Track the global best-score window.
+     *  5. Every 50 words, `await scheduler()` to yield to the browser event loop
+     *     and prevent "Script taking too long" warnings on large articles.
+     *
+     * Accepts matches with a normalised error ≤ 0.35 (35% tolerance).
+     *
+     * @async
+     * @param {string} fullText - Concatenated page text from `getAllTextNodes()`.
+     * @param {string} query    - Quote text to find (typically AI output, may differ).
+     * @returns {Promise<{ start: number, end: number }|null>} Best-match character range,
+     *   or `null` if nothing within tolerance was found.
+     */
     async function findLevenshteinMatchAsync(fullText, query) {
         if (!query || query.length < 5) return null;
 
@@ -304,6 +426,21 @@ if (!window.legitHighlighterLoaded) {
     }
 
     // --- HELPER: Map Global Indices to DOM Nodes ---
+    /**
+     * Translates a character-index range in `fullText` back to specific DOM text
+     * nodes and intra-node character offsets.
+     *
+     * Iterates the `nodeMap` produced by `getAllTextNodes()` until both the start
+     * and end nodes are located. Offsets are computed relative to the start of
+     * each node's text content.
+     *
+     * @param {number}          globalStart - Start index in the concatenated `fullText`.
+     * @param {number}          globalEnd   - End index in the concatenated `fullText`.
+     * @param {Array<Object>}   nodeMap     - Node map from `getAllTextNodes()`.
+     * @returns {{ startNode, startOffset, endNode, endOffset, nodeMap,
+     *             globalStart, globalEnd }|null} Range data object, or `null` if
+     *   the range could not be mapped to any node.
+     */
     function mapGlobalRangeToNodes(globalStart, globalEnd, nodeMap) {
         let startNodeInfo = null;
         let endNodeInfo = null;
@@ -338,6 +475,15 @@ if (!window.legitHighlighterLoaded) {
     }
 
     // --- HELPER: Highlight Range ---
+    /**
+     * Applies highlights to all DOM text nodes that overlap the given character range.
+     *
+     * Filters `nodeMap` to nodes that intersect `[globalStart, globalEnd)`, then
+     * calls `wrapTextNode()` for each, passing the clipped local start/end offsets.
+     *
+     * @param {{ nodeMap, globalStart, globalEnd }} rangeData - Output of `mapGlobalRangeToNodes()`.
+     * @param {string} type - Palette key ("default" | "supporting" | "contra").
+     */
     function highlightRange(rangeData, type) {
         const { nodeMap, globalStart, globalEnd } = rangeData;
         const theme = PALETTES[type] || PALETTES.default;
@@ -358,6 +504,22 @@ if (!window.legitHighlighterLoaded) {
         });
     }
 
+    /**
+     * Wraps a substring of a DOM text node in a styled `<span class="legit-highlight">`.
+     *
+     * Splits the text node into up to three sibling nodes:
+     *   [text before] + [<span>highlighted text</span>] + [text after]
+     *
+     * The original text node is removed after the siblings are inserted.
+     * `parent.normalize()` is intentionally NOT called here to avoid merging
+     * adjacent text nodes prematurely, which would break the `nodeMap` indices
+     * held by other nodes in the same highlight range.
+     *
+     * @param {Text}   textNode - The DOM text node to partially wrap.
+     * @param {number} start    - Start offset within the node's text content.
+     * @param {number} end      - End offset within the node's text content.
+     * @param {{ bg, border, shadow }} theme - Colour palette from `PALETTES`.
+     */
     function wrapTextNode(textNode, start, end, theme) {
         if (start < 0 || end > textNode.textContent.length || start >= end) return;
 
@@ -390,6 +552,18 @@ if (!window.legitHighlighterLoaded) {
     }
 
     // --- HELPER: Toast Notification ---
+    /**
+     * Displays a transient toast notification in the top-right corner of the page.
+     *
+     * Removes any existing toast before creating a new one to prevent stacking.
+     * The toast slides in via a CSS transition on `opacity` and `transform`, stays
+     * for 4 seconds, then slides back out and removes itself from the DOM.
+     *
+     * RTL (Hebrew) mode: adds `direction: rtl` to the inline style automatically.
+     *
+     * @param {string} message                    - Notification text to display.
+     * @param {'info'|'warning'|'error'} [type='info'] - Determines background colour.
+     */
     function showToast(message, type = 'info') {
         const existing = document.getElementById('legit-toast');
         if (existing) existing.remove();
@@ -439,6 +613,20 @@ if (!window.legitHighlighterLoaded) {
         }, 4000);
     }
 
+    /**
+     * Schedules automatic removal of `default`-type highlights after 20 seconds.
+     *
+     * For `default` type only (bias / style quotes):
+     *  - Any existing auto-remove timeout is cancelled first to reset the clock.
+     *  - A new `setTimeout` is set for 20 seconds.
+     *  - A `visibilitychange` listener is attached so highlights are cleared
+     *    immediately if the user switches away from the tab.
+     *
+     * Source-type highlights (`supporting` / `contra`) are permanent until the
+     * next call to `clearHighlights()` or page navigation.
+     *
+     * @param {string} type - The highlight palette type that was just applied.
+     */
     function handleAutoRemove(type) {
         if (highlightTimeoutId) {
             clearTimeout(highlightTimeoutId);
@@ -463,6 +651,16 @@ if (!window.legitHighlighterLoaded) {
         }
     }
 
+    /**
+     * Removes all `.legit-highlight` spans from the DOM and normalises text nodes.
+     *
+     * For each highlight span:
+     *  1. Replaces it with a plain text node containing the span's text content.
+     *  2. Calls `parent.normalize()` to merge adjacent text siblings created by
+     *     `wrapTextNode()` back into single nodes, restoring the original DOM state.
+     *
+     * Also removes the `visibilitychange` listener registered by `handleAutoRemove`.
+     */
     function clearHighlights() {
         document.querySelectorAll('.legit-highlight').forEach(highlight => {
             const text = highlight.textContent;
@@ -512,6 +710,16 @@ if (!window.legitHighlighterLoaded) {
     });
 
     // --- HELPER: Safe Translation ---
+    /**
+     * Safely retrieves a UI string from the global `TRANSLATIONS` object.
+     *
+     * Provides hardcoded English fallbacks for the two keys used by this script
+     * (`quoteMatchError`, `quoteMatchWarning`) so highlighting still works
+     * even if `localization.js` failed to load or `currentLang` is undefined.
+     *
+     * @param {string} key - Translation key to look up.
+     * @returns {string} The translated string, or the key itself as a last resort.
+     */
     function getTranslation(key) {
         // Try to access the global variable safely
         if (typeof TRANSLATIONS !== 'undefined' && typeof currentLang !== 'undefined') {

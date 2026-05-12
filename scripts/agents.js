@@ -144,7 +144,7 @@ Rate as: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, or UNRELIABLE
 
 Format:
 RATING: [your rating]
-EXPLANATION: [Your analysis with citations inserted. Example: "According to [[SOURCE::Media Bias Fact Check::N12 Profile::N12 has a history of publishing unverified rumors::SOURCE]], this domain has a track record of questionable reporting."]`
+EXPLANATION: [Your analysis with citations inserted. Example: "According to [[SOURCE::Known credibility profiler::The Daily Bugle Profile::The Daily Bugle has a history of publishing unverified rumors::SOURCE]], this domain has a track record of questionable reporting."]`
         },
         {
             id: "author",
@@ -165,14 +165,15 @@ Content Snippet: "${shortExcerpt}"
 1. **Extraction**: If Author is "Unknown", scan the Excerpt for "By [Name]" or "Written by". 
 2. **Verification**: Search for the exact name + the host domain. Check for a dedicated author profile page.
 3. **External Footprint**: Cross-reference the name with Muck Rack, LinkedIn, or Twitter to verify they are a real person and not an AI-generated persona.
-4. **Constraint**: Do not guess. If no information exists outside the current domain, rate as ANONYMOUS or SUSPICIOUS based on the site's reputation.
+4. **Constraint**: Do not guess. If no information exists outside the current domain, rate as ANONYMOUS or UNVERIFIABLE based on the site's reputation.
 
 ### RATING SCALE
 - EXPERT: Recognized authority/specialist with advanced credentials.
 - JOURNALIST: Verifiable staff or freelance writer for established news outlets.
 - CITIZEN_JOURNALIST: Independent contributor or blogger with a traceable history.
 - ANONYMOUS: No specific author found; content attributed to "Staff" or "Admin."
-- SUSPICIOUS: Failed verification, no digital footprint, or known misinformation purveyor.
+- UNVERIFIABLE: Name appears fabricated, no digital footprint, or no sources associated with the author outside the current domain.
+- SUSPICIOUS: Author has a history of spreading misinformation or is linked to disreputable sources.
 
 **IMPORTANT**: Write the explanation in ${lang}.
 
@@ -238,7 +239,7 @@ Format:
 RATING: [your rating]
 SOURCES_LIST:
 - STATUS: [SUPPORTING/CONTRADICTING]
-- SOURCE_NAME: [e.g. "bbc"]
+- SOURCE_NAME: [e.g. "newssite"]
 - ARTICLE_TITLE: [The distinct title of the article]
 DO NOT rely on internal citation tools.
 - RELEVANT_QUOTE: [Quote an exact short sentence (approx. 10-15 words) from the source that proves the point. Do not use quotation marks.]

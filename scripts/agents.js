@@ -101,12 +101,30 @@ Search Queries to Perform:
 - "${pageData.domain} political alignment controversy"
 
 Your Task:
-Investigate the domain and output a structured list of sources and a raw analysis.
+Investigate the domain, output a structured list of sources, a raw analysis, and a final RATING grounded in the evidence you found.
 
 Determine three distinct factors:
 1. Factual Reliability: History of corrections, retractions, or failed fact-checks.
 2. Political/Editorial Bias: The specific ideological lean (e.g., "Fiscal Conservative," "Progressive Left," "Pro-Government").
 3. Financial Context: Who pays the bills? (e.g., "Ad-driven corporate," "State-funded," "Donor-supported").
+
+RATING ANCHORS:
+- HIGHLY_CREDIBLE: Top-tier wire services / public broadcasters with documented editorial standards, transparent ownership, and a clean factual record.
+- CREDIBLE: Established mainstream outlet with editorial oversight and a generally clean fact-check record, even if it has a known editorial lean.
+- NEUTRAL: Mixed track record, partial transparency, OR outlet not listed in major watchdogs (insufficient evidence to rate higher).
+- QUESTIONABLE: Documented bias, repeated failed fact-checks, opaque ownership, OR known to mix opinion with reporting without clear labeling. Only use this rate if at least TWO of these factors are present.
+- UNRELIABLE: State propaganda arm, hidden funding ("dark money"), pattern of fabrication/retractions, OR explicitly flagged by MBFC/AllSides/Ad Fontes as "Low Factual" or "Conspiracy/Pseudoscience".
+- ENTERTAINMENT_GOSSIP: Primary purpose is virality/celebrity content rather than factual reporting.
+- SATIRE: Site explicitly publishes satirical or parody content as its primary format (e.g., clearly labeled satire, known satire domain, parody disclaimers in about/legal pages).
+
+HARD SHORTCUTS (apply immediately, skip further analysis):
+- If any major watchdog (MBFC, AllSides, Ad Fontes) explicitly rates the outlet "Low Factual Reporting", "Conspiracy/Pseudoscience", or equivalent → UNRELIABLE. No further analysis needed.
+- If the domain is a known satire or parody site → SATIRE. No further analysis needed.
+
+CEILING RULE FOR UNKNOWN OUTLETS: If the domain is not listed in any major watchdog AND the parent company is not identifiable, the maximum possible rating is NEUTRAL. Do not assign CREDIBLE or HIGHLY_CREDIBLE on thin evidence.
+
+TIE-BREAKING RULE: If evidence supports two adjacent tiers, pick the LOWER one.
+DEFAULT ON THIN EVIDENCE: If watchdogs don't list the domain AND the parent company is not identifiable → NEUTRAL (never CREDIBLE by default).
 
 **IMPORTANT**: Write the EXPLANATION part in ${lang}.
 
@@ -116,8 +134,10 @@ SOURCES_LIST:
 - ARTICLE_TITLE: [Page title]
 - RELEVANT_QUOTE: [Short quote confirming the finding]
 
+RATING: [HIGHLY_CREDIBLE | CREDIBLE | NEUTRAL | QUESTIONABLE | UNRELIABLE | ENTERTAINMENT_GOSSIP | SATIRE]
+
 ANALYSIS:
-[Provide a forensic analysis (3-4 sentences MAX). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus.]`
+[Provide a forensic analysis (3-4 sentences MAX). Focus entirely on external reputation. Explicitly state what *other* sources say about this domain's history, funding transparency, and adherence to factual consensus. The analysis must justify the RATING you chose above.]`
         },
         {
             id: "source-format",
@@ -133,17 +153,15 @@ INPUT DATA:
 {INPUT_FROM_SOURCE_VERIFY}
 
 INSTRUCTIONS:
-1. Read the ANALYSIS and SOURCES_LIST.
+1. Read the RATING, ANALYSIS, and SOURCES_LIST.
 2. Rewrite the analysis into a cohesive paragraph (3-4 sentences).
 3. Insert citations using the format: [[SOURCE::SOURCE_NAME::Article_Title::Quote::SOURCE]]
-4. Rate the domain based on the analysis.
+4. Pass the RATING through EXACTLY as it appears in the input. DO NOT re-evaluate, adjust, or override the rating — your job is formatting only.
 
 **IMPORTANT**: Write the explanation in ${lang}.
 
-Rate as: HIGHLY_CREDIBLE, CREDIBLE, NEUTRAL, QUESTIONABLE, or UNRELIABLE
-
 Format:
-RATING: [your rating]
+RATING: [copy the rating from the input verbatim]
 EXPLANATION: [Your analysis with citations inserted. Example: "According to [[SOURCE::Known credibility profiler::The Daily Bugle Profile::The Daily Bugle has a history of publishing unverified rumors::SOURCE]], this domain has a track record of questionable reporting."]`
         },
         {
@@ -209,16 +227,39 @@ If the date is the same as today, treat this as "Breaking News".
 - Do not rely on exact keyword matches (Lexical Overlap).
 - Look for "Embedding Similarity" (matching meaning). For example, if a source says "The bill cost $50M" and another says "The legislation price tag was $50 million", treat this as CONFIRMED.
 
-3. SOURCE GENEALOGY (Circular Reporting Check):
+3. **MANDATORY REFUTATION SEARCH** (critical — do not skip):
+- Confirmation queries alone bias the evidence pool. You MUST also run adversarial queries for each Atomic Fact, e.g.:
+  • "[claim] false"
+  • "[claim] debunked"
+  • "[claim] fact check"
+  • "[claim] disputed" / "[claim] denied"
+  • "[claim] site:snopes.com OR site:politifact.com OR site:factcheck.org OR site:reuters.com/fact-check OR site:apnews.com/hub/ap-fact-check"
+- Also look for reputable outlets reporting *materially different* facts about the same event (different numbers, different actors, different outcome). That counts as contradiction even if no article uses the word "false".
+
+4. SOURCE GENEALOGY (Circular Reporting Check):
 - Check if the search results are truly independent or if they all cite a single root source (e.g., "According to AP...").
 - If 10 articles all cite the same "base" report, count that as ONE source, not ten.
 
-4. TEMPORAL CONTEXT (Breaking News Check):
+5. TEMPORAL CONTEXT (Breaking News Check):
 - Check the timestamps. If the story is less than 24 hours old (eg. , "Breaking News"), a lack of consensus is normal. Do not penalize heavily.
 - If the story is old but has NO corroboration, flag it as suspicious.
 
-5. **VERY CRITICAL** SOURCE INDEPENDENCE:
+6. ENTERTAINMENT/GOSSIP & SATIRE CHECK:
+- If the domain is known for entertainment or gossip content, consider the possibility that the story is designed for virality rather than factual accuracy → ENTERTAINMENT_GOSSIP.
+- Check for satire/parody signals: disclaimer text ("for entertainment purposes only", "satire"), known satire domain, clearly fictional framing, or absurdist content written in journalistic style. If any satire signal is found → SATIRE. This takes priority over all other ratings — a satirical article cannot be CORROBORATED or CONTRADICTS_CONSENSUS because it is not making factual claims.
+
+7. **VERY CRITICAL** SOURCE INDEPENDENCE:
 - Note that this data is from "${pageData.siteName}". DO NOT USE THE SOURCE "${pageData.siteName}" TO VERIFY ITS OWN CLAIMS.
+
+8. **DECISION TREE** (apply in order — stop at the first match):
+- (a) Satire or parody signals detected (see step 6)? → SATIRE (stop here — do not evaluate factual claims)
+- (b) Did any reputable fact-checker rate this claim false / mostly false / misleading? → CONTRADICTS_CONSENSUS
+- (c) Do two or more independent reputable outlets report materially different facts about the same event (different numbers, actors, sequence, or outcome)? → CONTRADICTS_CONSENSUS
+- (d) Do multiple independent Tier-1 outlets report the same Atomic Facts? → CORROBORATED
+- (e) Reported by secondary sources only, no circular reporting? → PLAUSIBLE
+- (f) Fresh timestamp (<24h) or exclusive investigation, with no refutations found? → UNIQUE_REPORTING
+- (g) You ran BOTH confirmation AND refutation searches and found neither? → UNVERIFIABLE
+- TIE-BREAK: If you have ANY refutation evidence at all, prefer CONTRADICTS_CONSENSUS over UNVERIFIABLE. "Unverifiable" is reserved for genuine evidence vacuum, not for "I'm unsure".
 
 OUTPUT REQUIREMENT:
 1. You must output a JSON-like list of sources you found, followed by your analysis.
@@ -229,17 +270,19 @@ OUTPUT REQUIREMENT:
 --- SCORING CRITERIA ---
 - CORROBORATED: Multiple independent Tier-1 outlets report the same Atomic Facts.
 - PLAUSIBLE: Reported by secondary sources, but no "Circular Reporting" found.
-- UNIQUE_REPORTING: True "Breaking News" (fresh timestamp) or exclusive investigation.
-- CONTRADICTS_CONSENSUS: Major outlets explicitly debunk this specific claim.
-- UNVERIFIABLE: No independent matches found after 24+ hours.
+- UNIQUE_REPORTING: True "Breaking News" (fresh timestamp) or exclusive investigation, AND no refutations surfaced in the refutation search.
+- UNVERIFIABLE: You ran BOTH confirmation AND refutation searches and found neither supporting nor contradicting evidence. This is a genuine evidence vacuum — NOT a default for uncertainty.
+- CONTRADICTS_CONSENSUS: ANY of: (a) a reputable fact-checker rates the claim false/mostly false/misleading; (b) two or more independent reputable outlets report materially different facts about the same event (different numbers, actors, sequence, or outcome); (c) official records (court, government, peer-reviewed) contradict the claim. Explicit "debunk" language is NOT required.
+- ENTERTAINMENT_GOSSIP: Story is designed for virality rather than factual accuracy (tabloids, celebrity gossip, clickbait content mills).
+- SATIRE: Content is satirical or parody in nature. The article does not make genuine factual claims and should not be fact-checked as news.
 
-Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, or CONTRADICTS_CONSENSUS
+Rate as: CORROBORATED, PLAUSIBLE, UNIQUE_REPORTING, UNVERIFIABLE, ENTERTAINMENT_GOSSIP, SATIRE or CONTRADICTS_CONSENSUS
 
 Format:
 RATING: [your rating]
 SOURCES_LIST:
 - STATUS: [SUPPORTING/CONTRADICTING]
-- SOURCE_NAME: [e.g. "newssite"]
+- SOURCE_NAME: [e.g. "BagelNews"]
 - ARTICLE_TITLE: [The distinct title of the article]
 DO NOT rely on internal citation tools.
 - RELEVANT_QUOTE: [Quote an exact short sentence (approx. 10-15 words) from the source that proves the point. Do not use quotation marks.]
@@ -290,7 +333,7 @@ EXPLANATION: [The original analysis with the formatted citations inserted]`
             useSearch: false,
             tokenBudget: 0,
             prompt:`Act as a Skeptical Media Auditor specializing in linguistic manipulation. Your goal is to find the "Truth Gap" between a headline and its source text. You value precision over professional courtesy.
-   
+
 ###CONTEXT:
 Headline: "${pageData.title}"
 Content Snippet: "${longExcerpt}"
@@ -300,20 +343,29 @@ Current Date: ${today}
 ### THE AUDIT LOGIC
 1. **The Shorthand Test**: A headline is only "Accurate Shorthand" if it captures the *primary consequence* of the story. If it skips the main event to focus on a side-detail, it is SOMEWHAT_MISLEADING.
 2. **The Omission Test**: Does the headline withhold the "Who" or "What" to force a click? (e.g., "This happened...") If yes, it is CLICKBAIT.
-3. **The Distortion Test**: Does the headline use high-valence emotional words (Terror, Chaos, Miracle) that aren't justified by the data? If yes, it is SENSATIONAL.
+3. **The Distortion Test**: Does the headline use high-valence emotional words (Terror, Chaos, Miracle) that aren't justified by the data? If yes, it is SENSATIONAL. **Critical override**: if the emotional language is directly supported by the article body (e.g., the word "chaos" appears because the event was objectively chaotic), this is ACCURATE, not SENSATIONAL. Emotional words are only a problem when they *exceed* what the text supports.
+
+### BURDEN OF PROOF — mandatory before rating anything above ACCURATE
+To assign SENSATIONAL, SOMEWHAT_MISLEADING, CLICKBAIT, or DECEPTIVE, you must:
+- Quote the specific word or phrase from the headline that triggers the rating.
+- Cite the specific passage (or absence) in the article body that contradicts or fails to justify it.
+- If you cannot do both, default to ACCURATE.
+
+### TIE-BREAK RULE
+When the headline is emphatic but factually supported, choose ACCURATE over SENSATIONAL. Reserve SENSATIONAL for headlines where the emotional register *materially exceeds* what the article's facts warrant — not merely for headlines that use strong language about strong events.
 
 ### RATING SCALE
-- ACCURATE: A neutral, factual summary of the core event.
-- SENSATIONAL: Factual, but uses "loud" or emotional language to provoke the reader.
+- ACCURATE: A neutral or emphatic but factually supported summary of the core event.
+- SENSATIONAL: Factual, but uses emotional language that *exceeds* what the article's facts warrant.
 - SOMEWHAT_MISLEADING: Technically true but framed to suggest a false conclusion or focus on a minor point.
-- CLICKBAIT: Uses a curiosity gap or "mystery" framing to harvest clicks.
+- CLICKBAIT: Uses a curiosity gap or "mystery" framing to harvest clicks, withholding "Who" or "What".
 - DECEPTIVE: Directly contradicts or invents claims not found in the snippet.
 
 **IMPORTANT**: Write the explanation in ${lang}.
 
 ### OUTPUT FORMAT
 RATING: [RATING]
-EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Sentence 2: Identify the specific linguistic tactic or framing error. Sentence 3: A direct warning or confirmation for the user.]`
+EXPLANATION: [Sentence 1: The cold, hard relationship between title and text. Sentence 2: If not ACCURATE — quote the specific headline word/phrase that fails and cite the article passage that contradicts it. If ACCURATE — briefly confirm why the headline is justified. Sentence 3: A direct warning or confirmation for the user.]`
         },
         {
             id: "bias",

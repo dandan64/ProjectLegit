@@ -30,32 +30,6 @@ function getCacheKey(url) {
 }
 
 /**
- * Builds an HTML string where each letter of `baseText` is wrapped in a
- * `<span>` with a staggered CSS `animation-delay` to create a wave/jump effect.
- *
- * Note: this helper is retained for compatibility but the primary animation
- * used at runtime is `startCalculatingAnimation()`, which drives the wave
- * imperatively via `setTimeout` for finer control.
- *
- * @param {string} baseText  - The word to animate (e.g. "Calculating").
- * @param {number} dotCount  - Number of trailing dots to append (not animated).
- * @returns {string} HTML string ready to be set as `element.innerHTML`.
- */
-function createJumpyCalculatingText(baseText, dotCount) {
-    const letters = baseText.split('');
-    const dots = '.'.repeat(dotCount);
-    
-    return letters.map((letter, index) => {
-        const delay = (index * 0.08) % 0.6; // Stagger each letter
-        return `<span style="
-            display: inline-block;
-            animation: jump 0.6s ease-in-out infinite;
-            animation-delay: ${delay}s;
-        ">${letter}</span>`;
-    }).join('') + dots;
-}
-
-/**
  * Serialises and persists analysis results to chrome.storage.local.
  *
  * Storage optimisation: only a slim subset of `pageData` is saved (title,
@@ -235,7 +209,7 @@ function loadFromCache(cacheData, currentTabId) {
 
     const header = document.getElementById("pageHeader");
     if (!document.getElementById("cacheBadge")) {
-        header.insertAdjacentHTML('beforeend', `<div id="cacheBadge" style="font-size:11px; color:#0d9488; margin-top:5px; font-weight:600;">${TRANSLATIONS[currentLang].cacheBadge}</div>`);
+        header.insertAdjacentHTML('beforeend', `<div id="cacheBadge" class="cache-badge">${TRANSLATIONS[currentLang].cacheBadge}</div>`);
     }
 
     const agentGrid = document.getElementById("agentGrid");
@@ -385,8 +359,9 @@ function parseAgentResponse(text) {
     // Convert to score
     const score = ratingToScore(rating);
     
-    if (score === 50 && rating !== "UNKNOWN" && rating !== "ERROR" && rating !== "UNVERIFIED" && rating !== "UNVERIFIABLE") {
+    if (score === -1) {
         console.warn('⚠️ Unknown rating detected:', rating, '- using default score 50');
+        return { rating: TRANSLATIONS[currentLang]["UNKNOWN"], explanation, score: 50 };
     }
 
     return { rating, explanation, score };
@@ -395,7 +370,7 @@ function parseAgentResponse(text) {
 /**
  * Maps a rating string to a numeric score (0-100).
  *
- * The score map is divided into four tiers that drive the UI colour coding:
+ * The score map is divided into four  tiers that drive the UI colour coding:
  *  - 80-100 (green)   – HIGHLY_CREDIBLE, EXPERT, CORROBORATED, ACCURATE, …
  *  - 60-79  (yellow)  – ADEQUATE, SLIGHT_BIAS, SENSATIONAL, …
  *  - 40-59  (orange)  – UNVERIFIABLE, QUESTIONABLE, MODERATE_BIAS, …
@@ -427,10 +402,10 @@ function ratingToScore(rating) {
         POORLY_SOURCED: 30, POOR_QUALITY: 30, RECYCLED: 30, CONTAINS_ERRORS: 20,
         STRONG_BIAS: 20, UNSOURCED: 15, UNRELIABLE: 10,
         MISLEADING: 10, SUSPICIOUS: 10, DECEPTIVE: 5, HIGHLY_MANIPULATIVE: 5,
-        CONTRADICTS_CONSENSUS: 5
+        CONTRADICTS_CONSENSUS: 0, ENTERTAINMENT_GOSSIP: 5, SATIRE: 5
     };
 
-    return scoreMap[rating] || 50;
+    return scoreMap[rating] || -1;
 }
 
 /**
@@ -845,12 +820,11 @@ function parseAndLinkifyQuotes(rawExplanation, tabId) {
         // Re-escape for safe HTML attribute storage
         const safeQuoteForAttribute = escapeAttribute(cleanQuote);
         
-        return `<span class="quote-link" 
-                    data-quote="${safeQuoteForAttribute}" 
-                    data-tab-id="${tabId}" 
-                    data-quote-id="${uniqueId}" 
-                    title="Click to locate in article: ${cleanQuote.substring(0, 50)}..."
-                    style="color: #0f766e; text-decoration: underline; cursor: pointer; font-weight: 600; background-color: rgba(15, 118, 110, 0.05); border-radius: 3px; padding: 2px 4px; transition: all 0.2s ease;">
+        return `<span class="quote-link"
+                    data-quote="${safeQuoteForAttribute}"
+                    data-tab-id="${tabId}"
+                    data-quote-id="${uniqueId}"
+                    title="${escapeAttribute('Click to locate in article: ' + cleanQuote.substring(0, 50) + '...')}">
                     "${quoteContent.trim()}"
                 </span>`;
     });
@@ -1205,7 +1179,7 @@ async function generateFinalSummary(agents, finalScore) {
     // 1. Show loading state in the UI
     if(summaryBox) {
         summaryBox.style.display = "block";
-        summaryBox.innerHTML = `<span style="color:#9ca3af; font-style:italic;">${TRANSLATIONS[currentLang].summarizing}</span>`;
+        summaryBox.innerHTML = `<span class="summary-loading">${TRANSLATIONS[currentLang].summarizing}</span>`;
     }
 
     // 2. Find the Summary Agent Config (Safe Mode)

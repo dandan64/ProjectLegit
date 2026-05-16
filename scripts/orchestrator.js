@@ -384,13 +384,11 @@ async function analyzeAgent(agent) {
 
         const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-        let linkedExplanation = result.explanation;
+        let linkedExplanation = escapeHtml(result.explanation);
         if (agent.id === 'bias' || agent.id === 'style') {
             linkedExplanation = parseAndLinkifyQuotes(result.explanation, tab.id);
-        }
-
-        if (agent.id === 'consensus-format' || agent.id === 'source-format') {
-            linkedExplanation = parseAndLinkifySources(linkedExplanation);
+        } else if (agent.id === 'consensus-format' || agent.id === 'source-format') {
+            linkedExplanation = parseAndLinkifySources(result.explanation);
         }
 
         contentDiv.innerHTML = `<div class="agent-explanation">${linkedExplanation}</div>`;

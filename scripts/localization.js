@@ -65,6 +65,7 @@ if (typeof window.TRANSLATIONS === 'undefined') {
             summarizing: "✨ Summarizing...",
             quoteMatchWarning: "Exact quote match not found. Showing closest match.",
             quoteMatchError: "Quote not found. Please try searching manually.",
+            UNKNOWN: "Unknown",
             
             // Agent Names
             source: "Source Credibility",
@@ -95,7 +96,7 @@ if (typeof window.TRANSLATIONS === 'undefined') {
             MODERATE_BIAS: "Moderate Bias", STRONG_BIAS: "Strong Bias",
             PROFESSIONAL: "Professional", ADEQUATE: "Adequate", 
             SENSATIONALIST: "Sensationalist", POOR_QUALITY: "Poor Quality",
-            CURRENT: "Current", RECENT: "Recent", DATED: "Dated", RECYCLED: "Recycled"
+            CURRENT: "Current", RECENT: "Recent", DATED: "Dated", RECYCLED: "Recycled", ENTERTAINMENT_GOSSIP: "Entertainment/Gossip", SENSATIONALIST: "Sensationalist", SATIRE: "Satire"
         },
         he: {
             // UI Elements
@@ -133,6 +134,7 @@ if (typeof window.TRANSLATIONS === 'undefined') {
             summarizing: "✨ מסכם...",
             quoteMatchWarning: "לא נמצא ציטוט מדויק. מוצג הציטוט הקרוב ביותר.",
             quoteMatchError: "לא נמצא ציטוט. אנא נסה לחפש ידנית.",
+            UNKNOWN: "לא ידוע",
 
             // Agent Names
             source: "אמינות המקור",
@@ -160,7 +162,7 @@ if (typeof window.TRANSLATIONS === 'undefined') {
             MODERATE_BIAS: "הטיה בינונית", STRONG_BIAS: "הטיה חזקה",
             PROFESSIONAL: "מקצועי", ADEQUATE: "סביר", 
             SENSATIONAL: "סנסציוני", POOR_QUALITY: "איכות נמוכה",
-            CURRENT: "עדכני", RECENT: "מהזמן האחרון", DATED: "מיושן", RECYCLED: "ממוחזר"
+            CURRENT: "עדכני", RECENT: "מהזמן האחרון", DATED: "מיושן", RECYCLED: "ממוחזר", ENTERTAINMENT_GOSSIP: "בידור/רכילות", SENSATIONALIST: "סנסציוני", SATIRE: "סאטירה"
         }
     };
 }

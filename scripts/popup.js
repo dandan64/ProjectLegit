@@ -47,13 +47,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Initialize: check for existing API key
-    chrome.storage.local.get(["geminiApiKey"], (res) => {
+    // Initialize: check for existing API key and saved model
+    chrome.storage.local.get(["geminiApiKey", "geminiModel"], (res) => {
         if (res.geminiApiKey) {
             activateBtn.disabled = false;
             toggleApiKeyView(true);
             showStatus(TRANSLATIONS[currentLang].readyMsg, "success");
         }
+        if (res.geminiModel) {
+            const modelSelect = document.getElementById("modelSelect");
+            if (modelSelect) modelSelect.value = res.geminiModel;
+        }
+    });
+
+    // Save model selection immediately on change
+    document.getElementById("modelSelect")?.addEventListener("change", (e) => {
+        chrome.storage.local.set({ geminiModel: e.target.value });
     });
 
     // Save API key

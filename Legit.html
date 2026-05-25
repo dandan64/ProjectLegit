@@ -25,9 +25,9 @@
                 <label for="apiKeyInput" data-i18n="apiKeyLabel">
                     🔑 Gemini API Key
                 </label>
-                <input 
-                    id="apiKeyInput" 
-                    type="password" 
+                <input
+                    id="apiKeyInput"
+                    type="password"
                     data-i18n-placeholder="apiKeyPlaceholder"
                     placeholder="Enter your API key..."
                     autocomplete="off"
@@ -35,6 +35,17 @@
                 <button id="saveKeyBtn" data-i18n="saveKeyBtn">
                     💾 Save API Key
                 </button>
+            </div>
+            <div class="model-selector-group">
+                <label for="modelSelect" data-i18n="modelLabel">🤖 Model</label>
+                <select id="modelSelect">
+                    <option value="gemini-2.5-flash"    data-i18n="modelOpt_25flash">Gemini 2.5 Flash (Recommended)</option>
+                    <option value="gemini-2.5-pro"      data-i18n="modelOpt_25pro">Gemini 2.5 Pro</option>
+                    <option value="gemini-3-flash-preview" data-i18n="modelOpt_3flash">Gemini 3 Flash (Preview)</option>
+                    <option value="gemini-3.1-flash-lite"  data-i18n="modelOpt_31flashlite">Gemini 3.1 Flash Lite (Stable)</option>
+                    <option value="gemini-3.5-flash"    data-i18n="modelOpt_35flash">Gemini 3.5 Flash (Stable)</option>
+                    <option value="gemini-3.1-pro-preview" data-i18n="modelOpt_31pro">Gemini 3.1 Pro (Preview)</option>
+                </select>
             </div>
         </div>
 
@@ -65,9 +76,9 @@
             </div>
             <div class="score-display">
                 <div id="scoreSpinner" class="score-spinner"></div>
-                <div id="scoreValue" style="display: none">--</div>
+                <div id="scoreValue">--</div>
                 <div class="score-bar-container">
-                    <div id="scoreBar" style="width: 0%"></div>
+                    <div id="scoreBar"></div>
                 </div>
             </div>
             <div id="scoreSummary" class="summary-container">

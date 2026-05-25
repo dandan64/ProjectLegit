@@ -33,13 +33,18 @@ const MAX_CACHE_SIZE = 50;
 const requestTimestamps = [];
 const MAX_REQUESTS_PER_MINUTE = 30;
 
-/**
- * Retrieves the stored Gemini API key from Chrome storage
- */
 async function getGeminiKey() {
     return new Promise((resolve) => {
         chrome.storage.local.get(["geminiApiKey"], (result) => {
             resolve(result.geminiApiKey);
+        });
+    });
+}
+
+async function getGeminiModel() {
+    return new Promise((resolve) => {
+        chrome.storage.local.get(["geminiModel"], (result) => {
+            resolve(result.geminiModel || "gemini-2.5-flash");
         });
     });
 }
@@ -156,8 +161,8 @@ async function callGemini(promptText, options = {}) {
         throw new Error("RATE_LIMIT_EXCEEDED - Please wait a moment before analyzing again");
     }
     
-    // Get API key
-    const apiKey = await getGeminiKey();
+    // Get API key and selected model
+    const [apiKey, geminiModel] = await Promise.all([getGeminiKey(), getGeminiModel()]);
     if (!apiKey) {
         throw new Error("NO_API_KEY - Please enter your Gemini API key");
     }
@@ -200,7 +205,7 @@ async function callGemini(promptText, options = {}) {
             }
 
             const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

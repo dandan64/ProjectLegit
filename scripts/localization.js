@@ -52,6 +52,15 @@ if (typeof window.TRANSLATIONS === 'undefined') {
             systemReady: "System Ready",
             apiKeyActive: "API Key is active and secure",
             changeKey: "Change API Key",
+            modelLabel: "🤖 Model",
+
+            // Model selector options
+            modelOpt_25flash:    "Gemini 2.5 Flash",
+            modelOpt_25pro:      "Gemini 2.5 Pro",
+            modelOpt_3flash:     "Gemini 3 Flash",
+            modelOpt_31flashlite:"Gemini 3.1 Flash Lite",
+            modelOpt_35flash:    "Gemini 3.5 Flash",
+            modelOpt_31pro:      "Gemini 3.1 Pro",
 
             // Status & Errors
             calculating: "Calculating...",
@@ -121,6 +130,15 @@ if (typeof window.TRANSLATIONS === 'undefined') {
             systemReady: "המערכת מוכנה",
             apiKeyActive: "מפתח API פעיל ומאובטח",
             changeKey: "החלף מפתח",
+            modelLabel: "🤖 מודל",
+
+            // Model selector options
+            modelOpt_25flash:    "ג'מיני 2.5 פלאש",
+            modelOpt_25pro:      "ג'מיני 2.5 פרו",
+            modelOpt_3flash:     "ג'מיני 3 פלאש",
+            modelOpt_31flashlite:"ג'מיני 3.1 פלאש לייט",
+            modelOpt_35flash:    "ג'מיני 3.5 פלאש",
+            modelOpt_31pro:      "ג'מיני 3.1 פרו",
 
             // Status & Errors
             calculating: "מחשב...",

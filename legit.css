@@ -99,6 +99,7 @@ body.rtl {
     transition: all 0.2s ease;
     padding: 2px 4px;
     border-radius: 3px;
+    background-color: rgba(15, 118, 110, 0.05);
 }
 
 .quote-link:hover {
@@ -108,6 +109,12 @@ body.rtl {
 
 .quote-link:active {
     transform: scale(0.98);
+}
+
+/* Summary loading placeholder */
+.summary-loading {
+    color: #9ca3af;
+    font-style: italic;
 }
 
 /* =====================================
@@ -216,6 +223,54 @@ input[type="password"]:focus {
     border-color: #14b8a6;
     background: white;
     box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
+}
+
+.model-selector-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 16px;
+    margin-top: 4px;
+    border-top: 1px solid rgba(20, 184, 166, 0.2);
+}
+
+.input-card.dashboard-mode .model-selector-group {
+    border-top: none;
+    padding-top: 0;
+}
+
+select#modelSelect {
+    width: 100%;
+    padding: 10px 36px 10px 14px;
+    border: 2px solid rgba(20, 184, 166, 0.4);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Rubik', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #f0fdf9 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230f766e' d='M6 8L1 3h10z'/%3E%3C/svg%3E") no-repeat right 12px center;
+    color: #134e4a;
+    cursor: pointer;
+    transition: all 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    box-shadow: 0 1px 4px rgba(20, 184, 166, 0.08);
+}
+
+select#modelSelect:hover {
+    border-color: #14b8a6;
+    background-color: #ecfdf5;
+}
+
+select#modelSelect:focus {
+    outline: none;
+    border-color: #14b8a6;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+}
+
+body.rtl select#modelSelect {
+    padding: 10px 14px 10px 36px;
+    background-position: left 12px center;
 }
 
 
@@ -416,10 +471,17 @@ button:disabled {
     overflow: hidden;
 }
 
-.page-domain { 
-    font-size: 11px; 
-    color: #0d9488; 
-    font-weight: 600; 
+.page-domain {
+    font-size: 11px;
+    color: #0d9488;
+    font-weight: 600;
+}
+
+.cache-badge {
+    font-size: 11px;
+    color: #0d9488;
+    margin-top: 5px;
+    font-weight: 600;
 }
 
 /* =====================================
@@ -611,6 +673,7 @@ button:disabled {
 }
 
 #scoreValue {
+    display: none;
     font-size: 48px;
     font-weight: 900;
     min-width: 60px;
@@ -631,6 +694,7 @@ button:disabled {
 }
 
 #scoreBar {
+    width: 0%;
     height: 100%;
     transition: width 1s ease, background-color 0.5s ease, box-shadow 0.5s ease;
     border-radius: 4px;
@@ -1025,7 +1089,8 @@ button:disabled {
 .rating-badge.rating-contradicts_consensus, 
 .rating-badge.rating-strong_bias, 
 .rating-badge.rating-unsourced,
-.rating-badge.rating-contains_errors {
+.rating-badge.rating-contains_errors, 
+.rating-badge.rating-entertainment_gossip {
     background: rgba(239, 68, 68, 0.15); 
     color: #991b1b; 
     border-color: rgba(239, 68, 68, 0.3);

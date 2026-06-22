@@ -1,0 +1,63 @@
+This is a great start! You have the core functionality down, but to make the Store Listing "appealing" and drive downloads, you need to sell the **benefit** and the **technology** more aggressively. Currently, the text is a bit dry and functional.
+
+Here is a breakdown of how to improve each section based on the "Legit" branding and the technical details visible in your screenshots (specifically the multi-agent/Gemini focus).
+
+### 1. Title
+
+**Current:** `Legit`
+**Recommendation:** Keep the name, but consider adding a short keyword tail if space permits (and if it fits your brand strategy) to help with search results.
+
+* *Option:* **Legit: AI News Verifier**
+* *Option:* **Legit | Misinformation Detector**
+
+### 2. Summary (The "Hook")
+
+This appears in search results. It needs to be punchy and benefit-focused.
+**Current:** "Solving the problem of fake news on the internet" (A bit passive).
+**Better Options:**
+
+* "Instantly verify news credibility using multi-agent AI analysis powered by Google Gemini."
+* "Spot misinformation before you share. Real-time news analysis and credibility scoring."
+
+### 3. Detailed Description
+
+This is where you convince the user to install. You need to structure this with headings, bullet points, and emojis to make it scannable. Since you are using a "multi-agent" approach, highlight that—it sounds cutting-edge and robust.
+
+**Draft Copy:**
+
+> **Is that news article Legit?** 🕵️‍♂️
+> In an era of clickbait and misinformation, it’s hard to know what to trust. Legit is your personal AI fact-checker, seamlessly integrated into Chrome.
+> **How it Works:**
+> Unlike simple keyword blockers, Legit uses **Google's advanced Gemini AI** to conduct a deep semantic analysis of the content you read. It employs a **Multi-Agent System**, where different AI "experts" analyze the text for bias, logical fallacies, and source credibility to give you a balanced verification.
+> **Key Features:**
+> * **🛡️ Instant Credibility Score:** Get a clear 0-100 trust score on news articles instantly.
+> * **🤖 Multi-Agent Analysis:** Powered by multiple AI agents that cross-reference claims to reduce hallucinations and bias.
+> * **⚡ Powered by Gemini:** Utilizes the latest in Large Language Model technology for nuanced understanding.
+> * **📝 Detailed Breakdown:** Don't just get a score—understand *why*. See the detected bias, logical gaps, and source reputation.
+> * **🌍 Broad Topic Coverage:** Works on political news, science articles, and opinion pieces.
+> 
+> 
+> **Privacy First:**
+> We analyze the text of the article only when you ask us to. Your browsing history remains private.
+> *Install Legit today and browse with confidence.*
+
+### 4. Visual Assets Feedback
+
+* **Icon:** The green shield with the checkmark is excellent. It signifies trust and safety. Keep it.
+* **Screenshots:**
+* **Add Captions:** The current screenshot is a bit dark. Ensure you upload screenshots that highlight the **"84" Score** clearly. Users love seeing a quantifiable "score" interface.
+* **Feature Callouts:** You can add text overlays to your screenshots (like "Real-time Analysis" or "Bias Detection") to explain what is happening in the UI.
+
+
+* **Promo Tile:** The "Matrix/Code" background looks cool and technical, which fits the "hacker/cybersecurity" vibe of fighting fake news.
+
+### 5. Missing Fields (Strategic Advice)
+
+I noticed the **Official URL** and **Support URL** fields are empty in your screenshots.
+
+* **Website:** Even if you don't have a full marketing site, creating a simple landing page (or even a GitHub Pages site) makes the extension look much more professional and trustworthy.
+* **Category:** You selected "Tools." You might also consider **"News & Weather"** or **"Productivity"** if you want to reach users specifically looking for news tools, though "Tools" is a safe bet.
+
+**One final check:** Since you are handling complex text analysis, does the extension currently support languages other than English (like Hebrew or Spanish)? If so, definitely mention "Multilingual Support" in the feature list!
+
+Would you like me to write the text for the **"Small promo tile"** or help you draft a privacy policy snippet?

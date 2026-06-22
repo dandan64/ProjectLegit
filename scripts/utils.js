@@ -405,7 +405,11 @@ function ratingToScore(rating) {
         CONTRADICTS_CONSENSUS: 0, ENTERTAINMENT_GOSSIP: 5, SATIRE: 5
     };
 
-    return scoreMap[rating] || -1;
+    // NOTE: use hasOwnProperty, not `|| -1`, so a legitimate score of 0
+    // (e.g. CONTRADICTS_CONSENSUS) is honored instead of being treated as an
+    // unknown rating. Genuinely unknown ratings still fall through to -1, which
+    // parseAgentResponse() maps to the neutral default of 50.
+    return Object.prototype.hasOwnProperty.call(scoreMap, rating) ? scoreMap[rating] : -1;
 }
 
 /**

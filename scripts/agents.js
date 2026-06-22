@@ -121,10 +121,10 @@ HARD SHORTCUTS (apply immediately, skip further analysis):
 - If any major watchdog (MBFC, AllSides, Ad Fontes) explicitly rates the outlet "Low Factual Reporting", "Conspiracy/Pseudoscience", or equivalent → UNRELIABLE. No further analysis needed.
 - If the domain is a known satire or parody site → SATIRE. No further analysis needed.
 
-CEILING RULE FOR UNKNOWN OUTLETS: If the domain is not listed in any major watchdog AND the parent company is not identifiable, the maximum possible rating is NEUTRAL. Do not assign CREDIBLE or HIGHLY_CREDIBLE on thin evidence.
+CEILING RULE FOR UNKNOWN OUTLETS: If the domain is not listed in any major watchdog AND the parent company is not identifiable, the default rating is NEUTRAL. EXCEPTION: if you find at least TWO independent quality signals — e.g. a named, accountable editorial staff/masthead; a visible corrections or editorial-standards policy; an established publication history with no fact-check flags found in a direct search — assign CREDIBLE despite the watchdog absence. Absence from an English-language watchdog list is not itself evidence of unreliability, especially for non-English or regional outlets that those watchdogs don't cover.
 
 TIE-BREAKING RULE: If evidence supports two adjacent tiers, pick the LOWER one.
-DEFAULT ON THIN EVIDENCE: If watchdogs don't list the domain AND the parent company is not identifiable → NEUTRAL (never CREDIBLE by default).
+DEFAULT ON THIN EVIDENCE: If watchdogs don't list the domain, the parent company is not identifiable, AND you cannot find the quality signals above → NEUTRAL.
 
 **IMPORTANT**: Write the EXPLANATION part in ${lang}.
 
@@ -183,14 +183,14 @@ Content Snippet: "${shortExcerpt}"
 1. **Extraction**: If Author is "Unknown", scan the Excerpt for "By [Name]" or "Written by". 
 2. **Verification**: Search for the exact name + the host domain. Check for a dedicated author profile page.
 3. **External Footprint**: Cross-reference the name with Muck Rack, LinkedIn, or Twitter to verify they are a real person and not an AI-generated persona.
-4. **Constraint**: Do not guess. If no information exists outside the current domain, rate as ANONYMOUS or UNVERIFIABLE based on the site's reputation.
+4. **Constraint**: Do not guess. A named byline with no contradicting signal (not generic, no sign of fabrication) is sufficient for JOURNALIST even without an external Muck Rack/LinkedIn hit — staff pages are valid verification on their own. Only fall back to ANONYMOUS or UNVERIFIABLE when no real name is given, or the name itself shows signs of being fabricated.
 
 ### RATING SCALE
 - EXPERT: Recognized authority/specialist with advanced credentials.
-- JOURNALIST: Verifiable staff or freelance writer for established news outlets.
+- JOURNALIST: A named, specific person bylined on the article, whether or not external profiles were found — absence of an external footprint alone is not disqualifying.
 - CITIZEN_JOURNALIST: Independent contributor or blogger with a traceable history.
 - ANONYMOUS: No specific author found; content attributed to "Staff" or "Admin."
-- UNVERIFIABLE: Name appears fabricated, no digital footprint, or no sources associated with the author outside the current domain.
+- UNVERIFIABLE: The name itself appears fabricated (e.g., generic/implausible, inconsistent across the site, or shows other signs of being an AI-generated persona) — not merely "no external profile found."
 - SUSPICIOUS: Author has a history of spreading misinformation or is linked to disreputable sources.
 
 **IMPORTANT**: Write the explanation in ${lang}.
@@ -259,7 +259,7 @@ If the date is the same as today, treat this as "Breaking News".
 - (e) Reported by secondary sources only, no circular reporting? → PLAUSIBLE
 - (f) Fresh timestamp (<24h) or exclusive investigation, with no refutations found? → UNIQUE_REPORTING
 - (g) You ran BOTH confirmation AND refutation searches and found neither? → UNVERIFIABLE
-- TIE-BREAK: If you have ANY refutation evidence at all, prefer CONTRADICTS_CONSENSUS over UNVERIFIABLE. "Unverifiable" is reserved for genuine evidence vacuum, not for "I'm unsure".
+- TIE-BREAK: Only prefer CONTRADICTS_CONSENSUS over CORROBORATED/UNVERIFIABLE when the refutation evidence targets the SAME Atomic Fact specifically (not a related-but-different claim) and is comparable in quality/quantity to any corroboration found — a single weak or tangential refutation hit does not override two or more Tier-1 corroborating sources. "Unverifiable" is reserved for genuine evidence vacuum, not for "I'm unsure".
 
 OUTPUT REQUIREMENT:
 1. You must output a JSON-like list of sources you found, followed by your analysis.

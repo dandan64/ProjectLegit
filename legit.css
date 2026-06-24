@@ -1090,7 +1090,8 @@ button:disabled {
 .rating-badge.rating-strong_bias, 
 .rating-badge.rating-unsourced,
 .rating-badge.rating-contains_errors, 
-.rating-badge.rating-entertainment_gossip {
+.rating-badge.rating-entertainment_gossip,
+.rating-badge.rating-satire {
     background: rgba(239, 68, 68, 0.15); 
     color: #991b1b; 
     border-color: rgba(239, 68, 68, 0.3);
